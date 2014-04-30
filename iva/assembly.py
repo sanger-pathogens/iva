@@ -1,0 +1,568 @@
+import os
+import pysam
+import tempfile
+import shutil
+from iva import contig, mapping, seed, mummer, graph, edge
+import fastaq
+
+class Assembly:
+    def __init__(self, contigs_file=None, map_index_k=15, map_index_s=3, threads=1, max_insert=1000, map_minid=0.5, min_clip=3, ext_min_cov=5, ext_min_ratio=2, ext_bases=100, verbose=0, seed_min_cov=5, seed_min_ratio=10, seed_min_kmer_count=200, seed_max_kmer_count=1000000000, seed_start_length=None, seed_stop_length=500, seed_overlap_length=None, make_new_seeds=False, contig_iter_trim=10, seed_ext_max_bases=50, max_contigs=None, clean=True, strand_bias=0.2):
+        self.contigs = {}
+        self.contig_lengths = {}
+        self.map_index_k = map_index_k
+        self.map_index_s = map_index_s
+        self.threads = threads
+        self.max_insert = max_insert
+        self.map_minid = map_minid
+        self.min_clip = min_clip
+        self.ext_min_cov = ext_min_cov
+        self.ext_min_ratio = ext_min_ratio
+        self.ext_bases = ext_bases
+        self.verbose = verbose
+        self.clean = clean
+        self.make_new_seeds = make_new_seeds
+        self.seed_start_length = seed_start_length
+        self.seed_stop_length = seed_stop_length
+        self.seed_min_kmer_count = seed_min_kmer_count
+        self.seed_max_kmer_count = seed_max_kmer_count
+        self.seed_ext_max_bases = seed_ext_max_bases
+        self.seed_overlap_length = seed_overlap_length
+        self.seed_min_cov = seed_min_cov
+        self.seed_min_ratio = seed_min_ratio
+        self.contig_iter_trim = contig_iter_trim
+        self.max_contigs = max_contigs
+        self.strand_bias = strand_bias
+        self.contigs_trimmed_for_strand_bias = set()
+
+        if contigs_file is None:
+            self.make_new_seeds = True
+        else:
+            contigs = {}
+            fastaq.tasks.file_to_dict(contigs_file, contigs)
+            for ctg in contigs:
+                self._add_contig(contigs[ctg])
+
+
+    def _add_contig(self, ctg):
+        assert ctg.id not in self.contigs
+        self.contigs[ctg.id] = contig.Contig(ctg, verbose=self.verbose)
+        self.contig_lengths[ctg.id] = [[len(self.contigs[ctg.id]), 0, 0]]
+
+
+    def write_contigs_to_file(self, filename, min_length=None, do_not_write=set(), only_write=set(), biggest_first=False, order_by_orfs=False, prefix=None):
+        printed = 0
+        if min_length is None:
+            min_length = self.map_index_k + 1
+        f = fastaq.utils.open_file_write(filename)
+        if biggest_first:
+            contig_names = self._contig_names_size_order(biggest_first=True)
+        elif order_by_orfs:
+            names = self._get_contig_order_by_orfs()
+            contig_names = [x[0] for x in names]
+            contig_revcomp = [x[1] for x in names]
+        else:
+            contig_names = sorted(list(self.contigs.keys()))
+
+        for i in range(len(contig_names)):
+            name = contig_names[i]
+
+            if len(self.contigs[name]) >= min_length and name not in do_not_write and (name in only_write or len(only_write)==0):
+                if order_by_orfs and contig_revcomp[i]:
+                    self.contigs[name].fa.revcomp()
+
+                if prefix is None:
+                    print(self.contigs[name].fa, file=f)
+                else:
+                    printed += 1
+                    self.contigs[name].fa.id = prefix + '.' + str(printed).zfill(5)
+                    print(self.contigs[name].fa, file=f)
+                    self.contigs[name].fa.id = name
+
+                if order_by_orfs and contig_revcomp[i]:
+                    self.contigs[name].fa.revcomp()
+
+        fastaq.utils.close(f)
+
+
+    def _get_contig_order_by_orfs(self, min_length=300):
+        longest_orfs = []
+        no_orfs = set()
+        ordered_names = []
+        for contig in self.contigs.values():
+            orfs = contig.fa.all_orfs(min_length)
+            reverse = False
+            max_length = 0
+
+            for coords, rev in orfs:
+                if len(coords) > max_length:
+                    max_length = len(coords)
+                    reverse = rev
+
+            if max_length > 0:
+                longest_orfs.append((contig.fa.id, max_length, reverse))
+            else:
+                no_orfs.add((contig.fa.id, len(contig.fa)))
+
+        all_in_size_order = self._contig_names_size_order(biggest_first=True)
+        ordered_names = sorted(longest_orfs, key=lambda x:x[1], reverse=True)
+        ordered_names = [(x[0], x[2]) for x in ordered_names]
+
+        for t in sorted(no_orfs, key=lambda x:x[1], reverse=True):
+            ordered_names.append((t[0], False))
+
+        return ordered_names
+
+
+    def _map_reads(self, fwd_reads, rev_reads, out_prefix, required_flag=None, exclude_flag=None, sort_reads=False, mate_ref=None, no_map_contigs=set()):
+        if self.verbose:
+            print('    map reads', fwd_reads, rev_reads, sep='\t')
+        reference = out_prefix + '.ref.fa'
+        self.write_contigs_to_file(reference, do_not_write=no_map_contigs)
+        mapping.map_reads(fwd_reads, rev_reads, reference, out_prefix, index_k=self.map_index_k, index_s=self.map_index_s, threads=self.threads, max_insert=self.max_insert, minid=self.map_minid, verbose=self.verbose, required_flag=required_flag, sort=sort_reads, exclude_flag=exclude_flag)
+        if self.clean:
+            os.unlink(reference)
+        os.unlink(reference + '.fai')
+
+
+    def _extend_contigs_with_bam(self, bam_in, out_prefix=None, output_all_useful_reads=False):
+        if out_prefix is not None:
+            fa_out1 = fastaq.utils.open_file_write(out_prefix + '.to_remap_1.fa')
+            fa_out2 = fastaq.utils.open_file_write(out_prefix + '.to_remap_2.fa')
+        keep_read_types = set([mapping.CAN_EXTEND_LEFT, mapping.CAN_EXTEND_RIGHT, mapping.KEEP])
+        if output_all_useful_reads:
+            keep_read_types.add(mapping.BOTH_UNMAPPED)
+        previous_sam = None
+        left_seqs = []
+        right_seqs = []
+        sam_reader = pysam.Samfile(bam_in, "rb")
+
+        for current_sam in sam_reader.fetch(until_eof=True):
+            if previous_sam is None:
+                previous_sam = current_sam
+                continue
+
+            previous_type, current_type = mapping.get_pair_type(previous_sam, current_sam, self._get_ref_length_sam_pair(sam_reader, previous_sam, current_sam), self.max_insert, min_clip=self.min_clip)
+
+            for sam, sam_type in [(previous_sam, previous_type), (current_sam, current_type)]:
+                if sam_type == mapping.CAN_EXTEND_LEFT:
+                    name = mapping.get_ref_name(sam, sam_reader)
+                    clipped = mapping.soft_clipped(sam)[0]
+                    self.contigs[name].add_left_kmer(sam.seq[:clipped].decode())
+                elif sam_type == mapping.CAN_EXTEND_RIGHT:
+                    name = mapping.get_ref_name(sam, sam_reader)
+                    self.contigs[name].add_right_kmer(sam.seq[sam.qend:].decode())
+
+                if out_prefix is not None and sam_type in keep_read_types:
+                    if sam.is_read1:
+                        print(mapping.sam_to_fasta(sam), file=fa_out1)
+                    else:
+                        print(mapping.sam_to_fasta(sam), file=fa_out2)
+
+            previous_sam = None
+
+        if out_prefix is not None:
+            fastaq.utils.close(fa_out1)
+            fastaq.utils.close(fa_out2)
+        total_bases_added = 0
+
+        for ctg in self.contigs:
+            left_length, right_length = self.contigs[ctg].extend(self.ext_min_cov, self.ext_min_ratio, self.ext_bases)
+            if self.verbose:
+                print('    extend contig ' +  ctg, 'new_length:' + str(len(self.contigs[ctg])), 'added_left:' + str(left_length), 'added_right:' + str(right_length), sep='\t')
+            self.contig_lengths[ctg].append([len(self.contigs[ctg]), left_length, right_length])
+            total_bases_added += left_length + right_length
+
+        return total_bases_added
+
+
+    def _trim_contig_for_strand_bias(self, bam, ctg_name):
+        if ctg_name in self.contigs_trimmed_for_strand_bias:
+            return
+        ctg_length = len(self.contigs[ctg_name])
+        fwd_cov = mapping.get_bam_region_coverage(bam, ctg_name, ctg_length)
+        rev_cov = mapping.get_bam_region_coverage(bam, ctg_name, ctg_length, rev=True)
+        first_good_base = 0
+        while first_good_base < ctg_length:
+            total_cov = fwd_cov[first_good_base] + rev_cov[first_good_base]
+            if total_cov >= self.ext_min_cov and min(fwd_cov[first_good_base], rev_cov[first_good_base]) / total_cov >= self.strand_bias:
+                break
+            first_good_base += 1
+
+        last_good_base = ctg_length - 1
+        while last_good_base > first_good_base:
+            total_cov = fwd_cov[last_good_base] + rev_cov[last_good_base]
+            if total_cov >= self.ext_min_cov and min(fwd_cov[last_good_base], rev_cov[last_good_base]) / total_cov >= self.strand_bias:
+                break
+            last_good_base -= 1
+
+        if self.verbose >= 2:
+            print('Trimming strand biased ends of contig', ctg_name, '- good base range is', first_good_base + 1, 'to', last_good_base + 1, 'from', ctg_length, 'bases')
+        self.contigs[ctg_name].fa.seq = self.contigs[ctg_name].fa.seq[first_good_base:last_good_base+1]
+
+
+    def _good_intervals_from_strand_coverage(self, fwd_cov, rev_cov):
+        assert len(fwd_cov) == len(rev_cov)
+        good_intervals = []
+        start = None
+        cov_ok = False
+        for i in range(len(fwd_cov)):
+            total_cov = fwd_cov[i] + rev_cov[i]
+            cov_ok = total_cov >= self.ext_min_cov and min(fwd_cov[i], rev_cov[i]) / total_cov >= self.strand_bias
+            if cov_ok:
+                if start is None:
+                    start = i
+            else:
+                if start is not None:
+                    good_intervals.append((start, i-1))
+                start = None
+
+        if cov_ok and start is not None:
+            good_intervals.append((start, i-1))
+        return good_intervals
+
+
+    def _subcontigs_from_strand_bias(self, bam, ctg_name):
+        ctg_length = len(self.contigs[ctg_name])
+        fwd_cov = mapping.get_bam_region_coverage(bam, ctg_name, ctg_length)
+        rev_cov = mapping.get_bam_region_coverage(bam, ctg_name, ctg_length, rev=True)
+        good_intervals = self._good_intervals_from_strand_coverage(fwd_cov, rev_cov)
+        new_contigs = []
+
+        if len(good_intervals) == 1:
+            self.contigs[ctg_name].fa.seq = self.contigs[ctg_name].fa.seq[good_intervals[0][0]:good_intervals[0][1]+1]
+        elif len(good_intervals) > 1:
+            for i in range(len(good_intervals)):
+                start = good_intervals[i][0]
+                end = good_intervals[i][1]
+                if end - start + 1 >= 100:
+                    new_contigs.append(fastaq.sequences.Fasta(ctg_name + '.' + str(i+1), self.contigs[ctg_name].fa[start:end+1]))
+
+        return new_contigs
+
+
+    def _trim_strand_biased_ends(self, reads_prefix, out_prefix=None, tag_as_trimmed=False, break_contigs=False):
+        tmpdir = tempfile.mkdtemp(prefix='tmp.trim_strand_biased_ends.', dir=os.getcwd())
+        tmp_prefix = os.path.join(tmpdir, 'out')
+        sorted_bam = tmp_prefix + '.bam'
+        unsorted_bam = tmp_prefix + '.unsorted.bam'
+        original_map_minid = self.map_minid
+        if break_contigs:
+            self.map_minid = 0.9
+        self._map_reads(reads_prefix + '_1.fa', reads_prefix + '_2.fa', tmp_prefix, sort_reads=True)
+        self.map_minid = original_map_minid
+        new_contigs = []
+        contigs_to_remove = set()
+        for ctg in self.contigs:
+            if break_contigs:
+                subcontigs = self._subcontigs_from_strand_bias(sorted_bam, ctg)
+                if len(subcontigs):
+                    new_contigs.extend(subcontigs)
+                    contigs_to_remove.add(ctg)
+            elif ctg not in self.contigs_trimmed_for_strand_bias:
+                self._trim_contig_for_strand_bias(sorted_bam, ctg)
+                if tag_as_trimmed:
+                    self.contigs_trimmed_for_strand_bias.add(ctg)
+
+        for ctg in contigs_to_remove:
+            self._remove_contig(ctg)
+
+        for ctg in new_contigs:
+            self._add_contig(ctg)
+
+
+        if out_prefix is not None:
+            mapping.bam_file_to_fasta_pair_files(unsorted_bam, out_prefix + '_1.fa', out_prefix + '_2.fa', remove_proper_pairs=True)
+        shutil.rmtree(tmpdir)
+
+
+    def trim_contigs(self, trim):
+        for ctg in self.contigs:
+            if self._contig_worth_extending(ctg):
+                self.contigs[ctg].fa.trim(trim, trim)
+                self.contig_lengths[ctg][-1][0] -= 2 * trim
+
+
+    def _contig_worth_extending(self, name):
+        if name in self.contigs_trimmed_for_strand_bias:
+            return False
+        return len(self.contig_lengths[name]) < 3 \
+                  or self.contig_lengths[name][-1][0] > max([self.contig_lengths[name][x][0] for x in range(len(self.contig_lengths[name])-2)])
+
+
+    def _worth_extending(self):
+        for ctg in self.contigs:
+            if self._contig_worth_extending(ctg):
+                return True
+        return False
+
+
+    def _read_pair_extension_iterations(self, reads_prefix, out_prefix, no_map_contigs=set()):
+        assert(len(self.contigs))
+        if self.verbose:
+            print('{:-^79}'.format(' ' + out_prefix + ' start extension subiteration 0001 '))
+        bam = out_prefix + '.1.map.bam'
+        self._map_reads(reads_prefix + '_1.fa', reads_prefix + '_2.fa', out_prefix + '.1.map', no_map_contigs=no_map_contigs)
+        bases_added = self._extend_contigs_with_bam(bam)
+        if self.clean:
+            os.unlink(bam)
+
+        if bases_added == 0:
+            return
+        try_contig_trim = False
+        i = 1
+
+        while self._worth_extending() or try_contig_trim:
+            i += 1
+            if self.verbose:
+                print()
+                print('{:-^79}'.format(' ' + out_prefix + ' start extension subiteration ' + str(i).zfill(4) + ' '))
+
+            iter_prefix = out_prefix + '.' + str(i)
+            bam = iter_prefix + '.map.bam'
+            self._map_reads(reads_prefix + '_1.fa', reads_prefix + '_2.fa', iter_prefix + '.map', no_map_contigs=no_map_contigs)
+            bases_added = self._extend_contigs_with_bam(bam)
+            if self.clean:
+                os.unlink(bam)
+
+            if bases_added == 0:
+                if not try_contig_trim:
+                    if self.verbose:
+                        print('    No bases added. Try trimming contigs')
+                    self._trim_strand_biased_ends(reads_prefix, tag_as_trimmed=False)
+                    self.trim_contigs(self.contig_iter_trim)
+                    try_contig_trim = True
+                else:
+                    if self.verbose:
+                        print('    No bases added after trimming. No more iterations')
+                    break
+            else:
+                try_contig_trim = False
+
+
+    def read_pair_extend(self, reads_prefix, out_prefix):
+        assert(len(self.contigs))
+        current_reads_prefix = reads_prefix
+        i = 1
+        if len(self.contigs) == 1:
+            last_contig_added = list(self.contigs.keys())[0]
+        else:
+            last_contig_added = None
+        if self.verbose:
+            print('{:_^79}'.format(' START ITERATION 001 '))
+        self._read_pair_extension_iterations(current_reads_prefix, out_prefix + '.1')
+        current_contig_set = set()
+
+        while self.make_new_seeds and len(self.contigs) < self.max_contigs:
+            filtered_reads_prefix = out_prefix + '.' + str(i) + '.filtered'
+            if self.verbose:
+                print('{:_^79}'.format(' Trim contig ends '))
+
+            if self.verbose:
+                print('{:_^79}'.format(' Try making new seed '))
+            new_seed = self.add_new_seed_contig(current_reads_prefix + '_1.fa', current_reads_prefix + '_2.fa', contig_name=last_contig_added)
+
+            if new_seed is None:
+                if last_contig_added is not None:
+                    self._trim_strand_biased_ends(current_reads_prefix, tag_as_trimmed=True, out_prefix=filtered_reads_prefix)
+                    current_contig_set.add(last_contig_added)
+                    self._remove_contained_contigs(current_contig_set)
+                    self._merge_overlapping_contigs(current_contig_set, min_overlap_length=500, end_tolerance=10, min_identity=99)
+                    if current_reads_prefix != reads_prefix and self.clean:
+                        os.unlink(current_reads_prefix + '_1.fa')
+                        os.unlink(current_reads_prefix + '_2.fa')
+                    current_reads_prefix = filtered_reads_prefix
+                    new_seed = self.add_new_seed_contig(current_reads_prefix + '_1.fa', current_reads_prefix + '_2.fa')
+                    current_contig_set = set()
+            elif last_contig_added is not None:
+                    current_contig_set.add(last_contig_added)
+
+            if new_seed is None:
+                break
+
+            last_contig_added  = new_seed
+            i += 1
+            if self.verbose:
+                print('{:_^79}'.format(' START ITERATION ' + str(i).zfill(3) + ' '))
+            self._read_pair_extension_iterations(current_reads_prefix, out_prefix + '.' + str(i), no_map_contigs=current_contig_set)
+
+        if not self.clean:
+            self.write_contigs_to_file('contigs.before_cleaning.fasta', order_by_orfs=True)
+        else:
+            for j in range(i+1):
+                for k in [1,2]:
+                    fname = 'iteration.' + str(j) + '.filtered_' + str(k) + '.fa'
+                    if os.path.exists(fname):
+                        os.unlink(fname)
+
+        self._trim_strand_biased_ends(reads_prefix, tag_as_trimmed=True, break_contigs=True)
+        if not self.clean:
+            self.write_contigs_to_file('contigs.clean.01.after_strand_bias.fasta', order_by_orfs=True)
+        self._remove_contained_contigs(list(self.contigs.keys()))
+        if not self.clean:
+            self.write_contigs_to_file('contigs.clean.02.after_remove_containing.fasta', order_by_orfs=True)
+        self._merge_overlapping_contigs(list(self.contigs.keys()), min_overlap_length=200, end_tolerance=50, min_identity=99)
+
+
+    def _run_nucmer(self, contigs_to_use=set()):
+        if len(contigs_to_use) <= 1:
+            return []
+        tmpdir = tempfile.mkdtemp(prefix='tmp.remove_self_contigs.', dir=os.getcwd())
+        nucmer_out = os.path.join(tmpdir, 'nucmer.out')
+        contigs_fasta = os.path.join(tmpdir, 'contigs.fa')
+        self.write_contigs_to_file(contigs_fasta, only_write=contigs_to_use)
+        mummer.run_nucmer(contigs_fasta, contigs_fasta, nucmer_out)
+        hits = [hit for hit in mummer.file_reader(nucmer_out) if not hit.is_self_hit()]
+        for hit in hits:
+            hit.sort()
+        hits = list(set(hits))
+        shutil.rmtree(tmpdir)
+        return hits
+
+
+    def _remove_contained_contigs(self, contigs):
+        if len(contigs) <= 1:
+            return
+        hits = self._run_nucmer(contigs_to_use=contigs)
+        for contig in self._contig_names_size_order()[:-1]:
+            if self._contig_contained_in_nucmer_hits(hits, contig, 95):
+                hits = self._remove_contig_from_nucmer_hits(hits, contig)
+                self._remove_contig(contig)
+                contigs.remove(contig)
+
+
+    def _coords_to_new_contig(self, coords_list):
+        new_contig = fastaq.sequences.Fasta(coords_list[0][0], '')
+        for name, coords, reverse in coords_list:
+            assert name in self.contigs
+            if reverse:
+                seq = fastaq.sequences.Fasta('ni', self.contigs[name].fa.seq[coords.start:coords.end+1])
+                seq.revcomp()
+                new_contig.seq += seq.seq
+            else:
+                new_contig.seq += self.contigs[name].fa.seq[coords.start:coords.end+1]
+
+        return new_contig
+
+
+    def _merge_overlapping_contigs(self, contigs, min_overlap_length=200, end_tolerance=50, min_identity=99):
+        if len(contigs) <= 1:
+            return
+        hits = self._run_nucmer(contigs)
+        assembly_graph = graph.Graph(self, contigs=contigs)
+        for hit in hits:
+            e = hit.to_graph_edge()
+            if e is not None:
+                assembly_graph.add_edge(e)
+
+        for connected_component in assembly_graph.connected_components():
+            if len(connected_component) < 2:
+                continue
+            simple_path = assembly_graph.find_simple_path(connected_component)
+            assert assembly_graph.simple_path_is_consistent(simple_path)
+            if len(simple_path) > 1:
+                simple_path = assembly_graph.remove_redundant_nodes_from_simple_path(simple_path)
+                coords = assembly_graph.merged_coords_from_simple_nonredundant_path(simple_path)
+                new_contig = self._coords_to_new_contig(coords)
+                for name, x, y in coords:
+                    self._remove_contig(name)
+                self._add_contig(new_contig)
+
+
+    def _contig_names_size_order(self, biggest_first=False):
+        return sorted(self.contigs, key=lambda x:len(self.contigs[x]), reverse=biggest_first)
+
+
+    def _contig_contained_in_nucmer_hits(self, hits, contig, min_percent):
+        assert contig in self.contigs
+        contig_length = len(self.contigs[contig])
+        coords = []
+        for hit in [hit for hit in hits if contig in [hit.qry_name, hit.ref_name] and hit.qry_name != hit.ref_name]:
+            start = min(hit.qry_start, hit.qry_end)
+            end = max(hit.qry_start, hit.qry_end)
+            coords.append(fastaq.intervals.Interval(start, end))
+
+        if len(coords) == 0:
+            return False
+
+        fastaq.intervals.merge_overlapping_in_list(coords)
+        total_bases_matched = fastaq.intervals.length_sum_from_list(coords)
+        return min_percent <= 100.0 * total_bases_matched / len(self.contigs[contig])
+
+
+    def _remove_contig_from_nucmer_hits(self, hits, contig):
+        return [x for x in hits if contig not in [x.ref_name, x.qry_name]]
+
+
+    def _remove_contig(self, contig):
+        if contig in self.contigs:
+            del self.contigs[contig]
+        if contig in self.contig_lengths:
+            del self.contig_lengths[contig]
+        if contig in self.contigs_trimmed_for_strand_bias:
+            self.contigs_trimmed_for_strand_bias.remove(contig)
+
+
+    def _get_ref_length(self, samfile, sam):
+        if sam.is_unmapped:
+            return None
+        else:
+            return len(self.contigs[mapping.get_ref_name(sam, samfile)])
+
+
+    def _get_ref_length_sam_pair(self, samfile, sam1, sam2):
+        len1 = self._get_ref_length(samfile, sam1)
+        len2 = self._get_ref_length(samfile, sam2)
+        if len1 == len2:
+            return len1
+        else:
+            return None
+
+
+    def _get_unmapped_pairs(self, reads1, reads2, out_prefix):
+        self._map_reads(reads1, reads2, out_prefix, required_flag=12)
+        mapping.bam_file_to_fasta_pair_files(out_prefix + '.bam', out_prefix + '_1.fa', out_prefix + '_2.fa')
+        os.unlink(out_prefix + '.bam')
+
+
+    def add_new_seed_contig(self, reads1, reads2, contig_name=None, remove_seed_strand_bias=True):
+        if len(self.contigs):
+            tmpdir = tempfile.mkdtemp(prefix='tmp.make_seed.', dir=os.getcwd())
+            tmp_prefix = os.path.join(tmpdir, 'out')
+            seed_reads1 = tmp_prefix + '_1.fa'
+            seed_reads2 = tmp_prefix + '_2.fa'
+            if contig_name is not None:
+                self._map_reads(reads1, reads2, tmp_prefix, required_flag=5, exclude_flag=8, mate_ref=contig_name)
+                mapping.bam_to_fasta(tmp_prefix + '.bam', seed_reads1)
+                seed_reads2 = None
+            else:
+                self._get_unmapped_pairs(reads1, reads2, tmp_prefix)
+        else:
+            seed_reads1 = reads1
+            seed_reads2 = reads2
+        s = seed.Seed(reads1=seed_reads1, reads2=seed_reads2, extend_length=self.seed_ext_max_bases, seed_length=self.seed_start_length, seed_min_count=self.seed_min_kmer_count, seed_max_count=self.seed_max_kmer_count, ext_min_cov=self.seed_min_cov, ext_min_ratio=self.seed_min_ratio, verbose=self.verbose, threads=self.threads)
+
+        if s.seq is None:
+            if len(self.contigs):
+                shutil.rmtree(tmpdir)
+            return None
+
+        if self.seed_overlap_length is None:
+            s.overlap_length = len(s.seq)
+        else:
+            s.overlap_length = self.seed_overlap_length
+        s.extend(reads1, reads2, self.seed_stop_length)
+        if len(self.contigs):
+            shutil.rmtree(tmpdir)
+
+        if len(s.seq) < 0.75 * self.seed_stop_length:
+            return None
+
+        new_name = 'seeded.' + '1'.zfill(5)
+        i = 1
+        while new_name in self.contigs:
+            i += 1
+            new_name = 'seeded.' + str(i).zfill(5)
+
+        self._add_contig(fastaq.sequences.Fasta(new_name, s.seq))
+        return new_name
+
