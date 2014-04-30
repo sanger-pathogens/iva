@@ -97,9 +97,9 @@ Use 8 threads instead of the default 1 thread:
 
     iva --threads 8 --fr reads.fastq Output_directory
 
-Reduce the maximum insert size from 1000bp (default) to 500bp:
+Increase the maximum insert size from 500bp (default) to 1000bp:
 
-    iva --max_insert 500 --fr reads.fastq Output_directory
+    iva --max_insert 1000 --fr reads.fastq Output_directory
 
 
 
