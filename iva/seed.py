@@ -8,13 +8,18 @@ from iva import kcount, kmers, mapping
 class Error (Exception): pass
 
 class Seed:
-    def __init__(self, extend_length=50, overlap_length=None, reads1=None, reads2=None, seq=None, ext_min_cov=5, ext_min_ratio=2, verbose=0, seed_length=None, seed_min_count=10, seed_max_count=100000000, threads=1):
+    def __init__(self, extend_length=50, overlap_length=None, reads1=None, reads2=None, seq=None, ext_min_cov=5, ext_min_ratio=2, verbose=0, seed_length=None, seed_min_count=10, seed_max_count=100000000, threads=1, kmers_to_ignore=set(), contigs_to_check={}):
         self.verbose = verbose
         self.threads = threads
+        self.extend_length = extend_length
+        self.ext_min_cov = ext_min_cov
+        self.ext_min_ratio = ext_min_ratio
+        self.seed_lengths = []
+        self.overlap_length = overlap_length
         if seq is None:
             if reads1 is None:
                 raise Error('Cannot construct Seed object. Need reads when no seq has been given')
-            kmer_counts = kcount.get_most_common_kmers(reads1, reads2, most_common=1, min_count=seed_min_count, max_count=seed_max_count, kmer_length=seed_length, verbose=self.verbose)
+            kmer_counts = kcount.get_most_common_kmers(reads1, reads2, most_common=1, min_count=seed_min_count, max_count=seed_max_count, kmer_length=seed_length, verbose=self.verbose, ignore_kmers=kmers_to_ignore, contigs_to_check=contigs_to_check)
             if len(kmer_counts) == 1:
                 self.seq = list(kmer_counts.keys())[0]
                 if self.verbose:
@@ -24,11 +29,6 @@ class Seed:
         else:
             self.seq = seq
 
-        self.extend_length = extend_length
-        self.ext_min_cov = ext_min_cov
-        self.ext_min_ratio = ext_min_ratio
-        self.seed_lengths = []
-        self.overlap_length = overlap_length
 
         if self.seq is not None:
             if overlap_length is None:

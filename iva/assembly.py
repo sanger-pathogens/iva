@@ -33,6 +33,7 @@ class Assembly:
         self.max_contigs = max_contigs
         self.strand_bias = strand_bias
         self.contigs_trimmed_for_strand_bias = set()
+        self.used_seeds = set()
 
         if contigs_file is None:
             self.make_new_seeds = True
@@ -524,7 +525,7 @@ class Assembly:
         os.unlink(out_prefix + '.bam')
 
 
-    def add_new_seed_contig(self, reads1, reads2, contig_name=None, remove_seed_strand_bias=True):
+    def add_new_seed_contig(self, reads1, reads2, contig_name=None, remove_seed_strand_bias=True, max_attempts=10):
         if len(self.contigs):
             tmpdir = tempfile.mkdtemp(prefix='tmp.make_seed.', dir=os.getcwd())
             tmp_prefix = os.path.join(tmpdir, 'out')
@@ -539,24 +540,40 @@ class Assembly:
         else:
             seed_reads1 = reads1
             seed_reads2 = reads2
-        s = seed.Seed(reads1=seed_reads1, reads2=seed_reads2, extend_length=self.seed_ext_max_bases, seed_length=self.seed_start_length, seed_min_count=self.seed_min_kmer_count, seed_max_count=self.seed_max_kmer_count, ext_min_cov=self.seed_min_cov, ext_min_ratio=self.seed_min_ratio, verbose=self.verbose, threads=self.threads)
 
-        if s.seq is None:
-            if len(self.contigs):
-                shutil.rmtree(tmpdir)
-            return None
+        made_seed = False
 
-        if self.seed_overlap_length is None:
-            s.overlap_length = len(s.seq)
-        else:
-            s.overlap_length = self.seed_overlap_length
-        s.extend(reads1, reads2, self.seed_stop_length)
+        for i in range(max_attempts):
+            s = seed.Seed(reads1=seed_reads1, reads2=seed_reads2, extend_length=self.seed_ext_max_bases, seed_length=self.seed_start_length, seed_min_count=self.seed_min_kmer_count, seed_max_count=self.seed_max_kmer_count, ext_min_cov=self.seed_min_cov, ext_min_ratio=self.seed_min_ratio, verbose=self.verbose, threads=self.threads, kmers_to_ignore=self.used_seeds, contigs_to_check=self.contigs)
+
+            if s.seq is None:
+                break
+
+            self.used_seeds.add(s.seq)
+            seed_fa = fastaq.sequences.Fasta('x', s.seq)
+            seed_fa.revcomp()
+            self.used_seeds.add(seed_fa.seq)
+
+            if self.seed_overlap_length is None:
+                s.overlap_length = len(s.seq)
+            else:
+                s.overlap_length = self.seed_overlap_length
+            s.extend(reads1, reads2, self.seed_stop_length)
+
+            if len(s.seq) >= 0.75 * self.seed_stop_length:
+                made_seed = True
+                break
+            elif self.verbose:
+                print("    Couldn't extend seed enough. That was attempt", i+1, 'of', max_attempts)
+
         if len(self.contigs):
             shutil.rmtree(tmpdir)
 
-        if len(s.seq) < 0.75 * self.seed_stop_length:
+        if not made_seed:
             return None
 
+        if self.verbose:
+            print("    Extended seed OK.")
         new_name = 'seeded.' + '1'.zfill(5)
         i = 1
         while new_name in self.contigs:
