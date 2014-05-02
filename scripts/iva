@@ -7,7 +7,7 @@ import multiprocessing
 import fastaq
 import iva
 
-iva_version = '0.2.4'
+iva_version = '0.3.0'
 
 class abspathAction(argparse.Action):
     def __call__(self, parser, namespace, value, option_string):

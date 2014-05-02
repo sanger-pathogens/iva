@@ -108,7 +108,7 @@ def _run_kmc(reads, outprefix, kmer, min_count, max_count, verbose=0):
     return kmer_counts_file
 
 
-def _kmc_to_kmer_counts(infile, number):
+def _kmc_to_kmer_counts(infile, number, kmers_to_ignore=set(), contigs_to_check={}):
     '''Makes a dict of the most common kmers from the kmer counts output file of kmc'''
     f = fastaq.utils.open_file_read(infile)
     counts = {}
@@ -123,13 +123,21 @@ def _kmc_to_kmer_counts(infile, number):
             raise Error('Error getting kmer info from this line:\n' + line)
 
         assert kmer not in counts
+
+        if kmer in kmers_to_ignore:
+            continue
+
+        for contig in contigs_to_check:
+            if len(contigs_to_check[contig].fa.search(kmer)):
+                continue
+
         counts[kmer] = count
 
     fastaq.utils.close(f)
     return counts
 
 
-def get_most_common_kmers(reads1, reads2, kmer_length=None, head=100000, min_count=10, max_count=100000000, most_common=100, method='kmc', verbose=0):
+def get_most_common_kmers(reads1, reads2, kmer_length=None, head=100000, min_count=10, max_count=100000000, most_common=100, method='kmc', verbose=0, ignore_kmers=set(), contigs_to_check={}):
     '''Gets the most common kmers from a pair of interleaved read FASTA or FASTQ files. Takes the first N sequences (determined by head).  Returns a dict of kmer=>frequency. If kmer length is not given, use min(0.8 * median read length, 95)'''
     tmpdir = tempfile.mkdtemp(prefix='tmp.common_kmers.', dir=os.getcwd())
     counts = {}
@@ -143,7 +151,7 @@ def get_most_common_kmers(reads1, reads2, kmer_length=None, head=100000, min_cou
 
     if method == 'kmc':
         counts_file = _run_kmc(reads, os.path.join(tmpdir, 'out'), kmer_length, min_count, max_count, verbose=verbose)
-        counts = _kmc_to_kmer_counts(counts_file, most_common)
+        counts = _kmc_to_kmer_counts(counts_file, most_common, kmers_to_ignore=ignore_kmers, contigs_to_check=contigs_to_check)
     else:
         raise Error('Method "' + method + '" not supported in kcount.get_most_common_kmers(). Cannot continue.')
 
