@@ -2,6 +2,7 @@ import unittest
 import os
 import filecmp
 import pysam
+import fastaq
 from iva import mummer, edge
 
 modules_dir = os.path.dirname(os.path.abspath(mummer.__file__))
@@ -30,6 +31,34 @@ class TestMummer(unittest.TestCase):
         '''test file_read'''
         # TODO
         pass
+
+
+    def test_qry_coords(self):
+        '''Test qry_coords'''
+        hits = ['\t'.join(['1', '100', '1', '100', '100', '100', '100.00', '1000', '1000', '1', '1', 'ref', 'qry']),
+                '\t'.join(['1', '101', '100', '1', '100', '100', '100.00', '1000', '1000', '1', '1', 'ref', 'qry'])
+        ]
+        for h in hits:
+            m = mummer.NucmerHit(h)
+            self.assertEqual(fastaq.intervals.Interval(0,99), m.qry_coords())
+
+
+    def test_ref_coords(self):
+        '''Test ref_coords'''
+        hits = ['\t'.join(['1', '100', '1', '100', '100', '100', '100.00', '1000', '1000', '1', '1', 'ref', 'ref']),
+                '\t'.join(['100', '1', '100', '1', '100', '100', '100.00', '1000', '1000', '1', '1', 'ref', 'ref'])
+        ]
+        for h in hits:
+            m = mummer.NucmerHit(h)
+            self.assertEqual(fastaq.intervals.Interval(0,99), m.ref_coords())
+
+
+    def test_on_same_strand(self):
+        '''test on_same_strand'''
+        self.assertTrue(mummer.NucmerHit('\t'.join(['1', '100', '1', '100', '100', '100', '100.00', '1000', '1000', '1', '1', 'ref', 'ref'])).on_same_strand())
+        self.assertTrue(mummer.NucmerHit('\t'.join(['100', '1', '100', '1', '100', '100', '100.00', '1000', '1000', '1', '1', 'ref', 'ref'])).on_same_strand())
+        self.assertFalse(mummer.NucmerHit('\t'.join(['1', '100', '100', '1', '100', '100', '100.00', '1000', '1000', '1', '1', 'ref', 'ref'])).on_same_strand())
+        self.assertFalse(mummer.NucmerHit('\t'.join(['100', '1', '1', '100', '100', '100', '100.00', '1000', '1000', '1', '1', 'ref', 'ref'])).on_same_strand())
 
 
     def test_is_self_hit(self):

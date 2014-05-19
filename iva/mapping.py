@@ -30,14 +30,20 @@ def map_reads(reads_fwd, reads_rev, ref_fa, out_prefix, index_k=15, index_s=3, t
     if threads > 1:
         map_cmd += '-n ' + str(threads) + ' -O '
 
-
-    map_cmd += ' '.join([
-        '-i', str(max_insert),
-        '-y', str(minid),
-        map_index,
-        reads_fwd,
-        reads_rev,
-    ])
+    if reads_rev is None:
+        map_cmd += ' '.join([
+            '-y', str(minid),
+            map_index,
+            reads_fwd,
+        ])
+    else:
+        map_cmd += ' '.join([
+            '-i', str(max_insert),
+            '-y', str(minid),
+            map_index,
+            reads_fwd,
+            reads_rev,
+        ])
 
     if mate_ref is not None:
         map_cmd += r''' | awk '$7=="''' + mate_ref + '"\''

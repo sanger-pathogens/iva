@@ -84,6 +84,18 @@ class NucmerHit:
         self.ref_name, self.qry_name = self.qry_name, self.ref_name
 
 
+    def qry_coords(self):
+        return fastaq.intervals.Interval(min(self.qry_start, self.qry_end), max(self.qry_start, self.qry_end))
+
+
+    def ref_coords(self):
+        return fastaq.intervals.Interval(min(self.ref_start, self.ref_end), max(self.ref_start, self.ref_end))
+
+
+    def on_same_strand(self):
+        return (self.ref_start < self.ref_end) == (self.qry_start < self.qry_end)
+
+
     def sort(self):
         if self.ref_name > self.qry_name:
             self._swap()

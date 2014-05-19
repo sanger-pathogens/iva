@@ -1,0 +1,30 @@
+##gff-version 3
+##sequence-region contig1 1 1497228
+contig1	.	gene	10000	11000	.	-	.	ID=gene02
+contig1	.	mRNA	10000	11000	.	-	.	ID=mRNA02;Parent=gene02
+contig1	.	five_prime_UTR	10000	10010	.	-	.	Parent=mRNA02
+contig1	.	CDS	10011	10042	.	-	0	ID=cds02.1;Parent=mRNA02
+contig1	.	CDS	10090	11000	.	-	0	ID=cds02.2;Parent=mRNA02
+contig1	.	gene	1000	9000	.	+	.	ID=gene01
+contig1	.	mRNA	1000	9000	.	+	.	ID=mRNA01;Parent=gene01
+contig1	.	five_prime_UTR	1000	1200	.	+	.	Parent=mRNA01
+contig1	.	CDS	1201	1500	.	+	0	ID=cds01.1;Parent=mRNA01
+contig1	.	CDS	3000	3902	.	+	0	ID=cds01.2;Parent=mRNA01
+contig1	.	CDS	5000	5500	.	+	0	ID=cds01.3;Parent=mRNA01
+contig1	.	CDS	7000	7600	.	+	0	ID=cds01.4;Parent=mRNA01
+contig1	.	three_prime_UTR	7601	9000	.	+	.	Parent=mRNA01
+contig2	.	gene	100	400	.	+	.	ID=gene03
+contig2	.	mRNA	100	400	.	+	.	ID=mRNA03;Parent=gene03
+contig2	.	five_prime_UTR	100	120	.	+	.	Parent=mRNA03
+contig2	.	CDS	121	150	.	+	0	ID=cds03.1;Parent=mRNA03
+contig2	.	CDS	300	392	.	+	0	ID=cds03.2;Parent=mRNA03
+contig2	.	three_prime_UTR	393	400	.	+	.	Parent=mRNA03
+##FASTA
+>contig1
+ACGT
+ACTG
+TGGG
+>contig2
+GTGT
+AGTT
+TGTG

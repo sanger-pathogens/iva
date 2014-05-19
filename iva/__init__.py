@@ -8,6 +8,7 @@ __all__ = [
     'kmers',
     'mapping',
     'mummer',
+    'qc',
     'read_trim',
     'seed',
     'seed_processor',
