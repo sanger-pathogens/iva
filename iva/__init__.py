@@ -10,6 +10,7 @@ __all__ = [
     'mapping',
     'mummer',
     'qc',
+    'qc_external',
     'read_trim',
     'seed',
     'seed_processor',

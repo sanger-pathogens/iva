@@ -697,8 +697,8 @@ class TestQc(unittest.TestCase):
         self.assertEqual(expected, self.qc.should_have_assembled)
 
 
-    def test_contig_bases_that_hit_ref(self):
-        '''test _contig_bases_that_hit_ref'''
+    def test_contigs_and_bases_that_hit_ref(self):
+        '''test _contigs_and_bases_that_hit_ref'''
         self.qc.assembly_vs_ref_mummer_hits = {
             'ctg1': [
                 mummer.NucmerHit('\t'.join(['1', '100', '1', '100', '100', '100', '100.00', '1008', '762', '1', '1', 'ref1', 'ctg1'])),
@@ -706,5 +706,5 @@ class TestQc(unittest.TestCase):
             ],
             'ctg2': [mummer.NucmerHit('\t'.join(['1', '42', '42', '84', '42', '84', '100.00', '42', '84', '1', '1', 'ref2', 'ctg2']))]
         }
-        self.assertEqual(193, self.qc._contig_bases_that_hit_ref())
+        self.assertEqual((193, 2), self.qc._contigs_and_bases_that_hit_ref())
 

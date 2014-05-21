@@ -3,7 +3,7 @@ import subprocess
 import copy
 import fastaq
 import multiprocessing
-from iva import mapping, mummer
+from iva import mapping, mummer, qc_external
 
 class Error (Exception): pass
 
@@ -20,6 +20,7 @@ class Qc:
         reads_rev=None,
         assembly_bam=None,
         ref_bam=None,
+        gage=None,
         min_ref_cov=5,
         contig_layout_plot_title="IVA QC contig layout and read depth",
         threads=1,
@@ -43,6 +44,10 @@ class Qc:
         self.reads_fwd = reads_fwd
         self.reads_rev = reads_rev
         self.threads = threads
+        if gage is not None:
+            self.gage = os.path.abspath(gage)
+        else:
+            self.gage = gage
 
         if reads_fr:
             self.reads_fwd = self.outprefix + '.reads_1'
@@ -133,8 +138,9 @@ class Qc:
             'ref_sequences_assembled_ok',
             'ref_bases_assembler_missed',
             'assembly_bases',
-            'assembly_contigs',
             'assembly_bases_in_ref',
+            'assembly_contigs',
+            'assembly_contigs_hit_ref',
             'assembly_bases_reads_disagree',
             'cds_number',
             'cds_assembled',
@@ -516,6 +522,13 @@ class Qc:
             self.should_have_assembled[name] = fastaq.intervals.intersection(self._invert_list(l, self.ref_lengths[name]), self.ok_cov_ref_regions[name])
 
 
+    def _calculate_gage_stats(self):
+        if self.gage is None:
+            self.gage_stats = qc_external.dummy_gage_stats()
+        else:
+            self.gage_stats = qc_external.run_gage(self.ref_fasta, self.assembly_fasta, self.gage)
+
+
     def _do_calculations(self):
         if None not in [self.reads_fwd, self.reads_rev]:
             self._map_reads_to_assembly()
@@ -527,16 +540,17 @@ class Qc:
         self._calculate_should_have_assembled()
         self._calculate_cds_assembly_stats()
         self._calculate_refseq_assembly_stats()
+        self._calculate_gage_stats()
         self._calculate_stats()
  
 
-    def _contig_bases_that_hit_ref(self):
+    def _contigs_and_bases_that_hit_ref(self):
         total_bases = 0
         for name in self.assembly_vs_ref_mummer_hits:
             coords = [x.qry_coords() for x in self.assembly_vs_ref_mummer_hits[name]]
             fastaq.intervals.merge_overlapping_in_list(coords)
             total_bases += fastaq.intervals.length_sum_from_list(coords)
-        return total_bases
+        return total_bases, len(self.assembly_vs_ref_mummer_hits)
           
 
     def _calculate_stats(self):
@@ -548,7 +562,7 @@ class Qc:
         self.stats['ref_bases_assembler_missed'] = sum([fastaq.intervals.length_sum_from_list(l) for l in list(self.should_have_assembled.values())])
         self.stats['assembly_bases'] = sum(self.assembly_lengths.values())
         self.stats['assembly_contigs'] = len(self.assembly_lengths)
-        self.stats['assembly_bases_in_ref'] = self._contig_bases_that_hit_ref()
+        self.stats['assembly_bases_in_ref'], self.stats['assembly_contigs_hit_ref'] = self._contigs_and_bases_that_hit_ref()
         self.stats['assembly_bases_reads_disagree'] = sum([len(x) for x in self.incorrect_assembly_bases.values()])
         self.stats['cds_number'] = len(self.cds_assembly_stats)
         self.stats['cds_assembled'] = len([1 for x in self.cds_assembly_stats.values() if x['assembled']])
@@ -559,13 +573,17 @@ class Qc:
         f = fastaq.utils.open_file_write(self.stats_file_txt)
         for stat in self.stats_keys:
             print(stat, self.stats[stat], sep='\t', file=f)
+        for stat in qc_external.gage_stats:
+            print('gage_' + stat.replace(' ', '_'), self.gage_stats[stat], sep='\t', file=f)
         fastaq.utils.close(f)
 
 
     def _write_stats_tsv(self):
         f = fastaq.utils.open_file_write(self.stats_file_tsv)
-        print('\t'.join([x for x in self.stats_keys]), file=f)
-        print('\t'.join([str(self.stats[x]) for x in self.stats_keys]), file=f)
+        print('\t'.join([x.replace(' ', '_') for x in self.stats_keys + qc_external.gage_stats]), file=f)
+        print('\t'.join([str(self.stats[x]) for x in self.stats_keys]),
+              '\t'.join([str(self.gage_stats[x]) for x in qc_external.gage_stats]),
+              sep='\t', file=f)
         fastaq.utils.close(f)
 
 
