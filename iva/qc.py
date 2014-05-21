@@ -441,6 +441,7 @@ class Qc:
 
     def _map_reads_to_assembly(self):
         mapping.map_reads(self.reads_fwd, self.reads_rev, self.assembly_fasta, self.assembly_bam[:-4], sort=True, threads=self.threads, index_k=self.smalt_k, index_s=self.smalt_s, minid=self.smalt_id)
+        os.unlink(self.assembly_bam[:-4] + '.unsorted.bam')
 
 
     def _calculate_ref_read_coverage(self):
