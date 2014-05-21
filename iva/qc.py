@@ -48,10 +48,13 @@ class Qc:
         self.ratt_embl = None if ratt_embl is None else os.path.abspath(ratt_embl)
         self.ratt_outdir = self.outprefix + '.ratt'
         self.gage = None if gage is None else os.path.abspath(gage)
+        self.files_to_clean = []
 
         if reads_fr:
             self.reads_fwd = self.outprefix + '.reads_1'
             self.reads_rev = self.outprefix + '.reads_2'
+            self.files_to_clean.append(self.reads_fwd)
+            self.files_to_clean.append(self.reads_rev)
             fastaq.tasks.deinterleave(reads_fr, self.reads_fwd, self.reads_rev)
 
 
@@ -68,11 +71,13 @@ class Qc:
                 new_reads_fwd = self.outprefix + '.reads_1'
                 processes.append(multiprocessing.Process(target=unzip_file, args=(self.reads_fwd, new_reads_fwd)))
                 self.reads_fwd = new_reads_fwd
+                self.files_to_clean.append(self.reads_fwd)
 
             if self.reads_rev.endswith('.gz'):
                 new_reads_rev = self.outprefix + '.reads_2'
                 processes.append(multiprocessing.Process(target=unzip_file, args=(self.reads_rev, new_reads_rev)))
                 self.reads_rev = new_reads_rev
+                self.files_to_clean.append(self.reads_rev)
                 
             if len(processes) == 1:
                 processes[0].start()
@@ -680,8 +685,13 @@ class Qc:
         subprocess.check_output('R CMD BATCH ' + r_script, shell=True)
 
 
+    def _clean(self):
+        for fname in self.files_to_clean:
+            os.unlink(fname)
+
+
     def run(self):
         self._do_calculations()
         self._make_R_plots()
         self._write_stats_files()
-        
+        self._clean()
