@@ -37,10 +37,14 @@ mapping_group.add_argument('-s', '--smalt_s', type=int, help='kmer hash step siz
 mapping_group.add_argument('-y', '--smalt_id', type=float, help='Minimum identity threshold for mapping to be reported (the -y option in smalt map) [%(default)s]', default=0.5, metavar='FLOAT')
 
 
+external_group = parser.add_argument_group('External tools')
+external_group.add_argument('--gage', help='Path to directory of gage scripts, i.e. getCorrectnessStats.sh. If you use this option, gage results will also be reported', metavar='Directory')
+
 other_group = parser.add_argument_group('Other options')
-other_group.add_argument('--min_ref_cov', help='Minimum read coverage of the reference, on each strand, to count as OK coverage [%(default)s]', default=5, metavar='INT')
 other_group.add_argument('--ctg_layout_plot_title', help='Title to use in contig layout plot [%(default)s]', default='IVA QC contig layout and read depth', metavar='STRING')
+other_group.add_argument('--min_ref_cov', help='Minimum read coverage of the reference, on each strand, to count as OK coverage [%(default)s]', default=5, metavar='INT')
 other_group.add_argument('--threads', type=int, help='Number of threads to use [%(default)s]', default=1, metavar='INT')
+
 
 
 options = parser.parse_args()
@@ -66,6 +70,7 @@ qc = iva.qc.Qc(
     min_ref_cov=options.min_ref_cov,
     contig_layout_plot_title=options.ctg_layout_plot_title,
     threads=options.threads,
+    gage=options.gage,
 )
 
 qc.run()
