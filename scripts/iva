@@ -7,31 +7,21 @@ import multiprocessing
 import fastaq
 import iva
 
-iva_version = '0.3.0'
-
-class abspathAction(argparse.Action):
-    def __call__(self, parser, namespace, value, option_string):
-        '''Check if file exists, then convert to absolute path'''
-        if not os.path.exists(value):
-            print('Error! File "' + value + '" not found. Cannot continue', file=sys.stderr)
-            sys.exit(1)
-
-        setattr(namespace, self.dest, os.path.abspath(value))
 
 parser = argparse.ArgumentParser(
-    description = 'IVA - Iterative Virus Assembler. Version: ' + iva_version,
+    description = 'IVA - Iterative Virus Assembler. Version: ' + iva.common.version,
     usage = '%(prog)s [options] {-f reads_fwd -r reads_rev | --fr reads} <output directory>')
 
 parser.add_argument('outdir', help='Name of output directory (must not already exist)', metavar='Output directory')
 
 
 io_group = parser.add_argument_group('Input and output')
-io_group.add_argument('-f', '--reads_fwd', action=abspathAction, help='Name of forward reads fasta/q file. Must be used in conjuction with --reads_rev', metavar='filename[.gz]')
-io_group.add_argument('-r', '--reads_rev', action=abspathAction, help='Name of reverse reads fasta/q file. Must be used in conjuction with --reads_fwd', metavar='filename[.gz]')
-io_group.add_argument('--fr', action=abspathAction, dest='reads', help='Name of interleaved fasta/q file', metavar='filename[.gz]')
+io_group.add_argument('-f', '--reads_fwd', action=iva.common.abspathAction, help='Name of forward reads fasta/q file. Must be used in conjuction with --reads_rev', metavar='filename[.gz]')
+io_group.add_argument('-r', '--reads_rev', action=iva.common.abspathAction, help='Name of reverse reads fasta/q file. Must be used in conjuction with --reads_fwd', metavar='filename[.gz]')
+io_group.add_argument('--fr', action=iva.common.abspathAction, dest='reads', help='Name of interleaved fasta/q file', metavar='filename[.gz]')
 io_group.add_argument('--keep_files', action='store_true', help='Keep intermediate files (could be many!). Default is to delete all unecessary files')
-io_group.add_argument('--contigs', action=abspathAction, help='Fasta file of contigs to be extended. Incompatible with --reference', metavar='filename[.gz]')
-io_group.add_argument('--reference', action=abspathAction, help='Fasta file of reference genome, or parts thereof. IVA will try to assemble one contig per sequence in this file. Incompatible with --contigs', metavar='filename[.gz]')
+io_group.add_argument('--contigs', action=iva.common.abspathAction, help='Fasta file of contigs to be extended. Incompatible with --reference', metavar='filename[.gz]')
+io_group.add_argument('--reference', action=iva.common.abspathAction, help='Fasta file of reference genome, or parts thereof. IVA will try to assemble one contig per sequence in this file. Incompatible with --contigs', metavar='filename[.gz]')
 io_group.add_argument('-v', '--verbose', action='count', help='Be verbose by printing messages to stdout. Use up to three times for increasing verbosity.', default=0)
 
 
@@ -64,8 +54,8 @@ seed_group.add_argument('--seed_ext_min_ratio', type=float, help='Sets N, where 
 
 
 trimming_group = parser.add_argument_group('Read trimming options')
-trimming_group.add_argument('--trimmomatic', action=abspathAction, help='Location of trimmomatic.jar file. Required if --adapters used', metavar='FILENAME')
-trimming_group.add_argument('--adapters', action=abspathAction, help='Fasta file of adapter sequences to be trimmed off reads. If used, must also use --trimmomatic', metavar='FILENAME')
+trimming_group.add_argument('--trimmomatic', action=iva.common.abspathAction, help='Location of trimmomatic.jar file. Required if --adapters used', metavar='FILENAME')
+trimming_group.add_argument('--adapters', action=iva.common.abspathAction, help='Fasta file of adapter sequences to be trimmed off reads. If used, must also use --trimmomatic', metavar='FILENAME')
 trimming_group.add_argument('--min_trimmed_length', type=int, help='Minimum length of read after trimming [%(default)s]', default=50, metavar='INT')
 
 
@@ -101,7 +91,7 @@ if os.path.exists(options.outdir):
     sys.exit(1)
 
 print(' '.join(sys.argv))
-print('IVA version', iva_version)
+print('IVA version', iva.common.version)
 print('Checking external programs and trying to get their versions...')
 iva.external_progs.print_all_versions()
 print('...OK. Running assembly')

@@ -1,5 +1,6 @@
 __all__ = [
     'assembly',
+    'common',
     'contig',
     'edge',
     'external_progs',

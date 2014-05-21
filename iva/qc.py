@@ -2,6 +2,7 @@ import os
 import subprocess
 import copy
 import fastaq
+import multiprocessing
 from iva import mapping, mummer
 
 class Error (Exception): pass
@@ -9,21 +10,81 @@ class Error (Exception): pass
 
 
 class Qc:
-    def __init__(self, ref_fasta, ref_gff, assembly_fasta, output_prefix, reads_fwd=None, reads_rev=None, assembly_bam=None, ref_bam=None, min_ref_cov=5, contig_layout_plot_title="IVA QC contig layout and read depth", threads=1):
-        for filename in ref_fasta, ref_gff, assembly_fasta:
-            if not os.path.exists(filename):
+    def __init__(self,
+        ref_fasta,
+        ref_gff,
+        assembly_fasta,
+        output_prefix,
+        reads_fr=None,
+        reads_fwd=None,
+        reads_rev=None,
+        assembly_bam=None,
+        ref_bam=None,
+        min_ref_cov=5,
+        contig_layout_plot_title="IVA QC contig layout and read depth",
+        threads=1,
+        nucmer_min_cds_hit_length=30,
+        nucmer_min_cds_hit_id=80,
+        nucmer_min_ctg_hit_length=100,
+        nucmer_min_ctg_hit_id=95,
+        smalt_k=15,
+        smalt_s=3,
+        smalt_id=0.5,
+    ):
+
+        files_to_check = [ref_fasta, ref_gff, assembly_fasta, reads_fr, reads_fwd, reads_rev, ref_bam, assembly_bam]
+        for filename in files_to_check:
+            if filename is not None and not os.path.exists(filename):
                 raise Error('Error in IVA QC. File not found: "' + filename + '"')
       
         self.outprefix = output_prefix
         self.assembly_bam = output_prefix + '.reads_mapped_to_assembly.bam'
         self.ref_bam = output_prefix + '.reads_mapped_to_ref.bam'
+        self.reads_fwd = reads_fwd
+        self.reads_rev = reads_rev
+        self.threads = threads
+
+        if reads_fr:
+            self.reads_fwd = self.outprefix + '.reads_1'
+            self.reads_rev = self.outprefix + '.reads_2'
+            fastaq.tasks.deinterleave(reads_fr, self.reads_fwd, self.reads_rev)
+
 
         if None in [assembly_bam, ref_bam]:
-            if None in [reads_fwd, reads_rev]:
-                raise Error('Must give both reads_fwd and reads_rev, or both assembly_bam and ref_bam, to Qc.__init__()')
-        elif None in [reads_fwd, reads_rev]:
+            if not (None not in [self.reads_fwd, self.reads_rev] or reads_fr is not None):
+                raise Error('IVA QC needs reads_fr or both reads_fwd and reads_rev, if assembly_bam or ref_bam not supplied')
+
+            def unzip_file(infile, outfile):
+                subprocess.check_output('gunzip -c ' + infile + ' > ' + outfile, shell=True)
+
+            processes = []
+
+            if self.reads_fwd.endswith('.gz'):
+                new_reads_fwd = self.outprefix + '.reads_1'
+                processes.append(multiprocessing.Process(target=unzip_file, args=(self.reads_fwd, new_reads_fwd)))
+                self.reads_fwd = new_reads_fwd
+
+            if self.reads_rev.endswith('.gz'):
+                new_reads_rev = self.outprefix + '.reads_2'
+                processes.append(multiprocessing.Process(target=unzip_file, args=(self.reads_rev, new_reads_rev)))
+                self.reads_rev = new_reads_rev
+                
+            if len(processes) == 1:
+                processes[0].start()
+                processes[0].join()
+            elif len(processes) == 2:
+                processes[0].start()
+                if self.threads == 1:
+                    processes[0].join()
+                processes[1].start()
+                processes[1].join()
+                if self.threads > 1:
+                    processes[0].join()
+                    
+                    
+        elif None in [self.reads_fwd, self.reads_rev]:
             if None in [assembly_bam, ref_bam]:
-                raise Error('Must give both reads_fwd and reads_rev to Qc.__init__()')
+                raise Error('IVA QC needs reads_fr or both reads_fwd and reads_rev, if assembly_bam or ref_bam not supplied')
             
             for bam in [assembly_bam, ref_bam]:
                 if not os.path.exists(bam + '.bai'):
@@ -38,10 +99,15 @@ class Qc:
         self.min_ref_cov = min_ref_cov
         self._set_ref_fasta_data(ref_fasta)
         self._set_assembly_fasta_data(assembly_fasta)
-        self.reads_fwd = reads_fwd
-        self.reads_rev = reads_rev
         self.threads = threads
         self.contig_layout_plot_title = contig_layout_plot_title
+        self.nucmer_min_cds_hit_length = nucmer_min_cds_hit_length
+        self.nucmer_min_cds_hit_id = nucmer_min_cds_hit_id
+        self.nucmer_min_ctg_hit_length = nucmer_min_ctg_hit_length
+        self.nucmer_min_ctg_hit_id = nucmer_min_ctg_hit_id
+        self.smalt_k=smalt_k
+        self.smalt_s=smalt_s
+        self.smalt_id=smalt_id
         self.contig_pos_in_ref = {}
         self.low_cov_ref_regions = {}
         self.low_cov_ref_regions_fwd = {}
@@ -69,6 +135,7 @@ class Qc:
             'assembly_bases',
             'assembly_contigs',
             'assembly_bases_in_ref',
+            'assembly_bases_reads_disagree',
             'cds_number',
             'cds_assembled',
             'cds_assembled_ok',
@@ -157,7 +224,6 @@ class Qc:
                 'assembled_ok': False,
             }
             
-        
 
     def _gff_and_fasta_to_cds(self):
         cds_coords = self._get_ref_cds_from_gff()
@@ -172,7 +238,7 @@ class Qc:
     def _map_cds_to_assembly(self):
         if not os.path.exists(self.ref_cds_fasta):
             self._gff_and_fasta_to_cds()
-        mummer.run_nucmer(self.ref_cds_fasta, self.assembly_fasta, self.cds_nucmer_coords_in_assembly, min_length=30, min_id=80)
+        mummer.run_nucmer(self.ref_cds_fasta, self.assembly_fasta, self.cds_nucmer_coords_in_assembly, min_length=self.nucmer_min_cds_hit_length, min_id=self.nucmer_min_cds_hit_id)
 
 
     def _mummer_coords_file_to_dict(self, filename):
@@ -213,7 +279,7 @@ class Qc:
 
 
     def _get_contig_hits_to_reference(self):
-        mummer.run_nucmer(self.assembly_fasta, self.ref_fasta, self.assembly_vs_ref_coords, min_id=95, min_length=100)
+        mummer.run_nucmer(self.assembly_fasta, self.ref_fasta, self.assembly_vs_ref_coords, min_id=self.nucmer_min_ctg_hit_id, min_length=self.nucmer_min_ctg_hit_length)
         self.assembly_vs_ref_mummer_hits = self._mummer_coords_file_to_dict(self.assembly_vs_ref_coords)
 
 
@@ -330,6 +396,10 @@ class Qc:
         assert max_length != -1
         assert index != -1
         return index
+    
+
+    def _calculate_incorrect_assembly_bases(self):
+        self.incorrect_assembly_bases = mapping.find_incorrect_ref_bases(self.assembly_bam, self.assembly_fasta)
 
 
     def _contig_placement_in_reference(self, hits):
@@ -338,7 +408,7 @@ class Qc:
         placement += [(x.qry_coords(), x.ref_name, x.ref_coords(), x.on_same_strand(), True) for x in repetitive_hits]
         placement.sort()
         return placement
-         
+
 
     def _calculate_contig_placement(self):
         self._get_contig_hits_to_reference()
@@ -364,12 +434,12 @@ class Qc:
 
 
     def _map_reads_to_assembly(self):
-        mapping.map_reads(self.reads_fwd, self.reads_rev, self.assembly_fasta, self.assembly_bam[:-4], sort=True, threads=self.threads)
+        mapping.map_reads(self.reads_fwd, self.reads_rev, self.assembly_fasta, self.assembly_bam[:-4], sort=True, threads=self.threads, index_k=self.smalt_k, index_s=self.smalt_s, minid=self.smalt_id)
 
 
     def _calculate_ref_read_coverage(self):
         if None not in [self.reads_fwd, self.reads_rev]:
-            mapping.map_reads(self.reads_fwd, self.reads_rev, self.ref_fasta, self.ref_bam[:-4], sort=True, threads=self.threads)
+            mapping.map_reads(self.reads_fwd, self.reads_rev, self.ref_fasta, self.ref_bam[:-4], sort=True, threads=self.threads, index_k=self.smalt_k, index_s=self.smalt_s, minid=self.smalt_id)
             os.unlink(self.ref_bam[:-4] + '.unsorted.bam')
 
         for seq in self.ref_ids:
@@ -377,7 +447,6 @@ class Qc:
             self.ref_coverage_fwd[seq] = mapping.get_bam_region_coverage(self.ref_bam, seq, self.ref_lengths[seq])
             assert seq not in self.ref_coverage_rev
             self.ref_coverage_rev[seq] = mapping.get_bam_region_coverage(self.ref_bam, seq, self.ref_lengths[seq], rev=True)
-
 
 
     def _coverage_list_to_low_cov_intervals(self, l):
@@ -450,6 +519,7 @@ class Qc:
     def _do_calculations(self):
         if None not in [self.reads_fwd, self.reads_rev]:
             self._map_reads_to_assembly()
+        self._calculate_incorrect_assembly_bases()
         self._calculate_contig_placement()
         self._calculate_ref_read_coverage()
         self._calculate_ref_read_region_coverage()
@@ -457,8 +527,8 @@ class Qc:
         self._calculate_should_have_assembled()
         self._calculate_cds_assembly_stats()
         self._calculate_refseq_assembly_stats()
+        self._calculate_stats()
  
-
 
     def _contig_bases_that_hit_ref(self):
         total_bases = 0
@@ -472,7 +542,6 @@ class Qc:
     def _calculate_stats(self):
         self.stats['ref_bases'] = sum(self.ref_lengths.values())
         self.stats['ref_sequences'] = len(self.ref_lengths)
-        self.stats['ref_bases_assembled'] = 0
         self.stats['ref_bases_assembled'] = sum([fastaq.intervals.length_sum_from_list(l) for l in list(self.ref_pos_covered_by_contigs.values())])
         self.stats['ref_sequences_assembled'] = len([1 for x in self.refseq_assembly_stats.values() if x['assembled']])
         self.stats['ref_sequences_assembled_ok'] = len([1 for x in self.refseq_assembly_stats.values() if x['assembled_ok']])
@@ -480,6 +549,7 @@ class Qc:
         self.stats['assembly_bases'] = sum(self.assembly_lengths.values())
         self.stats['assembly_contigs'] = len(self.assembly_lengths)
         self.stats['assembly_bases_in_ref'] = self._contig_bases_that_hit_ref()
+        self.stats['assembly_bases_reads_disagree'] = sum([len(x) for x in self.incorrect_assembly_bases.values()])
         self.stats['cds_number'] = len(self.cds_assembly_stats)
         self.stats['cds_assembled'] = len([1 for x in self.cds_assembly_stats.values() if x['assembled']])
         self.stats['cds_assembled_ok'] = len([1 for x in self.cds_assembly_stats.values() if x['assembled_ok']])
@@ -577,10 +647,11 @@ class Qc:
 
         print('dev.off()', file=f)
         fastaq.utils.close(f)
+        subprocess.check_output('R CMD BATCH ' + r_script, shell=True)
 
 
     def run(self):
         self._do_calculations()
         self._make_R_plots()
-        self._calculate_stats()
         self._write_stats_files()
+        

@@ -1,5 +1,6 @@
 import os
 import subprocess
+import collections
 import fastaq
 import pysam
 
@@ -107,6 +108,81 @@ def get_bam_region_coverage(bam, seqname, seq_length, rev=False, verbose=0):
         cov[pos - 1] = depth
 
     return cov
+
+
+def strip_mpileup_coverage_string(s):
+    a = list(s)
+    i = 0
+    chars_to_delete = {
+        '$': 1,
+        '^': 2,
+        '*': 1,
+    }
+
+    while i < len(a):
+        if a[i] in chars_to_delete:
+            for j in range(chars_to_delete[a[i]]):
+                a.pop(i)
+        elif a[i] in ['-', '+']:
+            start_index = i
+            i += 1
+            while a[i].isdigit():
+                i += 1
+            count = ''.join(a[start_index+1:i])
+            a = a[0:start_index] + a[start_index + len(count) + int(count) + 1:]
+        else:
+            i += 1
+        
+    return ''.join(a)
+
+
+def consensus_base(counts, keys, ratio=0.5):
+    total = sum([counts.get(k, 0) for k in keys])
+    if total == 0:
+        return None
+
+    for k in keys:
+        if k not in ['N', 'n'] and 1.0 * counts.get(k, 0) / total >= ratio:
+            return k
+
+    return None
+
+
+def consensus_base_both_strands(counts, fwd_keys, rev_keys, ratio=0.5):
+    fwd_consensus = consensus_base(counts, fwd_keys, ratio=ratio)
+    rev_consensus = consensus_base(counts, rev_keys, ratio=ratio)
+    if None not in [fwd_consensus, rev_consensus] and fwd_consensus.upper() == rev_consensus.upper():
+        return fwd_consensus.upper()
+    else:
+        return None
+
+
+def find_incorrect_ref_bases(bam, ref_fasta):
+    assert os.path.exists(bam)
+    assert os.path.exists(ref_fasta)
+    forward_keys = set(['A', 'C', 'G', 'T', 'N'])
+    reverse_keys = set(['a', 'c', 'g', 't', 'n'])
+    ref_seqs = {}
+    bad_bases = {}
+    fastaq.tasks.file_to_dict(ref_fasta, ref_seqs)
+    mpileup_cmd = 'samtools mpileup ' + bam + ' | cut -f 1,2,5'
+    mpileup_out = subprocess.Popen(mpileup_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).communicate()[0].decode().split('\n')[:-1]
+
+    for line in mpileup_out:
+        refname, position, pileup = line.rstrip().split()
+        assert refname in ref_seqs
+        position = int(position) - 1
+        pileup = strip_mpileup_coverage_string(pileup)
+        counts = collections.Counter(pileup)
+        consensus = consensus_base_both_strands(counts, forward_keys, reverse_keys, ratio=0.5)
+        ref_base = ref_seqs[refname][position]
+
+        if consensus not in [None, ref_base]:
+            if refname not in bad_bases:
+                bad_bases[refname] = []
+            bad_bases[refname].append((position, ref_base, consensus))
+
+    return bad_bases
 
 
 def soft_clipped(sam):

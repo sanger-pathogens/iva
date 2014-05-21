@@ -94,6 +94,52 @@ class TestMapping(unittest.TestCase):
         self.assertListEqual(cov, expected)
 
 
+    def test_strip_mpileup_coverage_string(self):
+        '''Test strip_mpileup_coverage_string'''
+        self.assertEqual('acgt', mapping.strip_mpileup_coverage_string('acg^[t'))
+        self.assertEqual('acgt', mapping.strip_mpileup_coverage_string('acgt$'))
+        self.assertEqual('acgt', mapping.strip_mpileup_coverage_string('*ac*gt'))
+        self.assertEqual('acgt', mapping.strip_mpileup_coverage_string('*a$c^[gt$'))
+        self.assertEqual('acgt', mapping.strip_mpileup_coverage_string('ac+1Xgt'))
+        self.assertEqual('acgt', mapping.strip_mpileup_coverage_string('acg+10XXXXXXXXXXt'))
+        self.assertEqual('acgt', mapping.strip_mpileup_coverage_string('ac-1Xgt'))
+        self.assertEqual('acgt', mapping.strip_mpileup_coverage_string('acg-10XXXXXXXXXXt'))
+        
+
+    def test_consensus_base(self):
+        '''Test consensus_base'''
+        keys = ['A', 'C', 'G', 'T']
+        self.assertEqual(None, mapping.consensus_base({}, keys))
+        self.assertEqual('G', mapping.consensus_base({'A': 2, 'C': 2, 'G': 4}, keys, ratio=0.5))
+        self.assertEqual('G', mapping.consensus_base({'A': 2, 'C': 1, 'G': 4, 'T':1}, keys, ratio=0.5))
+        self.assertEqual(None, mapping.consensus_base({'A': 2, 'C': 1, 'G': 4, 'T':2}, keys, ratio=0.5))
+        self.assertEqual('G', mapping.consensus_base({'A': 2, 'C': 1, 'G': 4, 'T':2}, keys, ratio=0.43))
+
+
+    def test_consensus_base_both_strands(self):
+        '''Test consensus_base_both_strands'''
+        forward_keys = set(['A', 'C', 'G', 'T', 'N'])
+        reverse_keys = set(['a', 'c', 'g', 't', 'n'])
+        counts = [
+            ({}, None),
+            ({'A': 2, 'C': 2, 'G': 4, 'a': 2, 'c': 2, 'g': 5}, 'G'),
+            ({'A': 2, 'C': 2, 'G': 3, 'a': 2, 'c': 2, 'g': 5}, None),
+            ({'A': 2, 'C': 2, 'G': 4, 'a': 2, 'c': 2, 'g': 3}, None),
+        ]
+ 
+        for counts_dict, expected in counts:
+            self.assertEqual(expected, mapping.consensus_base_both_strands(counts_dict, forward_keys, reverse_keys, ratio=0.5))
+        
+
+    def test_find_incorrect_ref_bases(self):
+        '''Test find_incorrect_ref_bases'''
+        bam = os.path.join(data_dir, 'mapping_test.find_incorrect_ref_bases.bam')
+        ref = os.path.join(data_dir, 'mapping_test.find_incorrect_ref_bases.fasta')
+        bad_bases = mapping.find_incorrect_ref_bases(bam, ref)
+        expected = {'1': [(197, 'A', 'T'), (280, 'T', 'G')]}
+        self.assertTrue(expected, bad_bases)
+
+
     def test_soft_clipped(self):
         '''Test soft_clipped'''
         expected = [
