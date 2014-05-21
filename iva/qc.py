@@ -7,8 +7,6 @@ from iva import mapping, mummer, qc_external
 
 class Error (Exception): pass
 
-
-
 class Qc:
     def __init__(self,
         ref_fasta,
@@ -21,6 +19,8 @@ class Qc:
         assembly_bam=None,
         ref_bam=None,
         gage=None,
+        ratt_config=None,
+        ratt_embl=None,
         min_ref_cov=5,
         contig_layout_plot_title="IVA QC contig layout and read depth",
         threads=1,
@@ -44,10 +44,10 @@ class Qc:
         self.reads_fwd = reads_fwd
         self.reads_rev = reads_rev
         self.threads = threads
-        if gage is not None:
-            self.gage = os.path.abspath(gage)
-        else:
-            self.gage = gage
+        self.ratt_config = None if ratt_config is None else os.path.abspath(ratt_config)
+        self.ratt_embl = None if ratt_embl is None else os.path.abspath(ratt_embl)
+        self.ratt_outdir = self.outprefix + '.ratt'
+        self.gage = None if gage is None else os.path.abspath(gage)
 
         if reads_fr:
             self.reads_fwd = self.outprefix + '.reads_1'
@@ -529,6 +529,13 @@ class Qc:
             self.gage_stats = qc_external.run_gage(self.ref_fasta, self.assembly_fasta, self.gage)
 
 
+    def _calculate_ratt_stats(self):
+        if self.ratt_embl is None:
+            self.ratt_stats = qc_external.dummy_ratt_stats()
+        else:
+            self.ratt_stats = qc_external.run_ratt(self.ratt_embl, self.assembly_fasta, self.ratt_outdir, config_file=self.ratt_config)
+
+
     def _do_calculations(self):
         if None not in [self.reads_fwd, self.reads_rev]:
             self._map_reads_to_assembly()
@@ -541,6 +548,7 @@ class Qc:
         self._calculate_cds_assembly_stats()
         self._calculate_refseq_assembly_stats()
         self._calculate_gage_stats()
+        self._calculate_ratt_stats()
         self._calculate_stats()
  
 
@@ -575,6 +583,8 @@ class Qc:
             print(stat, self.stats[stat], sep='\t', file=f)
         for stat in qc_external.gage_stats:
             print('gage_' + stat.replace(' ', '_'), self.gage_stats[stat], sep='\t', file=f)
+        for stat in qc_external.ratt_stats:
+            print('ratt_' + stat.replace(' ', '_'), self.ratt_stats[stat], sep='\t', file=f)
         fastaq.utils.close(f)
 
 
@@ -583,6 +593,7 @@ class Qc:
         print('\t'.join([x.replace(' ', '_') for x in self.stats_keys + qc_external.gage_stats]), file=f)
         print('\t'.join([str(self.stats[x]) for x in self.stats_keys]),
               '\t'.join([str(self.gage_stats[x]) for x in qc_external.gage_stats]),
+              '\t'.join([str(self.ratt_stats[x]) for x in qc_external.ratt_stats]),
               sep='\t', file=f)
         fastaq.utils.close(f)
 

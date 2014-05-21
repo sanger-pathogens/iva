@@ -39,6 +39,8 @@ mapping_group.add_argument('-y', '--smalt_id', type=float, help='Minimum identit
 
 external_group = parser.add_argument_group('External tools')
 external_group.add_argument('--gage', help='Path to directory of gage scripts, i.e. getCorrectnessStats.sh. If you use this option, gage results will also be reported', metavar='Directory')
+external_group.add_argument('--ratt_embl', help='Path to directory of embl files, to be used as a reference to run RATT. RATT is only run if this option is used', metavar='Directory')
+external_group.add_argument('--ratt_config', help='Specify your own RATT config file', metavar='Directory')
 
 other_group = parser.add_argument_group('Other options')
 other_group.add_argument('--ctg_layout_plot_title', help='Title to use in contig layout plot [%(default)s]', default='IVA QC contig layout and read depth', metavar='STRING')
@@ -71,6 +73,8 @@ qc = iva.qc.Qc(
     contig_layout_plot_title=options.ctg_layout_plot_title,
     threads=options.threads,
     gage=options.gage,
+    ratt_embl=options.ratt_embl,
+    ratt_config=options.ratt_config,
 )
 
 qc.run()
