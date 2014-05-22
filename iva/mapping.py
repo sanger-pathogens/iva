@@ -325,3 +325,43 @@ def bam_file_to_region_fasta(bam, out, chromosome, start=None, end=None):
     sam_reader.close()
     fastaq.utils.close(f)
     fastaq.sequences.Fasta.line_length = original_line_length
+
+
+def _total_ref_length_from_bam(bam):
+    sam_reader = pysam.Samfile(bam, "rb")
+    return sum(sam_reader.lengths)
+
+
+def _mean_read_length(bam, head=1000):
+    sam_reader = pysam.Samfile(bam, "rb")
+    total = 0
+    reads = 0
+    for s in sam_reader.fetch(until_eof=True):
+        total += s.rlen
+        reads += 1
+        if reads >= head:
+            break
+
+    return int(total / reads) if total != 0 else 0
+
+
+def subsample_bam(bam, outfile, coverage=10):
+    ref_length = _total_ref_length_from_bam(bam)
+    read_length = _mean_read_length(bam)
+    reads_wanted = (coverage * ref_length) / read_length
+    step = max(1, ref_length / reads_wanted)
+    position = step
+    ref_id = None
+    f = fastaq.utils.open_file_write(outfile)
+    original_line_length = fastaq.sequences.Fasta.line_length
+    fastaq.sequences.Fasta.line_length = 0
+    sam_reader = pysam.Samfile(bam, "rb")
+    for s in sam_reader.fetch():
+        if s.tid != ref_id:
+            position = 0
+            ref_id = s.tid
+        if s.pos >= position:
+            print(sam_to_fasta(s), file=f)
+            position += step
+    fastaq.utils.close(f)
+    fastaq.sequences.Fasta.line_length = original_line_length

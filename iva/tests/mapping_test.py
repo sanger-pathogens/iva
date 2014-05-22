@@ -278,3 +278,19 @@ class TestMapping(unittest.TestCase):
         '''Test bam_to_fasta'''
         # TODO
         pass
+
+
+    def test_total_ref_length_from_bam(self):
+        '''Test _total_ref_length_from_bam'''
+        bam = os.path.join(data_dir, 'mapping_test.total_ref_length_from_bam.bam')
+        self.assertEqual(300, mapping._total_ref_length_from_bam(bam))
+
+
+    def _mean_read_length(self):
+        '''Test _mean_read_length'''
+        bam = os.path.join(data_dir, 'mapping_test.mean_read_length.bam')
+        lengths = [19, 18, 20, 17, 20, 20, 20, 20]
+        self.assertEqual(19, mapping._mean_read_length(bam, head=1))
+        self.assertEqual(18, mapping._mean_read_length(bam, head=2))
+        self.assertEqual(int(sum(lengths) / len(lengths)), mapping._mean_read_length(bam))
+
