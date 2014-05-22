@@ -31,6 +31,7 @@ class Qc:
         smalt_k=15,
         smalt_s=3,
         smalt_id=0.5,
+        reapr=False,
     ):
 
         files_to_check = [ref_fasta, ref_gff, assembly_fasta, reads_fr, reads_fwd, reads_rev, ref_bam, assembly_bam]
@@ -47,6 +48,8 @@ class Qc:
         self.ratt_config = None if ratt_config is None else os.path.abspath(ratt_config)
         self.ratt_embl = None if ratt_embl is None else os.path.abspath(ratt_embl)
         self.ratt_outdir = self.outprefix + '.ratt'
+        self.reapr = reapr
+        self.reapr_outdir = self.outprefix + '.reapr'
         self.gage = None if gage is None else os.path.abspath(gage)
         self.files_to_clean = []
 
@@ -445,13 +448,13 @@ class Qc:
 
 
     def _map_reads_to_assembly(self):
-        mapping.map_reads(self.reads_fwd, self.reads_rev, self.assembly_fasta, self.assembly_bam[:-4], sort=True, threads=self.threads, index_k=self.smalt_k, index_s=self.smalt_s, minid=self.smalt_id)
+        mapping.map_reads(self.reads_fwd, self.reads_rev, self.assembly_fasta, self.assembly_bam[:-4], sort=True, threads=self.threads, index_k=self.smalt_k, index_s=self.smalt_s, minid=self.smalt_id, extra_smalt_map_ops='-x')
         os.unlink(self.assembly_bam[:-4] + '.unsorted.bam')
 
 
     def _calculate_ref_read_coverage(self):
         if None not in [self.reads_fwd, self.reads_rev]:
-            mapping.map_reads(self.reads_fwd, self.reads_rev, self.ref_fasta, self.ref_bam[:-4], sort=True, threads=self.threads, index_k=self.smalt_k, index_s=self.smalt_s, minid=self.smalt_id)
+            mapping.map_reads(self.reads_fwd, self.reads_rev, self.ref_fasta, self.ref_bam[:-4], sort=True, threads=self.threads, index_k=self.smalt_k, index_s=self.smalt_s, minid=self.smalt_id, extra_smalt_map_ops='-x')
             os.unlink(self.ref_bam[:-4] + '.unsorted.bam')
 
         for seq in self.ref_ids:
@@ -541,6 +544,35 @@ class Qc:
         else:
             self.ratt_stats = qc_external.run_ratt(self.ratt_embl, self.assembly_fasta, self.ratt_outdir, config_file=self.ratt_config)
 
+    def _calculate_reapr_stats(self):
+        if self.reapr and None not in [self.reads_fwd, self.reads_rev]:
+            if len(self.assembly_lengths) > len(self.assembly_vs_ref_mummer_hits):
+                reapr_assembly = self.outprefix + '.reapr.assembly.fa'
+                ids_file = reapr_assembly + '.tmp.ids'
+                f = fastaq.utils.open_file_write(ids_file)
+                print('\n'.join(self.assembly_vs_ref_mummer_hits.keys()), file=f)
+                fastaq.utils.close(f)
+                fastaq.tasks.filter(self.assembly_fasta, reapr_assembly, ids_file=ids_file)
+                os.unlink(ids_file)
+
+                bed_file = reapr_assembly + '.tmp.bed'
+                f = fastaq.utils.open_file_write(bed_file)
+                for name in self.assembly_vs_ref_mummer_hits:
+                    print(name, 0, self.assembly_lengths[name], sep='\t', file=f)
+                fastaq.utils.close(f)
+                reapr_bam = self.outprefix + '.reapr.bam'
+                cmd = 'samtools view -L ' + bed_file + ' ' + self.assembly_bam + \
+                      ' | samtools view -bS -T ' + reapr_assembly + ' - > ' + reapr_bam
+                subprocess.check_output(cmd, shell=True, stderr=subprocess.DEVNULL)
+                subprocess.check_output('samtools index ' + reapr_bam, shell=True, stderr=subprocess.DEVNULL)
+            else:
+                reapr_assembly = self.assembly_fasta
+                reapr_bam = self.assembly_bam
+
+            self.reapr_stats = qc_external.run_reapr(reapr_assembly, self.reads_fwd, self.reads_rev, reapr_bam, self.reapr_outdir)
+        else:
+            self.reapr_stats = qc_external.dummy_reapr_stats()
+
 
     def _do_calculations(self):
         if None not in [self.reads_fwd, self.reads_rev]:
@@ -555,6 +587,7 @@ class Qc:
         self._calculate_refseq_assembly_stats()
         self._calculate_gage_stats()
         self._calculate_ratt_stats()
+        self._calculate_reapr_stats()
         self._calculate_stats()
  
 
@@ -591,6 +624,9 @@ class Qc:
             print('gage_' + stat.replace(' ', '_'), self.gage_stats[stat], sep='\t', file=f)
         for stat in qc_external.ratt_stats:
             print('ratt_' + stat.replace(' ', '_'), self.ratt_stats[stat], sep='\t', file=f)
+        for stat in qc_external.reapr_stats:
+            print('reapr_' + stat.replace(' ', '_'), self.reapr_stats[stat], sep='\t', file=f)
+            
         fastaq.utils.close(f)
 
 
@@ -600,6 +636,7 @@ class Qc:
         print('\t'.join([str(self.stats[x]) for x in self.stats_keys]),
               '\t'.join([str(self.gage_stats[x]) for x in qc_external.gage_stats]),
               '\t'.join([str(self.ratt_stats[x]) for x in qc_external.ratt_stats]),
+              '\t'.join([str(self.reapr_stats[x]) for x in qc_external.reapr_stats]),
               sep='\t', file=f)
         fastaq.utils.close(f)
 
