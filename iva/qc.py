@@ -1,7 +1,10 @@
 import os
+import inspect
 import subprocess
+import tempfile
 import copy
 import fastaq
+import shutil
 import multiprocessing
 from iva import mapping, mummer, qc_external, kraken
 
@@ -9,8 +12,7 @@ class Error (Exception): pass
 
 class Qc:
     def __init__(self,
-        ref_fasta,
-        ref_gff,
+        embl_dir,
         assembly_fasta,
         output_prefix,
         reads_fr=None,
@@ -18,7 +20,6 @@ class Qc:
         reads_rev=None,
         gage=None,
         ratt_config=None,
-        ratt_embl=None,
         min_ref_cov=5,
         contig_layout_plot_title="IVA QC contig layout and read depth",
         threads=1,
@@ -32,11 +33,12 @@ class Qc:
         reapr=False,
     ):
 
-        files_to_check = [ref_fasta, ref_gff, ref_embl, assembly_fasta, reads_fr, reads_fwd, reads_rev]
+        files_to_check = [assembly_fasta, reads_fr, reads_fwd, reads_rev]
         for filename in files_to_check:
             if filename is not None and not os.path.exists(filename):
                 raise Error('Error in IVA QC. File not found: "' + filename + '"')
       
+        self.embl_dir = os.path.abspath(embl_dir)
         self.outprefix = output_prefix
         self.assembly_bam = output_prefix + '.reads_mapped_to_assembly.bam'
         self.ref_bam = output_prefix + '.reads_mapped_to_ref.bam'
@@ -44,10 +46,10 @@ class Qc:
         self.reads_rev = reads_rev
         self.threads = threads
         self.ratt_config = None if ratt_config is None else os.path.abspath(ratt_config)
-        self.ratt_embl = None if ratt_embl is None else os.path.abspath(ratt_embl)
         self.ratt_outdir = self.outprefix + '.ratt'
         self.reapr = reapr
         self.reapr_outdir = self.outprefix + '.reapr'
+        self.gage_outdir = self.outprefix + '.gage'
         self.gage = None if gage is None else os.path.abspath(gage)
         self.files_to_clean = []
 
@@ -91,9 +93,8 @@ class Qc:
                 processes[0].join()
                     
             
-        self.ref_gff = ref_gff
         self.min_ref_cov = min_ref_cov
-        self._set_ref_fasta_data(ref_fasta)
+        self._set_ref_seq_data()
         self._set_assembly_fasta_data(assembly_fasta)
         self.threads = threads
         self.contig_layout_plot_title = contig_layout_plot_title
@@ -146,16 +147,35 @@ class Qc:
         self.assembly_fasta = fasta_filename
         self.assembly_fasta_fai = self.assembly_fasta + '.fai'
         if not os.path.exists(self.assembly_fasta_fai):
-            subprocess.check_output('samtools faidx ' + self.assembly_fasta_fai, shell=True)
+            subprocess.check_output('samtools faidx ' + self.assembly_fasta, shell=True)
         self.assembly_lengths = {}
         fastaq.tasks.lengths_from_fai(self.assembly_fasta_fai, self.assembly_lengths)
         
 
-    def _set_ref_fasta_data(self, fasta_filename):
-        self.ref_fasta = fasta_filename
+    def _set_ref_seq_data(self):
+        self.ref_fasta = self.outprefix + '.reference.fa'
         self.ref_fasta_fai = self.ref_fasta + '.fai'
-        if not os.path.exists(self.ref_fasta_fai):
-            subprocess.check_output('samtools faidx ' + self.ref_fasta_fai, shell=True)
+        self.ref_gff = self.outprefix + '.reference.gff'
+        tmpdir = tempfile.mkdtemp(prefix='tmp.set_ref_seq_data.', dir=os.getcwd())
+        this_module_dir =os.path.dirname(inspect.getfile(inspect.currentframe()))
+        embl2gff = os.path.abspath(os.path.join(this_module_dir, 'ratt', 'embl2gff.pl'))
+
+        for embl_file in os.listdir(self.embl_dir):
+            fa = os.path.join(tmpdir, embl_file + '.fa')
+            gff = os.path.join(tmpdir, embl_file + '.gff')
+            embl_full = os.path.join(self.embl_dir, embl_file)
+            fastaq.tasks.to_fasta(embl_full, fa)
+            subprocess.check_output(' '.join([embl2gff, embl_full, '>', gff]), shell=True)
+
+        subprocess.check_output('cat ' + tmpdir + '/*.gff > ' + self.ref_gff, shell=True)
+        subprocess.check_output('cat ' + tmpdir + '/*.fa > ' + self.ref_fasta, shell=True)
+        shutil.rmtree(tmpdir)
+        self._set_ref_fa_data()
+
+
+    def _set_ref_fa_data(self):
+        self.ref_fasta_fai = self.ref_fasta + '.fai'
+        subprocess.check_output('samtools faidx ' + self.ref_fasta, shell=True)
         self.ref_ids = self._ids_in_order_from_fai(self.ref_fasta_fai)
         self.ref_lengths = {}
         fastaq.tasks.lengths_from_fai(self.ref_fasta_fai, self.ref_lengths)
@@ -518,14 +538,12 @@ class Qc:
         if self.gage is None:
             self.gage_stats = qc_external.dummy_gage_stats()
         else:
-            self.gage_stats = qc_external.run_gage(self.ref_fasta, self.assembly_fasta, self.gage)
+            self.gage_stats = qc_external.run_gage(self.ref_fasta, self.assembly_fasta, self.gage, self.gage_outdir)
 
 
     def _calculate_ratt_stats(self):
-        if self.ratt_embl is None:
-            self.ratt_stats = qc_external.dummy_ratt_stats()
-        else:
-            self.ratt_stats = qc_external.run_ratt(self.ratt_embl, self.assembly_fasta, self.ratt_outdir, config_file=self.ratt_config)
+        self.ratt_stats = qc_external.run_ratt(self.embl_dir, self.assembly_fasta, self.ratt_outdir, config_file=self.ratt_config)
+
 
     def _calculate_reapr_stats(self):
         if self.reapr:

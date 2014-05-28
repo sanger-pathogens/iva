@@ -56,6 +56,7 @@ reapr_stats = [
     'read_orientation',
 ]
 
+
 def dummy_gage_stats():
     return {x:'NA' for x in gage_stats}
 
@@ -67,15 +68,17 @@ def dummy_ratt_stats():
 def dummy_reapr_stats():
     return {x:'NA' for x in reapr_stats}
 
-def run_gage(reference, scaffolds, gage_dir):
+
+def run_gage(reference, scaffolds, gage_dir, outdir):
     reference = os.path.abspath(reference)
     scaffolds = os.path.abspath(scaffolds)
     ref = 'ref.fa'
     scaffs = 'scaffolds.fa'
     contigs = 'contigs.fa'
-    tmpdir = tempfile.mkdtemp(prefix='tmp.gage.', dir=os.getcwd())
+    gage_out = 'gage.out'
     cwd = os.getcwd()
-    os.chdir(tmpdir)
+    os.mkdir(outdir)
+    os.chdir(outdir)
     os.symlink(reference, ref)
     os.symlink(scaffolds, scaffs)
     fastaq.tasks.scaffolds_to_contigs(scaffs, contigs, number_contigs=True)
@@ -84,15 +87,15 @@ def run_gage(reference, scaffolds, gage_dir):
         os.path.join(gage_dir, 'getCorrectnessStats.sh'),
         ref,
         contigs,
-        scaffolds
+        scaffs,
+        '>', gage_out
     ])
-    gage_out = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).communicate()[0].decode().split('\n')[:-1]
-    shutil.rmtree(tmpdir)
-    os.chdir(cwd)
-    stats = {}
+    subprocess.check_output(cmd, stderr=subprocess.DEVNULL, shell=True)
+    stats = dummy_gage_stats()
     wanted_stats = set(gage_stats)
+    f = fastaq.utils.open_file_read(gage_out)
 
-    for line in gage_out:
+    for line in f:
         if line.startswith('Corrected Contig Stats'):
             break
         elif ':' in line:
@@ -105,7 +108,8 @@ def run_gage(reference, scaffolds, gage_dir):
                     stats[a[0]] = int(stat)
                 else:
                     stats[a[0]] = float(stat)
-
+    fastaq.utils.close(f)
+    os.chdir(cwd)
     return stats
 
 
@@ -160,9 +164,9 @@ def run_ratt(embl_dir, assembly, outdir, config_file=None, transfer='Species'):
     f = fastaq.utils.open_file_read(script_out)
     for line in f:
         if '\t' in line:
-            number, stat = line.rstrip().split('\t')
-            assert stat in matches
-            stats[matches[stat]] = int(number)
+            a = line.rstrip().split('\t')
+            if len(a) == 2 and a[0].isdigit() and a[1] in matches:
+                stats[matches[a[1]]] = int(a[0])
     fastaq.utils.close(f)
     os.chdir(cwd)
     return stats
@@ -204,8 +208,8 @@ def run_reapr(assembly, reads_fwd, reads_rev, bam, outdir):
     cmd_pipeline = ' '.join(['reapr pipeline', assembly, bam, 'Out', 'perfect'])
     
     try:
-        subprocess.check_output(cmd_perfectmap, shell=True, stderr=subprocess.DEVNULL)
-        subprocess.check_output(cmd_pipeline, shell=True, stderr=subprocess.DEVNULL)
+        subprocess.check_output(cmd_perfectmap, stderr=subprocess.DEVNULL, shell=True)
+        subprocess.check_output(cmd_pipeline, stderr=subprocess.DEVNULL, shell=True)
     except:
         os.chdir(cwd)
         return dummy_reapr_stats()

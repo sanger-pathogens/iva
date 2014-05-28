@@ -10,12 +10,13 @@ data_dir = os.path.join(modules_dir, 'tests', 'data')
 
 class TestQc(unittest.TestCase):
     def setUp(self):
-        ref_fa = os.path.join(data_dir, 'qc_test.dummy.ref.fasta')
-        ref_gff = os.path.join(data_dir, 'qc_test.dummy.ref.gff')
+        ref_embl = os.path.join(data_dir, 'qc_test.dummy.embl')
+        #ref_fa = os.path.join(data_dir, 'qc_test.dummy.ref.fasta')
+        #ref_gff = os.path.join(data_dir, 'qc_test.dummy.ref.gff')
         assembly_fasta = os.path.join(data_dir, 'qc_test.dummy.assembly.fasta')
         reads_1 = os.path.join(data_dir,'qc_test.reads_1.fq')
         reads_2 = os.path.join(data_dir,'qc_test.reads_2.fq')
-        self.qc = qc.Qc(ref_fa, ref_gff, assembly_fasta, 'tmp.qc', reads_fwd=reads_1, reads_rev=reads_2)
+        self.qc = qc.Qc(ref_embl, assembly_fasta, 'tmp.qc', reads_fwd=reads_1, reads_rev=reads_2)
 
 
     def tearDown(self):
@@ -25,41 +26,14 @@ class TestQc(unittest.TestCase):
             'tmp.qc.ref_cds_seqs_mapped_to_assembly.coords',
             'tmp.qc.reads_mapped_to_ref.bam',
             'tmp.qc.reads_mapped_to_ref.bam.bai',
+            'tmp.qc.reference.fa',
+            'tmp.qc.reference.fa.fai',
+            'tmp.qc.reference.gff',
         ]
         for f in files_to_clean:
             if os.path.exists(f):
                 os.unlink(f)
 
-
-    def test_set_ref_fasta_data(self):
-        '''test _set_ref_fasta_data'''
-        self.qc._set_ref_fasta_data(os.path.join(data_dir, 'qc_test.reference.fa'))
-        expected_lengths = {
-            'A0': 240,
-            'A': 1027,
-            'B': 1778,
-            'C': 1413,
-            'D': 1565,
-            'E': 890,
-            'F': 2341,
-            'G': 2233,
-            'H': 2341,
-        }
-        self.assertEqual(expected_lengths, self.qc.ref_lengths)
-
-        expected_offsets = {
-            'A0': 0,
-            'A': 240,
-            'B': 1267,
-            'C': 3045,
-            'D': 4458,
-            'E': 6023,
-            'F': 6913,
-            'G': 9254,
-            'H': 11487,
-        }
-        self.assertEqual(expected_offsets, self.qc.ref_length_offsets)
-        
 
     def test_ids_in_order_from_fai(self):
         '''test _ids_in_order_from_fai'''
@@ -104,6 +78,7 @@ class TestQc(unittest.TestCase):
         '''test _gff_and_fasta_to_cds'''
         self.qc.ref_gff = os.path.join(data_dir, 'qc_test.gff_and_fasta_to_cds.in.gff')
         self.qc.ref_fasta = os.path.join(data_dir, 'qc_test.gff_and_fasta_to_cds.in.fasta')
+        self.qc._set_ref_fa_data()
         expected_out = os.path.join(data_dir, 'qc_test.gff_and_fasta_to_cds.out.fasta')
         got_out = 'tmp.qc.ref_cds_seqs.fa'
         self.qc._gff_and_fasta_to_cds()
@@ -114,6 +89,7 @@ class TestQc(unittest.TestCase):
     def test_map_cds_to_assembly(self):
         '''test _map_cds_to_assembly'''
         self.qc.ref_fasta = os.path.join(data_dir, 'qc_test.reference.fa')
+        self.qc._set_ref_fa_data()
         self.qc.ref_gff = os.path.join(data_dir, 'qc_test.reference.cds.gff')
         self.qc.assembly_fasta =  os.path.join(data_dir, 'qc_test.assembly.fasta')
         expected_out = os.path.join(data_dir, 'qc_test.map_cds_to_assembly.coords')
@@ -150,6 +126,7 @@ class TestQc(unittest.TestCase):
     def test_calculate_cds_assembly_stats(self):
         '''test _calculate_cds_assembly_stats'''
         self.qc.ref_fasta = os.path.join(data_dir, 'qc_test.reference.fa')
+        self.qc._set_ref_fa_data()
         self.qc.ref_gff = os.path.join(data_dir, 'qc_test.reference.cds.gff')
         self.qc.assembly_fasta =  os.path.join(data_dir, 'qc_test.assembly.fasta')
         self.qc._calculate_cds_assembly_stats()
@@ -249,6 +226,7 @@ class TestQc(unittest.TestCase):
     def test_get_contig_hits_to_reference(self):
         '''test _get_contig_hits_to_reference'''
         self.qc.ref_fasta = os.path.join(data_dir, 'qc_test.reference.fa')
+        self.qc._set_ref_fa_data()
         self.qc.ref_gff = os.path.join(data_dir, 'qc_test.reference.cds.gff')
         self.qc.assembly_fasta =  os.path.join(data_dir, 'qc_test.assembly.fasta')
         self.qc._get_contig_hits_to_reference()
@@ -355,6 +333,7 @@ class TestQc(unittest.TestCase):
     def test_calculate_ref_positions_covered_by_contigs(self):
         '''test _calculate_ref_positions_covered_by_contigs'''
         self.qc.ref_fasta = os.path.join(data_dir, 'qc_test.reference.fa')
+        self.qc._set_ref_fa_data()
         self.qc.ref_gff = os.path.join(data_dir, 'qc_test.reference.cds.gff')
         self.qc.assembly_fasta =  os.path.join(data_dir, 'qc_test.assembly.fasta')
         self.qc._get_contig_hits_to_reference()
@@ -437,7 +416,8 @@ class TestQc(unittest.TestCase):
 
     def test_calculate_contig_placement(self):
         '''test calculate_contig_placement'''
-        self.qc._set_ref_fasta_data(os.path.join(data_dir, 'qc_test.reference.fa'))
+        self.qc.ref_fasta = os.path.join(data_dir, 'qc_test.reference.fa')
+        self.qc._set_ref_fa_data()
         self.qc.ref_gff = os.path.join(data_dir, 'qc_test.reference.cds.gff')
         self.qc.assembly_fasta =  os.path.join(data_dir, 'qc_test.assembly.fasta')
         self.qc._calculate_contig_placement()
@@ -457,7 +437,8 @@ class TestQc(unittest.TestCase):
 
     def test_get_R_plot_contig_order_from_contig_placement(self):
         '''test _get_R_plot_contig_order_from_contig_placement'''
-        self.qc._set_ref_fasta_data(os.path.join(data_dir, 'qc_test.reference.fa'))
+        self.qc.ref_fasta = os.path.join(data_dir, 'qc_test.reference.fa')
+        self.qc._set_ref_fa_data()
         self.qc.ref_gff = os.path.join(data_dir, 'qc_test.reference.cds.gff')
         self.qc.assembly_fasta =  os.path.join(data_dir, 'qc_test.assembly.fasta')
         self.qc._calculate_contig_placement()
@@ -467,7 +448,11 @@ class TestQc(unittest.TestCase):
 
     def test_calculate_ref_read_coverage(self):
         '''test _calculate_ref_read_coverage'''
-        self.qc._set_ref_fasta_data(os.path.join(data_dir, 'qc_test.calculate_ref_read_coverage.ref.fa'))
+        self.qc.ref_fasta = os.path.join(data_dir, 'qc_test.calculate_ref_read_coverage.ref.fa')
+        self.qc._set_ref_fa_data()
+        #self.qc.ref_ids = self.qc._ids_in_order_from_fai(self.qc.ref_fasta_fai)
+        #self.qc.ref_lengths = {}
+        #fastaq.tasks.lengths_from_fai(self.qc.ref_fasta_fai, self.qc.ref_lengths)
         self.qc.reads_fwd = os.path.join(data_dir, 'qc_test.calculate_ref_read_coverage.reads_1.fq')
         self.qc.reads_rev = os.path.join(data_dir, 'qc_test.calculate_ref_read_coverage.reads_2.fq')
         fwd_mpileup = {
@@ -586,6 +571,7 @@ class TestQc(unittest.TestCase):
         expected_fwd = {'1': expected_fwd, '2': [0] * 100}
         expected_rev = {'1': expected_rev, '2': [0] * 100}
         self.qc._calculate_ref_read_coverage()
+        print(self.qc.ref_coverage_fwd.keys(), expected_fwd.keys())
         self.assertEqual(self.qc.ref_coverage_fwd, expected_fwd)
         self.assertEqual(self.qc.ref_coverage_rev, expected_rev)
 
