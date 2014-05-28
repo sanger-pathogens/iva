@@ -8,7 +8,7 @@ import iva
 parser = argparse.ArgumentParser(
     description = 'IVA QC. Version: ' + iva.common.version,
     usage = '%(prog)s [options] <ref.fasta> <ref.gff> <prefix of output files>',
-    epilog = 'You must supply reads in one of three ways: 1) both --reads_fwd and --reads_rev; 2) --fr; 3) both --assembly_bam and --ref_bam',
+    epilog = 'You must supply reads in one of two ways: 1) both --reads_fwd and --reads_rev; or 2) --fr.',
 )
 
 parser.add_argument('assembly_fasta', action=iva.common.abspathAction, help='Name of assembly fasta file to be compared to reference', metavar='assembly.fasta')
@@ -20,8 +20,6 @@ reads_group = parser.add_argument_group('Reads options')
 reads_group.add_argument('-f', '--reads_fwd', action=iva.common.abspathAction, help='Name of forwards reads fasta or fastq file. Must be used with --reads_rev', metavar='filename[.gz]')
 reads_group.add_argument('-r', '--reads_rev', action=iva.common.abspathAction, help='Name of reverse reads fasta or fastq file. Must be used with --reads_rev', metavar='filename[.gz]')
 reads_group.add_argument('--fr', action=iva.common.abspathAction, dest='reads_fr', help='Name of interleaved fasta/q file', metavar='filename[.gz]')
-reads_group.add_argument('--ref_bam', action=iva.common.abspathAction, help='Name of sorted indexed BAM file of reads mapped to reference fasta. Must be used with --assembly_bam', metavar='filename')
-reads_group.add_argument('--assembly_bam', action=iva.common.abspathAction, help='Name of sorted indexed BAM file of reads mapped to assembly fasta. Must be used with --ref_bam', metavar='filename')
 
 
 mummer_group = parser.add_argument_group('MUMmer options')
@@ -61,8 +59,6 @@ qc = iva.qc.Qc(
     reads_fwd=options.reads_rev,
     reads_rev=options.reads_fwd,
     reads_fr=options.reads_fr,
-    assembly_bam=options.assembly_bam,
-    ref_bam=options.ref_bam,
     nucmer_min_cds_hit_length=options.cds_min_hit_length,
     nucmer_min_cds_hit_id=options.cds_min_hit_id,
     nucmer_min_ctg_hit_length=options.ctg_min_hit_length,

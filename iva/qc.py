@@ -3,7 +3,7 @@ import subprocess
 import copy
 import fastaq
 import multiprocessing
-from iva import mapping, mummer, qc_external
+from iva import mapping, mummer, qc_external, kraken
 
 class Error (Exception): pass
 
@@ -16,8 +16,6 @@ class Qc:
         reads_fr=None,
         reads_fwd=None,
         reads_rev=None,
-        assembly_bam=None,
-        ref_bam=None,
         gage=None,
         ratt_config=None,
         ratt_embl=None,
@@ -34,7 +32,7 @@ class Qc:
         reapr=False,
     ):
 
-        files_to_check = [ref_fasta, ref_gff, assembly_fasta, reads_fr, reads_fwd, reads_rev, ref_bam, assembly_bam]
+        files_to_check = [ref_fasta, ref_gff, ref_embl, assembly_fasta, reads_fr, reads_fwd, reads_rev]
         for filename in files_to_check:
             if filename is not None and not os.path.exists(filename):
                 raise Error('Error in IVA QC. File not found: "' + filename + '"')
@@ -60,53 +58,38 @@ class Qc:
             self.files_to_clean.append(self.reads_rev)
             fastaq.tasks.deinterleave(reads_fr, self.reads_fwd, self.reads_rev)
 
+        if not (None not in [self.reads_fwd, self.reads_rev] or reads_fr is not None):
+            raise Error('IVA QC needs reads_fr or both reads_fwd and reads_rev, if assembly_bam or ref_bam not supplied')
 
-        if None in [assembly_bam, ref_bam]:
-            if not (None not in [self.reads_fwd, self.reads_rev] or reads_fr is not None):
-                raise Error('IVA QC needs reads_fr or both reads_fwd and reads_rev, if assembly_bam or ref_bam not supplied')
+        def unzip_file(infile, outfile):
+            subprocess.check_output('gunzip -c ' + infile + ' > ' + outfile, shell=True)
 
-            def unzip_file(infile, outfile):
-                subprocess.check_output('gunzip -c ' + infile + ' > ' + outfile, shell=True)
+        processes = []
 
-            processes = []
+        if self.reads_fwd.endswith('.gz'):
+            new_reads_fwd = self.outprefix + '.reads_1'
+            processes.append(multiprocessing.Process(target=unzip_file, args=(self.reads_fwd, new_reads_fwd)))
+            self.reads_fwd = new_reads_fwd
+            self.files_to_clean.append(self.reads_fwd)
 
-            if self.reads_fwd.endswith('.gz'):
-                new_reads_fwd = self.outprefix + '.reads_1'
-                processes.append(multiprocessing.Process(target=unzip_file, args=(self.reads_fwd, new_reads_fwd)))
-                self.reads_fwd = new_reads_fwd
-                self.files_to_clean.append(self.reads_fwd)
-
-            if self.reads_rev.endswith('.gz'):
-                new_reads_rev = self.outprefix + '.reads_2'
-                processes.append(multiprocessing.Process(target=unzip_file, args=(self.reads_rev, new_reads_rev)))
-                self.reads_rev = new_reads_rev
-                self.files_to_clean.append(self.reads_rev)
+        if self.reads_rev.endswith('.gz'):
+            new_reads_rev = self.outprefix + '.reads_2'
+            processes.append(multiprocessing.Process(target=unzip_file, args=(self.reads_rev, new_reads_rev)))
+            self.reads_rev = new_reads_rev
+            self.files_to_clean.append(self.reads_rev)
                 
-            if len(processes) == 1:
-                processes[0].start()
+        if len(processes) == 1:
+            processes[0].start()
+            processes[0].join()
+        elif len(processes) == 2:
+            processes[0].start()
+            if self.threads == 1:
                 processes[0].join()
-            elif len(processes) == 2:
-                processes[0].start()
-                if self.threads == 1:
-                    processes[0].join()
-                processes[1].start()
-                processes[1].join()
-                if self.threads > 1:
-                    processes[0].join()
+            processes[1].start()
+            processes[1].join()
+            if self.threads > 1:
+                processes[0].join()
                     
-                    
-        elif None in [self.reads_fwd, self.reads_rev]:
-            if None in [assembly_bam, ref_bam]:
-                raise Error('IVA QC needs reads_fr or both reads_fwd and reads_rev, if assembly_bam or ref_bam not supplied')
-            
-            for bam in [assembly_bam, ref_bam]:
-                if not os.path.exists(bam + '.bai'):
-                    raise Error('Must index input BAM files, Did not find .bai file for bam "' + bam + '". Cannot continue')
-               
-            os.symlink(assembly_bam, self.assembly_bam)
-            os.symlink(ref_bam, self.ref_bam)
-            os.symlink(assembly_bam + '.bai', self.assembly_bam + '.bai')
-            os.symlink(ref_bam + '.bai', self.ref_bam + '.bai')
             
         self.ref_gff = ref_gff
         self.min_ref_cov = min_ref_cov
