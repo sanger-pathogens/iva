@@ -7,14 +7,14 @@ import iva
 
 parser = argparse.ArgumentParser(
     description = 'IVA QC. Version: ' + iva.common.version,
-    usage = '%(prog)s [options] <ref.fasta> <ref.gff> <prefix of output files>',
+    usage = '%(prog)s [options] <assembly.fasta> <embl_dir> <prefix of output files>',
     epilog = 'You must supply reads in one of two ways: 1) both --reads_fwd and --reads_rev; or 2) --fr.',
 )
 
 parser.add_argument('assembly_fasta', action=iva.common.abspathAction, help='Name of assembly fasta file to be compared to reference', metavar='assembly.fasta')
-parser.add_argument('ref_fasta', action=iva.common.abspathAction, help='Name of reference fasta file that assembly will be compared against', metavar='ref.fasta')
-parser.add_argument('ref_gff', action=iva.common.abspathAction, help='Name of reference gff file that has CDSs annotated to look for in the assembly', metavar='ref.gff[.gz]')
+parser.add_argument('embl_dir', help='Directory of reference EMBL files', metavar='Directory')
 parser.add_argument('output_prefix', help='Prefix to use for name of all output files', metavar='prefix of output files')
+
 
 reads_group = parser.add_argument_group('Reads options')
 reads_group.add_argument('-f', '--reads_fwd', action=iva.common.abspathAction, help='Name of forwards reads fasta or fastq file. Must be used with --reads_rev', metavar='filename[.gz]')
@@ -37,9 +37,7 @@ mapping_group.add_argument('-y', '--smalt_id', type=float, help='Minimum identit
 
 external_group = parser.add_argument_group('External tools')
 external_group.add_argument('--gage', help='Path to directory of gage scripts, i.e. getCorrectnessStats.sh. If you use this option, gage results will also be reported', metavar='Directory')
-external_group.add_argument('--ratt_embl', help='Path to directory of embl files, to be used as a reference to run RATT. RATT is only run if this option is used', metavar='Directory')
 external_group.add_argument('--ratt_config', help='Specify your own RATT config file', metavar='filename')
-external_group.add_argument('--reapr', action='store_true', help=argparse.SUPPRESS)
 
 other_group = parser.add_argument_group('Other options')
 other_group.add_argument('--ctg_layout_plot_title', help='Title to use in contig layout plot [%(default)s]', default='IVA QC contig layout and read depth', metavar='STRING')
@@ -52,8 +50,7 @@ options = parser.parse_args()
 
 
 qc = iva.qc.Qc(
-    options.ref_fasta,
-    options.ref_gff,
+    options.embl_dir,
     options.assembly_fasta,
     options.output_prefix,
     reads_fwd=options.reads_rev,
@@ -72,7 +69,7 @@ qc = iva.qc.Qc(
     gage=options.gage,
     ratt_embl=options.ratt_embl,
     ratt_config=options.ratt_config,
-    reapr=options.reapr,
+    reapr=True,
 )
 
 qc.run()
