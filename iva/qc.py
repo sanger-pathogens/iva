@@ -528,31 +528,8 @@ class Qc:
             self.ratt_stats = qc_external.run_ratt(self.ratt_embl, self.assembly_fasta, self.ratt_outdir, config_file=self.ratt_config)
 
     def _calculate_reapr_stats(self):
-        if self.reapr and None not in [self.reads_fwd, self.reads_rev]:
-            if len(self.assembly_lengths) > len(self.assembly_vs_ref_mummer_hits):
-                reapr_assembly = self.outprefix + '.reapr.assembly.fa'
-                ids_file = reapr_assembly + '.tmp.ids'
-                f = fastaq.utils.open_file_write(ids_file)
-                print('\n'.join(self.assembly_vs_ref_mummer_hits.keys()), file=f)
-                fastaq.utils.close(f)
-                fastaq.tasks.filter(self.assembly_fasta, reapr_assembly, ids_file=ids_file)
-                os.unlink(ids_file)
-
-                bed_file = reapr_assembly + '.tmp.bed'
-                f = fastaq.utils.open_file_write(bed_file)
-                for name in self.assembly_vs_ref_mummer_hits:
-                    print(name, 0, self.assembly_lengths[name], sep='\t', file=f)
-                fastaq.utils.close(f)
-                reapr_bam = self.outprefix + '.reapr.bam'
-                cmd = 'samtools view -L ' + bed_file + ' ' + self.assembly_bam + \
-                      ' | samtools view -bS -T ' + reapr_assembly + ' - > ' + reapr_bam
-                subprocess.check_output(cmd, shell=True, stderr=subprocess.DEVNULL)
-                subprocess.check_output('samtools index ' + reapr_bam, shell=True, stderr=subprocess.DEVNULL)
-            else:
-                reapr_assembly = self.assembly_fasta
-                reapr_bam = self.assembly_bam
-
-            self.reapr_stats = qc_external.run_reapr(reapr_assembly, self.reads_fwd, self.reads_rev, reapr_bam, self.reapr_outdir)
+        if self.reapr:
+            self.reapr_stats = qc_external.run_reapr(self.assembly_fasta, self.reads_fwd, self.reads_rev, self.assembly_bam, self.reapr_outdir)
         else:
             self.reapr_stats = qc_external.dummy_reapr_stats()
 
