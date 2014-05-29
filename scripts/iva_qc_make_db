@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+
+import argparse
+import iva
+
+parser = argparse.ArgumentParser(
+    description = 'IVA QC. Version: ' + iva.common.version,
+    usage = '%(prog)s [options] <output directory>',
+)
+
+parser.add_argument('outdir', help='Name of output directory', metavar='Directory_name')
+parser.add_argument('--threads', type=int, help='Number of threads to use [%(default)s]', metavar='INT', default=1)
+parser.add_argument('--minimizer_len', type=int, help='Number to pass to kraken-build minimizer_len option [%(default)s]', default=13, metavar='INT')
+parser.add_argument('--max_db_size', type=int, help='Number to pass to kraken-build max_db_size option [%(default)s]', default=3, metavar='INT')
+options = parser.parse_args()
+
+iva.kraken.setup_ref_db(
+    options.outdir,
+    threads=options.threads,
+    minimizer_len=options.minimizer_len,
+    max_db_size=options.max_db_size
+)

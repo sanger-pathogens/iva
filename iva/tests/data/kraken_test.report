@@ -1,0 +1,64 @@
+ 61.44	683808	683808	U	0	unclassified
+ 38.56	429135	4	-	1	root
+ 38.56	429129	1	D	10239	  Viruses
+ 38.55	429013	0	-	35268	    Retro-transcribing viruses
+ 38.55	429013	0	F	11632	      Retroviridae
+ 38.55	429013	0	-	327045	        Orthoretrovirinae
+ 38.55	429013	0	G	11646	          Lentivirus
+ 38.55	429013	4902	-	11652	            Primate lentivirus group
+ 38.08	423791	423791	S	11676	              Human immunodeficiency virus 1
+  0.03	320	0	S	11723	              Simian immunodeficiency virus
+  0.03	320	0	-	12830	                Simian immunodeficiency virus - mnd
+  0.03	320	320	-	159122	                  Simian immunodeficiency virus SIV-mnd 2
+  0.01	68	1	-	35237	    dsDNA viruses, no RNA stage
+  0.00	40	0	O	548681	      Herpesvirales
+  0.00	35	0	F	10292	        Herpesviridae
+  0.00	35	0	-	10293	          Alphaherpesvirinae
+  0.00	35	0	G	10294	            Simplexvirus
+  0.00	33	33	S	10325	              Macacine herpesvirus 1
+  0.00	2	2	S	10317	              Cercopithecine herpesvirus 2
+  0.00	5	5	F	548682	        Alloherpesviridae
+  0.00	13	0	F	10442	      Baculoviridae
+  0.00	13	0	G	558016	        Alphabaculovirus
+  0.00	13	13	S	31508	          Agrotis segetum nucleopolyhedrovirus
+  0.00	6	0	F	10482	      Polydnaviridae
+  0.00	5	0	G	10485	        Bracovirus
+  0.00	5	5	S	39640	          Cotesia congregata bracovirus
+  0.00	1	0	G	10483	        Ichnovirus
+  0.00	1	1	S	419435	          Glypta fumiferanae ichnovirus
+  0.00	5	0	O	28883	      Caudovirales
+  0.00	3	0	F	10699	        Siphoviridae
+  0.00	3	0	G	186765	          Lambdalikevirus
+  0.00	3	1	-	335795	            unclassified Lambda-like viruses
+  0.00	2	2	S	255131	              Burkholderia phage phi1026b
+  0.00	2	0	F	10662	        Myoviridae
+  0.00	1	0	-	857473	          Spounavirinae
+  0.00	1	0	G	140409	            Spounalikevirus
+  0.00	1	1	S	10685	              Bacillus phage SPO1
+  0.00	1	0	-	857479	          Peduovirinae
+  0.00	1	0	G	140410	            P2likevirus
+  0.00	1	1	S	332032	              Burkholderia phage phi52237
+  0.00	2	0	F	10501	      Phycodnaviridae
+  0.00	1	1	G	181083	        Chlorovirus
+  0.00	1	0	G	346673	        Coccolithovirus
+  0.00	1	1	S	181082	          Emiliania huxleyi virus 86
+  0.00	1	0	F	10240	      Poxviridae
+  0.00	1	0	-	10241	        Chordopoxvirinae
+  0.00	1	0	G	10282	          Yatapoxvirus
+  0.00	1	0	S	99000	            Tanapox virus
+  0.00	1	1	-	132475	              Yaba-like disease virus
+  0.00	47	0	-	439488	    ssRNA viruses
+  0.00	47	0	-	35278	      ssRNA positive-strand viruses, no DNA stage
+  0.00	47	0	F	11050	        Flaviviridae
+  0.00	47	0	G	1307799	          Pegivirus
+  0.00	47	0	-	1307802	            unclassified Pegivirus
+  0.00	47	47	S	54290	              GB virus C
+  0.00	2	0	-	131567	  cellular organisms
+  0.00	2	0	D	2	    Bacteria
+  0.00	2	0	P	1239	      Firmicutes
+  0.00	2	0	C	186801	        Clostridia
+  0.00	2	0	O	68295	          Thermoanaerobacterales
+  0.00	2	0	F	543371	            Thermoanaerobacterales Family III. Incertae Sedis
+  0.00	2	0	G	28895	              Thermoanaerobacterium
+  0.00	2	0	S	28896	                Thermoanaerobacterium saccharolyticum
+  0.00	2	2	-	1094508	                  Thermoanaerobacterium saccharolyticum JW/SL-YS485

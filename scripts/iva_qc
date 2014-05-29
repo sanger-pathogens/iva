@@ -7,13 +7,15 @@ import iva
 
 parser = argparse.ArgumentParser(
     description = 'IVA QC. Version: ' + iva.common.version,
-    usage = '%(prog)s [options] <assembly.fasta> <embl_dir> <prefix of output files>',
-    epilog = 'You must supply reads in one of two ways: 1) both --reads_fwd and --reads_rev; or 2) --fr.',
+    usage = '%(prog)s [options] <assembly.fasta> <prefix of output files>',
+    epilog = 'You must supply reads in one of two ways: 1) both --reads_fwd and --reads_rev; or 2) --fr. Also, you must either supply a reference with --embl_dir, or choose one automatically from a database with --ref_db.',
 )
 
 parser.add_argument('assembly_fasta', action=iva.common.abspathAction, help='Name of assembly fasta file to be compared to reference', metavar='assembly.fasta')
-parser.add_argument('embl_dir', help='Directory of reference EMBL files', metavar='Directory')
 parser.add_argument('output_prefix', help='Prefix to use for name of all output files', metavar='prefix of output files')
+
+parser.add_argument('--embl_dir', help='Directory of reference EMBL files. If not used, must use --ref_db', metavar='Directory')
+parser.add_argument('--ref_db', help='Directory of database made by iva_qc_make_db. If not used, must use --embl_dir', metavar='Directory')
 
 
 reads_group = parser.add_argument_group('Reads options')
@@ -37,7 +39,9 @@ mapping_group.add_argument('-y', '--smalt_id', type=float, help='Minimum identit
 
 external_group = parser.add_argument_group('External tools')
 external_group.add_argument('--gage', help='Path to directory of gage scripts, i.e. getCorrectnessStats.sh. If you use this option, gage results will also be reported', metavar='Directory')
+external_group.add_argument('--kraken_preload', action='store_true', help='Use the --preload option when running kraken')
 external_group.add_argument('--ratt_config', help='Specify your own RATT config file', metavar='filename')
+
 
 other_group = parser.add_argument_group('Other options')
 other_group.add_argument('--ctg_layout_plot_title', help='Title to use in contig layout plot [%(default)s]', default='IVA QC contig layout and read depth', metavar='STRING')
@@ -45,14 +49,19 @@ other_group.add_argument('--min_ref_cov', help='Minimum read coverage of the ref
 other_group.add_argument('--threads', type=int, help='Number of threads to use [%(default)s]', default=1, metavar='INT')
 
 
-
 options = parser.parse_args()
 
 
+if options.embl_dir == options.ref_db == None:
+    print('You must use one of --embl_dir or --ref_db. Cannot continue.', file=sys.stderr)
+    sys.exit(1)
+
+
 qc = iva.qc.Qc(
-    options.embl_dir,
     options.assembly_fasta,
     options.output_prefix,
+    embl_dir=options.embl_dir,
+    ref_db=options.ref_db,
     reads_fwd=options.reads_rev,
     reads_rev=options.reads_fwd,
     reads_fr=options.reads_fr,
@@ -67,7 +76,7 @@ qc = iva.qc.Qc(
     contig_layout_plot_title=options.ctg_layout_plot_title,
     threads=options.threads,
     gage=options.gage,
-    ratt_embl=options.ratt_embl,
+    kraken_preload=options.kraken_preload,
     ratt_config=options.ratt_config,
     reapr=True,
 )

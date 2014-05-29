@@ -11,12 +11,10 @@ data_dir = os.path.join(modules_dir, 'tests', 'data')
 class TestQc(unittest.TestCase):
     def setUp(self):
         ref_embl = os.path.join(data_dir, 'qc_test.dummy.embl')
-        #ref_fa = os.path.join(data_dir, 'qc_test.dummy.ref.fasta')
-        #ref_gff = os.path.join(data_dir, 'qc_test.dummy.ref.gff')
         assembly_fasta = os.path.join(data_dir, 'qc_test.dummy.assembly.fasta')
         reads_1 = os.path.join(data_dir,'qc_test.reads_1.fq')
         reads_2 = os.path.join(data_dir,'qc_test.reads_2.fq')
-        self.qc = qc.Qc(ref_embl, assembly_fasta, 'tmp.qc', reads_fwd=reads_1, reads_rev=reads_2)
+        self.qc = qc.Qc(assembly_fasta, 'tmp.qc', embl_dir=ref_embl, reads_fwd=reads_1, reads_rev=reads_2)
 
 
     def tearDown(self):
@@ -450,9 +448,6 @@ class TestQc(unittest.TestCase):
         '''test _calculate_ref_read_coverage'''
         self.qc.ref_fasta = os.path.join(data_dir, 'qc_test.calculate_ref_read_coverage.ref.fa')
         self.qc._set_ref_fa_data()
-        #self.qc.ref_ids = self.qc._ids_in_order_from_fai(self.qc.ref_fasta_fai)
-        #self.qc.ref_lengths = {}
-        #fastaq.tasks.lengths_from_fai(self.qc.ref_fasta_fai, self.qc.ref_lengths)
         self.qc.reads_fwd = os.path.join(data_dir, 'qc_test.calculate_ref_read_coverage.reads_1.fq')
         self.qc.reads_rev = os.path.join(data_dir, 'qc_test.calculate_ref_read_coverage.reads_2.fq')
         fwd_mpileup = {

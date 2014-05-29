@@ -12,9 +12,10 @@ class Error (Exception): pass
 
 class Qc:
     def __init__(self,
-        embl_dir,
         assembly_fasta,
         output_prefix,
+        embl_dir=None,
+        ref_db=None,
         reads_fr=None,
         reads_fwd=None,
         reads_rev=None,
@@ -31,20 +32,25 @@ class Qc:
         smalt_s=3,
         smalt_id=0.5,
         reapr=False,
+        kraken_preload=False,
     ):
+
+        if embl_dir is None and ref_db is None:
+           raise Error('Must provide either embl_dir or ref_db to Qc object. Cannot continue')
 
         files_to_check = [assembly_fasta, reads_fr, reads_fwd, reads_rev]
         for filename in files_to_check:
             if filename is not None and not os.path.exists(filename):
                 raise Error('Error in IVA QC. File not found: "' + filename + '"')
       
-        self.embl_dir = os.path.abspath(embl_dir)
         self.outprefix = output_prefix
         self.assembly_bam = output_prefix + '.reads_mapped_to_assembly.bam'
         self.ref_bam = output_prefix + '.reads_mapped_to_ref.bam'
         self.reads_fwd = reads_fwd
         self.reads_rev = reads_rev
         self.threads = threads
+        self.kraken_preload = kraken_preload
+        self.kraken_prefix = self.outprefix + '.kraken'
         self.ratt_config = None if ratt_config is None else os.path.abspath(ratt_config)
         self.ratt_outdir = self.outprefix + '.ratt'
         self.reapr = reapr
@@ -92,6 +98,10 @@ class Qc:
             if self.threads > 1:
                 processes[0].join()
                     
+        if embl_dir is None:
+            self.embl_dir = kraken.choose_reference(ref_db, self.reads_fwd, self.kraken_prefix, preload=self.kraken_preload, threads=self.threads, mate_reads=self.reads_rev)
+        else:
+            self.embl_dir = os.path.abspath(embl_dir)
             
         self.min_ref_cov = min_ref_cov
         self._set_ref_seq_data()

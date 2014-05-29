@@ -7,6 +7,7 @@ __all__ = [
     'graph',
     'kcount',
     'kmers',
+    'kraken',
     'mapping',
     'mummer',
     'qc',
