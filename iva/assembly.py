@@ -50,7 +50,12 @@ class Assembly:
         self.contig_lengths[ctg.id] = [[len(self.contigs[ctg.id]), 0, 0]]
 
 
-    def write_contigs_to_file(self, filename, min_length=None, do_not_write=set(), only_write=set(), biggest_first=False, order_by_orfs=False, prefix=None):
+    def write_contigs_to_file(self, filename, min_length=None, do_not_write=None, only_write=None, biggest_first=False, order_by_orfs=False, prefix=None):
+        if do_not_write is None:
+            do_not_write = set()
+        if only_write is None:
+            only_write = set()
+      
         printed = 0
         if min_length is None:
             min_length = self.map_index_k + 1
@@ -114,7 +119,9 @@ class Assembly:
         return ordered_names
 
 
-    def _map_reads(self, fwd_reads, rev_reads, out_prefix, required_flag=None, exclude_flag=None, sort_reads=False, mate_ref=None, no_map_contigs=set()):
+    def _map_reads(self, fwd_reads, rev_reads, out_prefix, required_flag=None, exclude_flag=None, sort_reads=False, mate_ref=None, no_map_contigs=None):
+        if no_map_contigs is None:
+            no_map_contigs = set()
         if self.verbose:
             print('    map reads', fwd_reads, rev_reads, sep='\t')
         reference = out_prefix + '.ref.fa'
@@ -297,7 +304,9 @@ class Assembly:
         return False
 
 
-    def _read_pair_extension_iterations(self, reads_prefix, out_prefix, no_map_contigs=set()):
+    def _read_pair_extension_iterations(self, reads_prefix, out_prefix, no_map_contigs=None):
+        if no_map_contigs is None:
+            no_map_contigs = set()
         assert(len(self.contigs))
         if self.verbose:
             print('{:-^79}'.format(' ' + out_prefix + ' start extension subiteration 0001 '))
@@ -404,7 +413,9 @@ class Assembly:
         self._merge_overlapping_contigs(list(self.contigs.keys()), min_overlap_length=200, end_tolerance=50, min_identity=99)
 
 
-    def _run_nucmer(self, contigs_to_use=set()):
+    def _run_nucmer(self, contigs_to_use=None):
+        if contigs_to_use is None:
+            contigs_to_use = set()
         if len(contigs_to_use) <= 1:
             return []
         tmpdir = tempfile.mkdtemp(prefix='tmp.remove_self_contigs.', dir=os.getcwd())

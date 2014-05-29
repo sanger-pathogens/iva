@@ -108,8 +108,12 @@ def _run_kmc(reads, outprefix, kmer, min_count, max_count, verbose=0):
     return kmer_counts_file
 
 
-def _kmc_to_kmer_counts(infile, number, kmers_to_ignore=set(), contigs_to_check={}):
+def _kmc_to_kmer_counts(infile, number, kmers_to_ignore=None, contigs_to_check=None):
     '''Makes a dict of the most common kmers from the kmer counts output file of kmc'''
+    if kmers_to_ignore is None:
+        kmers_to_ignore = set()
+    if contigs_to_check is None:
+        contigs_to_check = {}
     f = fastaq.utils.open_file_read(infile)
     counts = {}
 
@@ -137,8 +141,12 @@ def _kmc_to_kmer_counts(infile, number, kmers_to_ignore=set(), contigs_to_check=
     return counts
 
 
-def get_most_common_kmers(reads1, reads2, kmer_length=None, head=100000, min_count=10, max_count=100000000, most_common=100, method='kmc', verbose=0, ignore_kmers=set(), contigs_to_check={}):
+def get_most_common_kmers(reads1, reads2, kmer_length=None, head=100000, min_count=10, max_count=100000000, most_common=100, method='kmc', verbose=0, ignore_kmers=None, contigs_to_check=None):
     '''Gets the most common kmers from a pair of interleaved read FASTA or FASTQ files. Takes the first N sequences (determined by head).  Returns a dict of kmer=>frequency. If kmer length is not given, use min(0.8 * median read length, 95)'''
+    if ignore_kmers is None:
+        ignore_kmers = set()
+    if contigs_to_check is None:
+        contigs_to_check = {}
     tmpdir = tempfile.mkdtemp(prefix='tmp.common_kmers.', dir=os.getcwd())
     counts = {}
     reads = os.path.join(tmpdir, 'reads.fa')
