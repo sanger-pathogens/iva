@@ -14,7 +14,9 @@ CAN_EXTEND_LEFT = 3
 CAN_EXTEND_RIGHT = 4
 
 
-def map_reads(reads_fwd, reads_rev, ref_fa, out_prefix, index_k=15, index_s=3, threads=1, max_insert=1000, minid=0.5, verbose=0, required_flag=None, sort=False, exclude_flag=None, mate_ref=None, extra_smalt_map_ops=''):
+def map_reads(reads_fwd, reads_rev, ref_fa, out_prefix, index_k=15, index_s=3, threads=1, max_insert=1000, minid=0.5, verbose=0, required_flag=None, sort=False, exclude_flag=None, mate_ref=None, extra_smalt_map_ops=None):
+    if extra_smalt_map_ops is None:
+        extra_smalt_map_ops = ''
     map_index = out_prefix + '.map_index'
     clean_files = [map_index + '.' + x for x in ['smi', 'sma']]
     index_cmd = ' '.join([

@@ -8,7 +8,11 @@ from iva import kcount, kmers, mapping
 class Error (Exception): pass
 
 class Seed:
-    def __init__(self, extend_length=50, overlap_length=None, reads1=None, reads2=None, seq=None, ext_min_cov=5, ext_min_ratio=2, verbose=0, seed_length=None, seed_min_count=10, seed_max_count=100000000, threads=1, kmers_to_ignore=set(), contigs_to_check={}):
+    def __init__(self, extend_length=50, overlap_length=None, reads1=None, reads2=None, seq=None, ext_min_cov=5, ext_min_ratio=2, verbose=0, seed_length=None, seed_min_count=10, seed_max_count=100000000, threads=1, kmers_to_ignore=None, contigs_to_check=None):
+        if contigs_to_check is None:
+            contigs_to_check = {}
+        if kmers_to_ignore is None:
+            kmers_to_ignore = set()
         self.verbose = verbose
         self.threads = threads
         self.extend_length = extend_length
