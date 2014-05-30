@@ -134,8 +134,8 @@ class Assembly:
 
     def _extend_contigs_with_bam(self, bam_in, out_prefix=None, output_all_useful_reads=False):
         if out_prefix is not None:
-            fa_out1 = fastaq.utils.open_file_write(out_prefix + '.to_remap_1.fa')
-            fa_out2 = fastaq.utils.open_file_write(out_prefix + '.to_remap_2.fa')
+            fa_out1 = fastaq.utils.open_file_write(out_prefix + '_1.fa')
+            fa_out2 = fastaq.utils.open_file_write(out_prefix + '_2.fa')
         keep_read_types = set([mapping.CAN_EXTEND_LEFT, mapping.CAN_EXTEND_RIGHT, mapping.KEEP])
         if output_all_useful_reads:
             keep_read_types.add(mapping.BOTH_UNMAPPED)
@@ -304,17 +304,39 @@ class Assembly:
         return False
 
 
+    def _extend_with_reads(self, reads_prefix, out_prefix, no_map_contigs):
+        tmpdir = tempfile.mkdtemp(prefix='tmp.extend.', dir=os.getcwd())
+        tmp_prefix = os.path.join(tmpdir, 'reads')
+        total_bases_added = 0
+
+        for i in range(5):
+            bam_prefix = out_prefix + '.' + str(i+1) + '.map'
+            bam = bam_prefix +  '.bam'
+            self._map_reads(reads_prefix + '_1.fa', reads_prefix + '_2.fa', bam_prefix, no_map_contigs=no_map_contigs)
+            reads_prefix = tmp_prefix + '.' + str(i)
+            bases_added = self._extend_contigs_with_bam(bam, out_prefix=reads_prefix)
+            total_bases_added += bases_added
+            if self.clean:
+                os.unlink(bam)
+            if bases_added < 0.2 * self.ext_bases:
+                break
+
+        shutil.rmtree(tmpdir)
+        return total_bases_added
+
+
     def _read_pair_extension_iterations(self, reads_prefix, out_prefix, no_map_contigs=None):
         if no_map_contigs is None:
             no_map_contigs = set()
         assert(len(self.contigs))
         if self.verbose:
             print('{:-^79}'.format(' ' + out_prefix + ' start extension subiteration 0001 '))
-        bam = out_prefix + '.1.map.bam'
-        self._map_reads(reads_prefix + '_1.fa', reads_prefix + '_2.fa', out_prefix + '.1.map', no_map_contigs=no_map_contigs)
-        bases_added = self._extend_contigs_with_bam(bam)
-        if self.clean:
-            os.unlink(bam)
+        #bam = out_prefix + '.1.map.bam'
+        bases_added = self._extend_with_reads(reads_prefix, out_prefix + '.1', no_map_contigs)
+        #self._map_reads(reads_prefix + '_1.fa', reads_prefix + '_2.fa', out_prefix + '.1.map', no_map_contigs=no_map_contigs)
+        #bases_added = self._extend_contigs_with_bam(bam)
+        #if self.clean:
+        #    os.unlink(bam)
 
         if bases_added == 0:
             return
@@ -328,11 +350,12 @@ class Assembly:
                 print('{:-^79}'.format(' ' + out_prefix + ' start extension subiteration ' + str(i).zfill(4) + ' '))
 
             iter_prefix = out_prefix + '.' + str(i)
-            bam = iter_prefix + '.map.bam'
-            self._map_reads(reads_prefix + '_1.fa', reads_prefix + '_2.fa', iter_prefix + '.map', no_map_contigs=no_map_contigs)
-            bases_added = self._extend_contigs_with_bam(bam)
-            if self.clean:
-                os.unlink(bam)
+            #bam = iter_prefix + '.map.bam'
+            bases_added = self._extend_with_reads(reads_prefix, iter_prefix, no_map_contigs)
+            #self._map_reads(reads_prefix + '_1.fa', reads_prefix + '_2.fa', iter_prefix + '.map', no_map_contigs=no_map_contigs)
+            #bases_added = self._extend_contigs_with_bam(bam)
+            #if self.clean:
+            #    os.unlink(bam)
 
             if bases_added == 0:
                 if not try_contig_trim:
