@@ -50,8 +50,8 @@ class TestAssembly(unittest.TestCase):
         out_prefix = 'tmp'
         a._extend_contigs_with_bam(bam, out_prefix, output_all_useful_reads=False)
         tmp_contigs = 'tmp.new_contigs.fa'
-        tmp_reads_1 = out_prefix + '.to_remap_1.fa'
-        tmp_reads_2 = out_prefix + '.to_remap_2.fa'
+        tmp_reads_1 = out_prefix + '_1.fa'
+        tmp_reads_2 = out_prefix + '_2.fa'
         a.write_contigs_to_file(tmp_contigs)
         self.assertTrue(filecmp.cmp(os.path.join(data_dir, 'mapping_test.ref.fa'), tmp_contigs))
         self.assertTrue(filecmp.cmp(os.path.join(data_dir, 'assembly_test.extend_kept_reads_1.fa'), tmp_reads_1))
