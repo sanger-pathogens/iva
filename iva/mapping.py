@@ -134,7 +134,7 @@ def strip_mpileup_coverage_string(s):
             a = a[0:start_index] + a[start_index + len(count) + int(count) + 1:]
         else:
             i += 1
-        
+
     return ''.join(a)
 
 
@@ -171,7 +171,12 @@ def find_incorrect_ref_bases(bam, ref_fasta):
     mpileup_out = subprocess.Popen(mpileup_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).communicate()[0].decode().split('\n')[:-1]
 
     for line in mpileup_out:
-        refname, position, pileup = line.rstrip().split()
+        # somteimes mpileup has an empty bases column, so skip those
+        try:
+            refname, position, pileup = line.rstrip().split()
+        except:
+            continue
+
         assert refname in ref_seqs
         position = int(position) - 1
         pileup = strip_mpileup_coverage_string(pileup)
