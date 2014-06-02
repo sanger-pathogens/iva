@@ -54,8 +54,10 @@ seed_group.add_argument('--seed_ext_min_ratio', type=float, help='Sets N, where 
 
 
 trimming_group = parser.add_argument_group('Read trimming options')
-trimming_group.add_argument('--trimmomatic', action=iva.common.abspathAction, help='Location of trimmomatic.jar file. Required if --adapters used', metavar='FILENAME')
-trimming_group.add_argument('--adapters', action=iva.common.abspathAction, help='Fasta file of adapter sequences to be trimmed off reads. If used, must also use --trimmomatic', metavar='FILENAME')
+trimming_group.add_argument('--trimmomatic', action=iva.common.abspathAction, help='Provide location of trimmomatic.jar file to enable read trimming. Required if --adapters used', metavar='FILENAME')
+iva_module_dir = os.path.dirname(iva.read_trim.__file__)
+adapters = os.path.abspath(os.path.join(iva_module_dir, 'read_trim', 'adapters.fasta'))
+trimming_group.add_argument('--adapters', action=iva.common.abspathAction, help='Fasta file of adapter sequences to be trimmed off reads. If used, must also use --trimmomatic. [' + adapters + ']', metavar='FILENAME')
 trimming_group.add_argument('--min_trimmed_length', type=int, help='Minimum length of read after trimming [%(default)s]', default=50, metavar='INT')
 
 
@@ -93,7 +95,7 @@ if os.path.exists(options.outdir):
 print(' '.join(sys.argv))
 print('IVA version', iva.common.version)
 print('Checking external programs and trying to get their versions...')
-iva.external_progs.print_all_versions()
+iva.external_progs.print_all_versions(iva.external_progs.assembly_progs)
 print('...OK. Running assembly')
 
 try:
@@ -110,7 +112,7 @@ reads_2 = reads_prefix + '_2.fa'
 original_line_length = fastaq.sequences.Fasta.line_length
 fastaq.sequences.Fasta.line_length = 0
 
-if options.reads and not options.adapters:
+if options.reads and not options.trimmomatic:
     fastaq.tasks.deinterleave(options.reads, reads_1, reads_2, fasta_out=True)
 else:
     to_delete = []
@@ -125,8 +127,10 @@ else:
         reads_for_trimming_1 = options.reads_fwd
         reads_for_trimming_2 = options.reads_rev
 
-    if options.adapters:
+    if options.trimmomatic:
         trimmed_reads_prefix = 'reads.trimmed'
+        if options.adapters is None:
+            options.adapters = adapters
         iva.read_trim.run_trimmomatic(reads_for_trimming_1, reads_for_trimming_2, trimmed_reads_prefix, options.trimmomatic, options.adapters, minlen=options.min_trimmed_length, verbose=options.verbose, threads=options.threads)
         fq_to_convert_to_fa_1 = trimmed_reads_prefix + '_1.fq'
         fq_to_convert_to_fa_2 = trimmed_reads_prefix + '_2.fq'
