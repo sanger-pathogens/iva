@@ -69,7 +69,9 @@ def dummy_reapr_stats():
     return {x:'NA' for x in reapr_stats}
 
 
-def run_gage(reference, scaffolds, gage_dir, outdir):
+def run_gage(reference, scaffolds, outdir, nucmer_minid=80):
+    this_module_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
+    gage_dir = os.path.join(this_module_dir, 'gage')
     reference = os.path.abspath(reference)
     scaffolds = os.path.abspath(scaffolds)
     ref = 'ref.fa'
@@ -88,6 +90,7 @@ def run_gage(reference, scaffolds, gage_dir, outdir):
         ref,
         contigs,
         scaffs,
+        str(nucmer_minid),
         '>', gage_out
     ])
     subprocess.check_output(cmd, stderr=subprocess.DEVNULL, shell=True)
@@ -146,7 +149,7 @@ def run_ratt(embl_dir, assembly, outdir, config_file=None, transfer='Species'):
         pass
 
     stats = {}
-    
+
     matches = {
         'elements found.': 'elements_found',
         'Elements were transfered.': 'elements_transferred',
@@ -193,7 +196,7 @@ def run_reapr(assembly, reads_fwd, reads_rev, bam, outdir):
     except:
         raise Error('Error mkdir ' + outdir)
 
-    
+
     cmd_facheck = 'reapr facheck ' + assembly
     try:
         subprocess.check_output(cmd_facheck, shell=True, stderr=subprocess.DEVNULL)
@@ -206,7 +209,7 @@ def run_reapr(assembly, reads_fwd, reads_rev, bam, outdir):
 
     cmd_perfectmap = ' '.join(['reapr perfectmap', assembly, reads_fwd, reads_rev, str(insert_size), 'perfect'])
     cmd_pipeline = ' '.join(['reapr pipeline', assembly, bam, 'Out', 'perfect'])
-    
+
     try:
         subprocess.check_output(cmd_perfectmap, stderr=subprocess.DEVNULL, shell=True)
         subprocess.check_output(cmd_pipeline, stderr=subprocess.DEVNULL, shell=True)
@@ -230,5 +233,5 @@ def run_reapr(assembly, reads_fwd, reads_rev, bam, outdir):
 
     os.chdir(cwd)
     return stats
-    
+
 

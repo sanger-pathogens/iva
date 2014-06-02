@@ -19,15 +19,15 @@ class Qc:
         reads_fr=None,
         reads_fwd=None,
         reads_rev=None,
-        gage=None,
         ratt_config=None,
         min_ref_cov=5,
         contig_layout_plot_title="IVA QC contig layout and read depth",
         threads=1,
-        nucmer_min_cds_hit_length=30,
+        nucmer_min_cds_hit_length=20,
         nucmer_min_cds_hit_id=80,
         nucmer_min_ctg_hit_length=100,
-        nucmer_min_ctg_hit_id=95,
+        nucmer_min_ctg_hit_id=80,
+        gage_nucmer_minid=80,
         smalt_k=15,
         smalt_s=3,
         smalt_id=0.5,
@@ -42,7 +42,7 @@ class Qc:
         for filename in files_to_check:
             if filename is not None and not os.path.exists(filename):
                 raise Error('Error in IVA QC. File not found: "' + filename + '"')
-      
+
         self.outprefix = output_prefix
         self.assembly_bam = output_prefix + '.reads_mapped_to_assembly.bam'
         self.ref_bam = output_prefix + '.reads_mapped_to_ref.bam'
@@ -56,7 +56,7 @@ class Qc:
         self.reapr = reapr
         self.reapr_outdir = self.outprefix + '.reapr'
         self.gage_outdir = self.outprefix + '.gage'
-        self.gage = None if gage is None else os.path.abspath(gage)
+        self.gage_nucmer_minid = gage_nucmer_minid
         self.files_to_clean = []
 
         if reads_fr:
@@ -85,7 +85,7 @@ class Qc:
             processes.append(multiprocessing.Process(target=unzip_file, args=(self.reads_rev, new_reads_rev)))
             self.reads_rev = new_reads_rev
             self.files_to_clean.append(self.reads_rev)
-                
+
         if len(processes) == 1:
             processes[0].start()
             processes[0].join()
@@ -97,12 +97,12 @@ class Qc:
             processes[1].join()
             if self.threads > 1:
                 processes[0].join()
-                    
+
         if embl_dir is None:
             self.embl_dir = kraken.choose_reference(ref_db, self.reads_fwd, self.kraken_prefix, preload=self.kraken_preload, threads=self.threads, mate_reads=self.reads_rev)
         else:
             self.embl_dir = os.path.abspath(embl_dir)
-            
+
         self.min_ref_cov = min_ref_cov
         self._set_ref_seq_data()
         self._set_assembly_fasta_data(assembly_fasta)
@@ -160,7 +160,7 @@ class Qc:
             subprocess.check_output('samtools faidx ' + self.assembly_fasta, shell=True)
         self.assembly_lengths = {}
         fastaq.tasks.lengths_from_fai(self.assembly_fasta_fai, self.assembly_lengths)
-        
+
 
     def _set_ref_seq_data(self):
         self.ref_fasta = self.outprefix + '.reference.fa'
@@ -195,7 +195,7 @@ class Qc:
         for seq in self.ref_ids:
             self.ref_length_offsets[seq] = offset
             offset += self.ref_lengths[seq]
-        
+
 
     def _ids_in_order_from_fai(self, filename):
         ids = []
@@ -232,7 +232,7 @@ class Qc:
             coords[seqname].sort()
 
         return coords
-       
+
 
     def _write_cds_seqs(self, cds_list, fa, f_out):
         for coords, strand in cds_list:
@@ -250,7 +250,7 @@ class Qc:
                 'assembled': False,
                 'assembled_ok': False,
             }
-            
+
 
     def _gff_and_fasta_to_cds(self):
         cds_coords = self._get_ref_cds_from_gff()
@@ -295,7 +295,7 @@ class Qc:
             bases_assembled = fastaq.intervals.length_sum_from_list(hit_coords)
             self.cds_assembly_stats[cds_name]['bases_assembled'] = bases_assembled
             self.cds_assembly_stats[cds_name]['assembled'] = 0.9 <= bases_assembled / self.cds_assembly_stats[cds_name]['length_in_ref'] <= 1.1
-            
+
             if len(hit_list) == 1:
                 hit = hit_list[0]
                 contig_coords = hit.ref_coords()
@@ -343,7 +343,7 @@ class Qc:
                     'assembled_ok': False,
                 }
 
-             
+
 
     def _invert_list(self, coords, seq_length):
         if len(coords) == 0:
@@ -359,7 +359,7 @@ class Qc:
 
         if coords[-1].end < seq_length - 1:
             not_covered.append(fastaq.intervals.Interval(coords[-1].end + 1, seq_length - 1))
- 
+
         return not_covered
 
 
@@ -369,7 +369,7 @@ class Qc:
                 if hit.ref_name not in self.ref_pos_covered_by_contigs:
                     self.ref_pos_covered_by_contigs[hit.ref_name] = []
                 self.ref_pos_covered_by_contigs[hit.ref_name].append(hit.ref_coords())
-            
+
         for coords_list in self.ref_pos_covered_by_contigs.values():
             fastaq.intervals.merge_overlapping_in_list(coords_list)
 
@@ -384,7 +384,7 @@ class Qc:
     def _get_overlapping_qry_hits(self, hits, hit):
         overlapping = []
         hit_coords = hit.qry_coords()
-        
+
         for test_hit in hits:
             if test_hit != hit:
                 test_coords = test_hit.qry_coords()
@@ -407,7 +407,7 @@ class Qc:
                 unique.append(hit)
 
         return unique, repetitive
-             
+
 
     def _get_longest_hit_index(self, hits):
         if len(hits) == 0:
@@ -423,7 +423,7 @@ class Qc:
         assert max_length != -1
         assert index != -1
         return index
-    
+
 
     def _calculate_incorrect_assembly_bases(self):
         self.incorrect_assembly_bases = mapping.find_incorrect_ref_bases(self.assembly_bam, self.assembly_fasta)
@@ -495,7 +495,7 @@ class Qc:
         if cov_bad and start is not None:
             bad_intervals.append(fastaq.intervals.Interval(start, i))
         return bad_intervals
-         
+
 
     def _calculate_ref_read_region_coverage(self):
         assert len(self.ref_coverage_fwd)
@@ -545,10 +545,7 @@ class Qc:
 
 
     def _calculate_gage_stats(self):
-        if self.gage is None:
-            self.gage_stats = qc_external.dummy_gage_stats()
-        else:
-            self.gage_stats = qc_external.run_gage(self.ref_fasta, self.assembly_fasta, self.gage, self.gage_outdir)
+        self.gage_stats = qc_external.run_gage(self.ref_fasta, self.assembly_fasta, self.gage_outdir, nucmer_minid=self.gage_nucmer_minid)
 
 
     def _calculate_ratt_stats(self):
@@ -577,7 +574,7 @@ class Qc:
         self._calculate_ratt_stats()
         self._calculate_reapr_stats()
         self._calculate_stats()
- 
+
 
     def _contigs_and_bases_that_hit_ref(self):
         total_bases = 0
@@ -586,7 +583,7 @@ class Qc:
             fastaq.intervals.merge_overlapping_in_list(coords)
             total_bases += fastaq.intervals.length_sum_from_list(coords)
         return total_bases, len(self.assembly_vs_ref_mummer_hits)
-          
+
 
     def _calculate_stats(self):
         self.stats['ref_bases'] = sum(self.ref_lengths.values())
@@ -602,7 +599,7 @@ class Qc:
         self.stats['cds_number'] = len(self.cds_assembly_stats)
         self.stats['cds_assembled'] = len([1 for x in self.cds_assembly_stats.values() if x['assembled']])
         self.stats['cds_assembled_ok'] = len([1 for x in self.cds_assembly_stats.values() if x['assembled_ok']])
-        
+
 
     def _write_stats_txt(self):
         f = fastaq.utils.open_file_write(self.stats_file_txt)
@@ -614,7 +611,7 @@ class Qc:
             print('ratt_' + stat.replace(' ', '_'), self.ratt_stats[stat], sep='\t', file=f)
         for stat in qc_external.reapr_stats:
             print('reapr_' + stat.replace(' ', '_'), self.reapr_stats[stat], sep='\t', file=f)
-            
+
         fastaq.utils.close(f)
 
 
@@ -671,7 +668,7 @@ class Qc:
             print(self._cov_to_R_string(self.ref_pos_not_covered_by_contigs[name], 'black', offset, 2, 0.25), file=f)
 
         print(vertical_lines, file=f)
-       
+
         if number_of_contigs > 0:
             print('contig_names=c("ref read cov", "ref contig cov", "', '", "'.join(contig_names), '")', sep='', file=f)
             print('axis(2, at=c(1:', number_of_contigs + 2, '), labels=contig_names, las=2, cex.axis=0.3)', sep='', file=f)
@@ -686,7 +683,7 @@ class Qc:
                         colour = "red"
                     else:
                         colour = "blue"
- 
+
                     if same_strand:
                          colour = "dark" + colour
 
@@ -695,7 +692,7 @@ class Qc:
                             ref_coords.end + offset, ',',
                             y_centre + 0.5 * contig_height, ',',
                             'col="', colour, '")', sep='', file=f)
-                
+
         # ----------- read depth on reference plot --------------
         self._write_ref_coverage_to_files_for_R(self.outprefix + '.read_coverage_on_ref')
         print('fwd_ref_cov = scan("', self.outprefix + '.read_coverage_on_ref.fwd', '")', sep='', file=f)

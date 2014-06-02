@@ -12,10 +12,34 @@ def is_in_path(prog):
 prog_to_version_cmd = {
     'kmc': ('kmc', re.compile('^K-Mer Counter \(KMC\) ver\. (.*) \(.*\)$')),
     'kmc_dump': ('kmc_dump', re.compile('^KMC dump ver. (.*) \(.*\)$')),
+    'kraken': ('kraken --version', re.compile('^Kraken version (.*)$')),
+    'kraken-build': ('kraken-build --version', re.compile('^Kraken version (.*)$')),
     'nucmer': ('nucmer --version', re.compile('^NUCmer \(NUCleotide MUMmer\) version (.*)$')),
+    'R': ('R --version', re.compile('^R version (.*) \(.*\) --')),
+    'reapr': ('reapr', re.compile('^REAPR version: (.*)$')),
     'smalt': ('smalt version', re.compile('^Version: (.*)$')),
     'samtools': ('samtools', re.compile('^Version: (.*)$')),
 }
+
+
+assembly_progs = [
+    'kmc',
+    'kmc_dump',
+    'nucmer',
+    'smalt',
+    'samtools',
+]
+
+
+qc_progs = [
+    'kraken',
+    'kraken-build',
+    'nucmer',
+    'reapr',
+    'R',
+    'smalt',
+    'samtools',
+]
 
 
 def get_version(prog):
@@ -31,8 +55,8 @@ def get_version(prog):
     return 'UNKNOWN ...\n    I tried running this to get the version: "' + cmd + '"\n    and the output didn\'t match this regular expression: "' + regex.pattern + '"'
 
 
-def print_all_versions():
-    for prog in sorted(prog_to_version_cmd):
+def print_all_versions(progs):
+    for prog in sorted(progs):
         version = get_version(prog)
         print('Using', prog, 'version', version)
 
