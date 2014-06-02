@@ -5,6 +5,7 @@ import os
 import sys
 import inspect
 import fastaq
+from iva import common
 
 class Error (Exception): pass
 
@@ -93,7 +94,7 @@ def run_gage(reference, scaffolds, outdir, nucmer_minid=80):
         str(nucmer_minid),
         '>', gage_out
     ])
-    subprocess.check_output(cmd, stderr=subprocess.DEVNULL, shell=True)
+    common.syscall(cmd)
     stats = dummy_gage_stats()
     wanted_stats = set(gage_stats)
     f = fastaq.utils.open_file_read(gage_out)
@@ -143,10 +144,7 @@ def run_ratt(embl_dir, assembly, outdir, config_file=None, transfer='Species'):
     fastaq.utils.close(f)
     cmd = 'bash ' + script + ' > ' + script_out
     # sometimes ratt returns nonzero code, but is OK, so ignore it
-    try:
-        subprocess.check_output(cmd, shell=True, stderr=subprocess.DEVNULL)
-    except:
-        pass
+    common.syscall(cmd, allow_fail=True)
 
     stats = {}
 
@@ -198,21 +196,19 @@ def run_reapr(assembly, reads_fwd, reads_rev, bam, outdir):
 
 
     cmd_facheck = 'reapr facheck ' + assembly
-    try:
-        subprocess.check_output(cmd_facheck, shell=True, stderr=subprocess.DEVNULL)
-    except:
-        subprocess.check_output(cmd_facheck + ' assembly', shell=True, stderr=subprocess.DEVNULL)
+    if not common.syscall(cmd_facheck, allow_fail=True):
+        common.syscall(cmd_facheck + ' assembly')
         assembly = 'assembly.fa'
         cmd_rename = 'reapr seqrename assembly.info ' + bam + ' renamed.bam'
-        subprocess.check_output(cmd_rename, shell=True, stderr=subprocess.DEVNULL)
+        common.syscall(cmd_rename)
         bam = 'renamed.bam'
 
     cmd_perfectmap = ' '.join(['reapr perfectmap', assembly, reads_fwd, reads_rev, str(insert_size), 'perfect'])
     cmd_pipeline = ' '.join(['reapr pipeline', assembly, bam, 'Out', 'perfect'])
 
     try:
-        subprocess.check_output(cmd_perfectmap, stderr=subprocess.DEVNULL, shell=True)
-        subprocess.check_output(cmd_pipeline, stderr=subprocess.DEVNULL, shell=True)
+        common.syscall(cmd_perfectmap)
+        common.syscall(cmd_pipeline)
     except:
         os.chdir(cwd)
         return dummy_reapr_stats()

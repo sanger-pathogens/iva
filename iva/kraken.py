@@ -1,6 +1,5 @@
 import inspect
 import sys
-import subprocess
 import os
 import shutil
 import iva
@@ -28,8 +27,8 @@ def build_kraken_virus_db(outdir, threads=1, minimizer_len=13, max_db_size=4):
             print('Skipping ', cmd, flush=True)
         else:
             print('Running:', cmd, flush=True)
-            subprocess.check_output(cmd, shell=True)
-            subprocess.check_output('touch ' + done_file, shell=True)
+            iva.common.syscall(cmd)
+            iva.common.syscall('touch ' + done_file)
 
 
 def get_genbank_virus_files(outdir):
@@ -41,8 +40,8 @@ def get_genbank_virus_files(outdir):
     cwd = os.getcwd()
     os.chdir(outdir)
     cmd = 'wget -q ftp://ftp.ncbi.nlm.nih.gov/genomes/Viruses/all.gbk.tar.gz'
-    subprocess.check_output(cmd, shell=True)
-    subprocess.check_output('tar -xf all.gbk.tar.gz', shell=True)
+    iva.common.syscall('wget -q ftp://ftp.ncbi.nlm.nih.gov/genomes/Viruses/all.gbk.tar.gz')
+    iva.common.syscall('tar -xf all.gbk.tar.gz')
     os.chdir(cwd)
 
 
@@ -59,9 +58,8 @@ def make_embl_files(indir):
         for fname in gbk_files:
             # some genbank files have a 'CONTIG' line, which breaks bioperl's
             # conversion genbank --> embl and makes genbank2embl.pl hang
-            subprocess.check_output('grep -v CONTIG ' + fname + ' > tmp.gbk; mv tmp.gbk ' + fname, shell=True)
-            cmd = genbank2embl + ' ' + fname + ' ' + fname + '.embl'
-            subprocess.check_output(cmd, shell=True, stderr=subprocess.DEVNULL)
+            iva.common.syscall('grep -v CONTIG ' + fname + ' > tmp.gbk; mv tmp.gbk ' + fname)
+            iva.common.syscall(genbank2embl + ' ' + fname + ' ' + fname + '.embl')
             os.unlink(fname)
             print(fname, end=' ', flush=True)
 
@@ -110,9 +108,9 @@ def setup_ref_db(outdir, threads=1, minimizer_len=13, max_db_size=3):
         get_genbank_virus_files(embl_dir)
         print('...finished. Making EMBL and fasta files', flush=True)
         make_embl_files(embl_dir)
-        subprocess.check_output('touch ' + embl_done_file, shell=True)
+        iva.common.syscall('touch ' + embl_done_file)
 
-    subprocess.check_output('touch ' + final_done_file, shell=True)
+    iva.common.syscall('touch ' + final_done_file)
     os.chdir(cwd)
 
 
@@ -132,7 +130,7 @@ def run_kraken(database, reads, outprefix, preload=True, threads=1, mate_reads=N
     else:
         cmd += ' ' + reads
 
-    subprocess.check_output(cmd, shell=True, stderr=subprocess.DEVNULL)
+    iva.common.syscall(cmd)
 
     cmd = ' '.join([
         'kraken-report',
@@ -140,7 +138,7 @@ def run_kraken(database, reads, outprefix, preload=True, threads=1, mate_reads=N
         kraken_out,
         '>', kraken_report
     ])
-    subprocess.check_output(cmd, shell=True, stderr=subprocess.DEVNULL)
+    iva.common.syscall(cmd)
     os.unlink(kraken_out)
 
 

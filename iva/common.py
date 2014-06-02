@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+import subprocess
 version = '0.3.0'
 
 class abspathAction(argparse.Action):
@@ -12,3 +13,18 @@ class abspathAction(argparse.Action):
 
         setattr(namespace, self.dest, os.path.abspath(value))
 
+
+def syscall(cmd, allow_fail=False):
+    try:
+        subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as error:
+        if allow_fail:
+            return False
+        else:
+            print('The following command failed with exit code', error.returncode, file=sys.stderr)
+            print(cmd, file=sys.stderr)
+            print('\nThe output was:\n', file=sys.stderr)
+            print(error.output.decode())
+            sys.exit(1)
+
+    return True

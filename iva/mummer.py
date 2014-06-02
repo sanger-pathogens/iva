@@ -2,8 +2,7 @@ import os
 import tempfile
 import shutil
 import fastaq
-import subprocess
-from iva import edge
+from iva import edge, common
 
 class Error (Exception): pass
 
@@ -25,7 +24,7 @@ def run_nucmer(query, ref, outfile, min_id=95, min_length=100):
     print('delta-filter -i', min_id, '-l', min_length, 'p.delta > p.delta.filter', file=f)
     print('show-coords -dTlro p.delta.filter >', outfile, file=f)
     fastaq.utils.close(f)
-    subprocess.check_output('bash ' + script, shell=True, stderr=subprocess.DEVNULL)
+    common.syscall('bash ' + script)
     os.chdir(original_dir)
     shutil.rmtree(tmpdir)
 

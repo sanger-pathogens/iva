@@ -2,6 +2,7 @@ import os
 import tempfile
 import shutil
 import fastaq
+from iva import common
 
 class Error (Exception): pass
 
@@ -49,7 +50,7 @@ def _median(d):
             return key
 
 
-def _run_kmc_with_script(script, reads, outfile, kmer, min_count, max_count, m_option, verbose):
+def _run_kmc_with_script(script, reads, outfile, kmer, min_count, max_count, m_option, verbose, allow_fail):
     f = fastaq.utils.open_file_write(script)
     print('set -e', file=f)
     kmc_command = ''.join([
@@ -74,12 +75,7 @@ def _run_kmc_with_script(script, reads, outfile, kmer, min_count, max_count, m_o
     print('kmc_dump', 'kmc_out', 'kmc_out.dump', file=f)
     print('sort -k2nr', 'kmc_out.dump >', outfile, file=f)
     fastaq.utils.close(f)
-    try:
-        fastaq.utils.syscall('bash ' + script)
-    except:
-        return False
-
-    return True
+    return common.syscall('bash ' + script, allow_fail=allow_fail)
 
 
 def _run_kmc(reads, outprefix, kmer, min_count, max_count, verbose=0):
@@ -94,10 +90,10 @@ def _run_kmc(reads, outprefix, kmer, min_count, max_count, verbose=0):
     # The range is 4-32 (GB).
     # Try 4 and 32 (the default), then give up. This seems to make a difference, regardless of
     # RAM available on the machine.
-    ran_ok = _run_kmc_with_script('run_kmc.sh', reads, kmer_counts_file, kmer, min_count, max_count, 32, verbose)
+    ran_ok = _run_kmc_with_script('run_kmc.sh', reads, kmer_counts_file, kmer, min_count, max_count, 32, verbose, True)
     if not ran_ok:
         print('First try of running kmc failed. Trying again with -m4 instead of -m32...')
-        ran_ok = _run_kmc_with_script('run_kmc.sh', reads, kmer_counts_file, kmer, min_count, max_count, 4, verbose)
+        ran_ok = _run_kmc_with_script('run_kmc.sh', reads, kmer_counts_file, kmer, min_count, max_count, 4, verbose, False)
 
     os.chdir(original_dir)
     shutil.rmtree(tmpdir)
