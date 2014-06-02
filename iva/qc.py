@@ -1,12 +1,11 @@
 import os
 import inspect
-import subprocess
 import tempfile
 import copy
 import fastaq
 import shutil
 import multiprocessing
-from iva import mapping, mummer, qc_external, kraken
+from iva import mapping, mummer, qc_external, kraken, common
 
 class Error (Exception): pass
 
@@ -70,7 +69,7 @@ class Qc:
             raise Error('IVA QC needs reads_fr or both reads_fwd and reads_rev, if assembly_bam or ref_bam not supplied')
 
         def unzip_file(infile, outfile):
-            subprocess.check_output('gunzip -c ' + infile + ' > ' + outfile, shell=True)
+            common.syscall('gunzip -c ' + infile + ' > ' + outfile)
 
         processes = []
 
@@ -157,7 +156,7 @@ class Qc:
         self.assembly_fasta = fasta_filename
         self.assembly_fasta_fai = self.assembly_fasta + '.fai'
         if not os.path.exists(self.assembly_fasta_fai):
-            subprocess.check_output('samtools faidx ' + self.assembly_fasta, shell=True)
+            common.syscall('samtools faidx ' + self.assembly_fasta)
         self.assembly_lengths = {}
         fastaq.tasks.lengths_from_fai(self.assembly_fasta_fai, self.assembly_lengths)
 
@@ -175,17 +174,17 @@ class Qc:
             gff = os.path.join(tmpdir, embl_file + '.gff')
             embl_full = os.path.join(self.embl_dir, embl_file)
             fastaq.tasks.to_fasta(embl_full, fa)
-            subprocess.check_output(' '.join([embl2gff, embl_full, '>', gff]), shell=True)
+            common.syscall(' '.join([embl2gff, embl_full, '>', gff]))
 
-        subprocess.check_output('cat ' + tmpdir + '/*.gff > ' + self.ref_gff, shell=True)
-        subprocess.check_output('cat ' + tmpdir + '/*.fa > ' + self.ref_fasta, shell=True)
+        common.syscall('cat ' + tmpdir + '/*.gff > ' + self.ref_gff)
+        common.syscall('cat ' + tmpdir + '/*.fa > ' + self.ref_fasta)
         shutil.rmtree(tmpdir)
         self._set_ref_fa_data()
 
 
     def _set_ref_fa_data(self):
         self.ref_fasta_fai = self.ref_fasta + '.fai'
-        subprocess.check_output('samtools faidx ' + self.ref_fasta, shell=True)
+        common.syscall('samtools faidx ' + self.ref_fasta)
         self.ref_ids = self._ids_in_order_from_fai(self.ref_fasta_fai)
         self.ref_lengths = {}
         fastaq.tasks.lengths_from_fai(self.ref_fasta_fai, self.ref_lengths)
@@ -704,7 +703,7 @@ class Qc:
 
         print('dev.off()', file=f)
         fastaq.utils.close(f)
-        subprocess.check_output('R CMD BATCH ' + r_script, shell=True)
+        common.syscall('R CMD BATCH ' + r_script)
 
 
     def _clean(self):

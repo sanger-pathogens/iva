@@ -3,6 +3,7 @@ import subprocess
 import collections
 import fastaq
 import pysam
+from iva import common
 
 class Error (Exception): pass
 
@@ -67,8 +68,8 @@ def map_reads(reads_fwd, reads_rev, ref_fa, out_prefix, index_k=15, index_s=3, t
         intermediate_bam = final_bam
 
     map_cmd += ' -bS -T ' + ref_fa + '  - > ' + intermediate_bam
-    subprocess.check_output(index_cmd, shell=True, stderr=subprocess.DEVNULL)
-    subprocess.check_output(map_cmd, shell=True, stderr=subprocess.DEVNULL)
+    common.syscall(index_cmd)
+    common.syscall(map_cmd)
     if verbose >= 2:
         print('        map reads. Index:  ', index_cmd)
         print('        map reads. Mapping:', map_cmd)
@@ -80,10 +81,10 @@ def map_reads(reads_fwd, reads_rev, ref_fa, out_prefix, index_k=15, index_s=3, t
         index_cmd = 'samtools index ' + final_bam
         if verbose >= 2:
             print('        map reads. sort:  ', sort_cmd)
-        subprocess.check_output(sort_cmd, shell=True, stderr=subprocess.DEVNULL)
+        common.syscall(sort_cmd)
         if verbose >= 2:
             print('        map reads. index:  ', index_cmd)
-        subprocess.check_output(index_cmd, shell=True, stderr=subprocess.DEVNULL)
+        common.syscall(index_cmd)
     for fname in clean_files:
         os.unlink(fname)
 

@@ -1,5 +1,5 @@
 import os
-import subprocess
+from iva import common
 
 def run_trimmomatic(reads1, reads2, outprefix, trimmo_jar, adapters, minlen=50, verbose=0, threads=1):
     cmd = ' '.join([
@@ -19,6 +19,6 @@ def run_trimmomatic(reads1, reads2, outprefix, trimmo_jar, adapters, minlen=50, 
 
     if verbose:
         print('Run trimmomatic:', cmd)
-    subprocess.check_output(cmd, shell=True, stderr=subprocess.DEVNULL)
+    common.syscall(cmd)
     os.unlink(outprefix + '.unpaired_1.fq')
     os.unlink(outprefix + '.unpaired_2.fq')
