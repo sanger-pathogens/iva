@@ -7,15 +7,16 @@ import iva
 
 parser = argparse.ArgumentParser(
     description = 'IVA QC. Version: ' + iva.common.version,
-    usage = '%(prog)s [options] <assembly.fasta> <prefix of output files>',
+    usage = '%(prog)s [options] {(--embl_dir | --ref_db) directory} <assembly.fasta> <prefix of output files>',
     epilog = 'You must supply reads in one of two ways: 1) both --reads_fwd and --reads_rev; or 2) --fr. Also, you must either supply a reference with --embl_dir, or choose one automatically from a database with --ref_db.',
 )
 
 parser.add_argument('assembly_fasta', action=iva.common.abspathAction, help='Name of assembly fasta file to be compared to reference', metavar='assembly.fasta')
 parser.add_argument('output_prefix', help='Prefix to use for name of all output files', metavar='prefix of output files')
 
-parser.add_argument('--embl_dir', help='Directory of reference EMBL files. If not used, must use --ref_db', metavar='Directory')
-parser.add_argument('--ref_db', help='Directory of database made by iva_qc_make_db. If not used, must use --embl_dir', metavar='Directory')
+ref_group = parser.add_argument_group('Reference options (REQUIRED)')
+ref_group.add_argument('--embl_dir', help='Directory of reference EMBL files. If not used, must use --ref_db', metavar='Directory')
+ref_group.add_argument('--ref_db', help='Directory of database made by iva_qc_make_db. If not used, must use --embl_dir', metavar='Directory')
 
 
 reads_group = parser.add_argument_group('Reads options')
@@ -28,7 +29,7 @@ mummer_group = parser.add_argument_group('MUMmer options')
 mummer_group.add_argument('--cds_min_hit_length', type=int, help='Minimum hit length when running nucmer of CDS sequences against contigs [%(default)s]', metavar='INT', default=30)
 mummer_group.add_argument('--cds_min_hit_id', type=float, help='Minimum hit percent identity when running nucmer of CDS sequences against contigs [%(default)s]', metavar='FLOAT', default=80)
 mummer_group.add_argument('--ctg_min_hit_length', type=int, help='Minimum hit length when running nucmer of contigs against reference [%(default)s]', metavar='INT', default=100)
-mummer_group.add_argument('--ctg_min_hit_id', type=float, help='Minimum hit percent identity when running nucmer of contigs against reference [%(default)s]', metavar='FLOAT', default=95)
+mummer_group.add_argument('--ctg_min_hit_id', type=float, help='Minimum hit percent identity when running nucmer of contigs against reference [%(default)s]', metavar='FLOAT', default=80)
 
 
 mapping_group = parser.add_argument_group('SMALT mapping options')
@@ -38,7 +39,7 @@ mapping_group.add_argument('-y', '--smalt_id', type=float, help='Minimum identit
 
 
 external_group = parser.add_argument_group('External tools')
-external_group.add_argument('--gage', help='Path to directory of gage scripts, i.e. getCorrectnessStats.sh. If you use this option, gage results will also be reported', metavar='Directory')
+external_group.add_argument('--gage_minid', help='Minimum percent identity used when GAGE runs nucmer', metavar='INT in (0,100)', default=80)
 external_group.add_argument('--kraken_preload', action='store_true', help='Use the --preload option when running kraken')
 external_group.add_argument('--ratt_config', help='Specify your own RATT config file', metavar='filename')
 
@@ -75,10 +76,10 @@ qc = iva.qc.Qc(
     min_ref_cov=options.min_ref_cov,
     contig_layout_plot_title=options.ctg_layout_plot_title,
     threads=options.threads,
-    gage=options.gage,
+    gage_nucmer_minid=options.gage_minid,
     kraken_preload=options.kraken_preload,
     ratt_config=options.ratt_config,
-    reapr=True,
+    reapr=iva.external_progs.is_in_path('reapr'),
 )
 
 qc.run()
