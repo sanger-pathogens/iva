@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import sys
 import argparse
 import iva
 
@@ -13,6 +14,12 @@ parser.add_argument('--threads', type=int, help='Number of threads to use [%(def
 parser.add_argument('--minimizer_len', type=int, help='Number to pass to kraken-build minimizer_len option [%(default)s]', default=13, metavar='INT')
 parser.add_argument('--max_db_size', type=int, help='Number to pass to kraken-build max_db_size option [%(default)s]', default=3, metavar='INT')
 options = parser.parse_args()
+
+print(' '.join(sys.argv))
+print('IVA version', iva.common.version)
+print('Checking required external programs and trying to get their versions...')
+iva.external_progs.print_all_versions(iva.external_progs.qc_make_db_progs)
+print('...OK. Making database...', flush=True)
 
 iva.kraken.setup_ref_db(
     options.outdir,
