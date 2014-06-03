@@ -33,18 +33,34 @@ assembly_progs = [
 
 qc_progs = [
     'kraken',
-    'kraken-build',
     'nucmer',
-    'reapr',
     'R',
     'smalt',
     'samtools',
 ]
 
 
-def get_version(prog):
+qc_progs_optional = [
+    'kraken',
+    'kraken-build',
+    'reapr',
+]
+
+
+qc_make_db_progs = [
+    'kraken',
+    'kraken-build',
+]
+
+
+def get_version(prog, must_be_in_path=True):
     assert prog in prog_to_version_cmd
-    assert is_in_path(prog)
+    if not is_in_path(prog):
+        if must_be_in_path:
+            raise Error('Error getting version of', prog, '- not found in path.')
+        else:
+            return 'UNKNOWN - not in path'
+
     cmd, regex = prog_to_version_cmd[prog]
     cmd_output = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
     cmd_output = cmd_output[0].decode().split('\n')[:-1] + cmd_output[1].decode().split('\n')[:-1]
@@ -55,8 +71,8 @@ def get_version(prog):
     return 'UNKNOWN ...\n    I tried running this to get the version: "' + cmd + '"\n    and the output didn\'t match this regular expression: "' + regex.pattern + '"'
 
 
-def print_all_versions(progs):
+def print_all_versions(progs, must_be_in_path=True):
     for prog in sorted(progs):
-        version = get_version(prog)
+        version = get_version(prog, must_be_in_path=must_be_in_path)
         print('Using', prog, 'version', version)
 
