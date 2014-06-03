@@ -37,6 +37,9 @@ class Qc:
         if embl_dir is None and ref_db is None:
            raise Error('Must provide either embl_dir or ref_db to Qc object. Cannot continue')
 
+        self.embl_dir = embl_dir
+        self.ref_db = ref_db
+
         files_to_check = [assembly_fasta, reads_fr, reads_fwd, reads_rev]
         for filename in files_to_check:
             if filename is not None and not os.path.exists(filename):
@@ -97,13 +100,8 @@ class Qc:
             if self.threads > 1:
                 processes[0].join()
 
-        if embl_dir is None:
-            self.embl_dir = kraken.choose_reference(ref_db, self.reads_fwd, self.kraken_prefix, preload=self.kraken_preload, threads=self.threads, mate_reads=self.reads_rev)
-        else:
-            self.embl_dir = os.path.abspath(embl_dir)
-
         self.min_ref_cov = min_ref_cov
-        self._set_ref_seq_data()
+        #self._set_ref_seq_data()
         self._set_assembly_fasta_data(assembly_fasta)
         self.threads = threads
         self.contig_layout_plot_title = contig_layout_plot_title
@@ -162,6 +160,7 @@ class Qc:
 
 
     def _set_ref_seq_data(self):
+        assert self.embl_dir is not None
         self.ref_fasta = self.outprefix + '.reference.fa'
         self.ref_fasta_fai = self.ref_fasta + '.fai'
         self.ref_gff = self.outprefix + '.reference.gff'
@@ -464,11 +463,27 @@ class Qc:
         os.unlink(self.assembly_bam[:-4] + '.unsorted.bam')
 
 
-    def _calculate_ref_read_coverage(self):
-        if None not in [self.reads_fwd, self.reads_rev]:
-            mapping.map_reads(self.reads_fwd, self.reads_rev, self.ref_fasta, self.ref_bam[:-4], sort=True, threads=self.threads, index_k=self.smalt_k, index_s=self.smalt_s, minid=self.smalt_id, extra_smalt_map_ops='-x')
-            os.unlink(self.ref_bam[:-4] + '.unsorted.bam')
+    def _choose_reference_genome(self):
+        if self.embl_dir is None:
+            assert self.ref_db is not None
+            assert os.path.exists(self.assembly_bam)
+            tmp_reads = self.outprefix + '.tmp.subsample.reads.fastq'
+            mapping.subsample_bam(self.assembly_bam, tmp_reads, coverage=20)
+            self.embl_dir = kraken.choose_reference(self.ref_db, tmp_reads, self.kraken_prefix, preload=self.kraken_preload, threads=self.threads)
+            os.unlink(tmp_reads)
+        else:
+            self.embl_dir = os.path.abspath(self.embl_dir)
 
+
+    def _map_reads_to_reference(self):
+        assert os.path.exists(self.ref_fasta)
+        mapping.map_reads(self.reads_fwd, self.reads_rev, self.ref_fasta, self.ref_bam[:-4], sort=True, threads=self.threads, index_k=self.smalt_k, index_s=self.smalt_s, minid=self.smalt_id, extra_smalt_map_ops='-x')
+        os.unlink(self.ref_bam[:-4] + '.unsorted.bam')
+        
+
+    def _calculate_ref_read_coverage(self):
+        if not os.path.exists(self.ref_bam):
+            self._map_reads_to_reference()
         for seq in self.ref_ids:
             assert seq not in self.ref_coverage_fwd
             self.ref_coverage_fwd[seq] = mapping.get_bam_region_coverage(self.ref_bam, seq, self.ref_lengths[seq])
@@ -559,8 +574,10 @@ class Qc:
 
 
     def _do_calculations(self):
-        if None not in [self.reads_fwd, self.reads_rev]:
-            self._map_reads_to_assembly()
+        self._map_reads_to_assembly()
+        self._choose_reference_genome()
+        self._set_ref_seq_data()
+        self._map_reads_to_reference()
         self._calculate_incorrect_assembly_bases()
         self._calculate_contig_placement()
         self._calculate_ref_read_coverage()
