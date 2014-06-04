@@ -1,6 +1,9 @@
 import shutil
 import subprocess
 import re
+import sys
+import fastaq
+from iva import common
 
 class Error (Exception): pass
 
@@ -71,8 +74,32 @@ def get_version(prog, must_be_in_path=True):
     return 'UNKNOWN ...\n    I tried running this to get the version: "' + cmd + '"\n    and the output didn\'t match this regular expression: "' + regex.pattern + '"'
 
 
-def print_all_versions(progs, must_be_in_path=True):
+def get_all_versions(progs, must_be_in_path=True):
+    info = []
     for prog in sorted(progs):
         version = get_version(prog, must_be_in_path=must_be_in_path)
-        print('Using', prog, 'version', version)
+        info.append(' '.join(['Using', prog, 'version', version]))
+    return info
+
+
+def write_prog_info(script, filename):
+    if script == 'iva':
+        required = assembly_progs
+        optional = None
+    elif script == 'iva_qc':
+        required = qc_progs
+        optional = qc_progs_optional
+    elif script == 'iva_qc_make_db':
+        required = qc_make_db_progs
+        optional = None
+    else:
+        raise Error('Script ' + script + ' not recognised')
+
+    f = fastaq.utils.open_file_write(filename)
+    print(' '.join(sys.argv), file=f)
+    print('IVA version', common.version, file=f)
+    print('\n'.join(get_all_versions(required)), file=f)
+    if optional is not None:
+        print('\n'.join(get_all_versions(optional, must_be_in_path=False)), file=f)
+    fastaq.utils.close(f)
 

@@ -57,14 +57,7 @@ if options.embl_dir == options.ref_db == None:
     print('You must use one of --embl_dir or --ref_db. Cannot continue.', file=sys.stderr)
     sys.exit(1)
 
-print(' '.join(sys.argv))
-print('IVA version', iva.common.version)
-print('Checking required external programs and trying to get their versions...')
-iva.external_progs.print_all_versions(iva.external_progs.qc_progs)
-print('...OK. Checking optional programs ...')
-iva.external_progs.print_all_versions(iva.external_progs.qc_progs_optional, must_be_in_path=False)
-print('...OK. Running QC ...')
-
+iva.external_progs.write_prog_info('iva_qc', options.output_prefix + '.info.txt')
 
 qc = iva.qc.Qc(
     options.assembly_fasta,
