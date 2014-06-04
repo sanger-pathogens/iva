@@ -226,6 +226,7 @@ elif not options.reference:
         sys.exit(1)
 
 assembly.read_pair_extend(reads_prefix, 'iteration')
+assembly.write_contigs_to_file('contigs.fasta', min_length=100, order_by_orfs=True, prefix='contig')
 
 if not options.keep_files:
     os.unlink(reads_1)
