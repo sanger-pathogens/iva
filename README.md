@@ -163,6 +163,8 @@ you can use it with the QC script by running:
 References
 ----------
 
+**Adapter sequences:** Quail, M. a et al. _Optimal enzymes for amplifying sequencing libraries_. Nat. Methods 9, 10-1 (2012).
+
 **GAGE:** Salzberg, S. L. et al. _GAGE: A critical evaluation of genome
 assemblies and assembly algorithms_. Genome Res. 22, 557-67 (2012).
 
