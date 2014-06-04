@@ -226,8 +226,6 @@ elif not options.reference:
         sys.exit(1)
 
 assembly.read_pair_extend(reads_prefix, 'iteration')
-assembly.write_contigs_to_file('contigs.fasta', min_length=100, order_by_orfs=True, prefix='contig')
-fastaq.tasks.fastaq_to_orfs_gff('contigs.fasta', 'contigs.orfs.gff', min_length=options.min_orf, tool_name='IVA')
 
 if not options.keep_files:
     os.unlink(reads_1)
