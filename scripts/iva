@@ -92,11 +92,8 @@ if os.path.exists(options.outdir):
     print('Error! Output directory', options.outdir, 'already exists. Cannot continue', file=sys.stderr)
     sys.exit(1)
 
-print(' '.join(sys.argv))
-print('IVA version', iva.common.version)
-print('Checking external programs and trying to get their versions...')
-iva.external_progs.print_all_versions(iva.external_progs.assembly_progs)
-print('...OK. Running assembly')
+
+iva.external_progs.get_all_versions(iva.external_progs.assembly_progs)
 
 try:
     os.mkdir(options.outdir)
@@ -105,6 +102,8 @@ except:
     sys.exit(1)
 
 os.chdir(options.outdir)
+
+iva.external_progs.write_prog_info('iva', 'info.txt')
 
 reads_prefix = 'reads'
 reads_1 = reads_prefix + '_1.fa'

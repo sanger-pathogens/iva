@@ -15,11 +15,7 @@ parser.add_argument('--minimizer_len', type=int, help='Number to pass to kraken-
 parser.add_argument('--max_db_size', type=int, help='Number to pass to kraken-build max_db_size option [%(default)s]', default=3, metavar='INT')
 options = parser.parse_args()
 
-print(' '.join(sys.argv))
-print('IVA version', iva.common.version)
-print('Checking required external programs and trying to get their versions...')
-iva.external_progs.print_all_versions(iva.external_progs.qc_make_db_progs)
-print('...OK. Making database...', flush=True)
+iva.external_progs.write_prog_info('iva_qc_make_db', '-')
 
 iva.kraken.setup_ref_db(
     options.outdir,
