@@ -12,10 +12,8 @@ class Error (Exception): pass
 
 
 def download_extra_refs(outdir, extra_ref_file):
-    if extra_ref_file is None:
-        return
+    done_file = os.path.join(outdir, 'downloaded')
 
-    done_file = os.path.join(outdir, 'done')
     if os.path.exists(done_file):
         print('Extra references already downloaded. Skipping.')
         return
@@ -27,6 +25,10 @@ def download_extra_refs(outdir, extra_ref_file):
         os.mkdir(outdir)
     except:
         raise Error('Error mkdir ' + outdir)
+
+    if extra_ref_file is None:
+        iva.common.syscall('touch ' + done_file)
+        return 
 
     f_ids = fastaq.utils.open_file_read(extra_ref_file)
     for line in f_ids:
@@ -56,10 +58,24 @@ def download_extra_refs(outdir, extra_ref_file):
 def build_kraken_virus_db(outdir, threads=1, minimizer_len=13, max_db_size=4, extra_ref_file=None):
     extra_ref_dir = os.path.join(outdir, 'Extra_ref')
     download_extra_refs(extra_ref_dir, extra_ref_file)
+    add_extra_files_script = os.path.join(outdir, 'add-to-library.sh')
+
+    f = fastaq.utils.open_file_write(add_extra_files_script)
+    print('set -e', file=f)
+    if extra_ref_file is None:
+        print('echo "No extra reference files to download. Skipping"', file=f)
+    else:
+        print('for f in `find ' + extra_ref_dir + "'*.fasta'`;",
+              'do',
+              '    kraken-build --add-to-library $f --db ' + outdir,
+              '    rm $f',
+              'done', sep='\n', file=f)
+    fastaq.utils.close(f)
     
     tasks = [
         ('kraken-build --download-taxonomy --db ' + outdir, 'progress.kraken-build.taxonomy.done'),
         ('kraken-build --download-library viruses --db ' + outdir, 'progress.kraken-build.library.done'),
+        ('bash ' + add_extra_files_script, 'progress.add-extra-to-library.done'),
         (' '.join([
             'kraken-build --build',
             '--db', outdir,
@@ -104,7 +120,6 @@ def download_from_genbank(outfile, filetype, gi):
     f = fastaq.utils.open_file_write(outfile)
     print(file_contents, file=f)
     fastaq.utils.close(f)
-
 
 
 def make_embl_files(indir):
@@ -154,6 +169,7 @@ def setup_ref_db(outdir, threads=1, minimizer_len=13, max_db_size=3, extra_ref_f
 
     kraken_dir = 'Kraken_db'
     embl_dir = 'Library'
+    extra_ref_dir = 'Extra_ref'
 
     if os.path.exists('progress.kraken-build.clean.done'):
         print('Kraken database already made. Skipping.')
@@ -170,6 +186,10 @@ def setup_ref_db(outdir, threads=1, minimizer_len=13, max_db_size=3, extra_ref_f
         get_genbank_virus_files(embl_dir)
         print('...finished. Making EMBL and fasta files', flush=True)
         make_embl_files(embl_dir)
+        make_embl_files(extra_ref_dir)
+        iva.common.syscall('mv ' + extra_ref_dir + '/* ' + embl_dir)
+        os.unlink(os.path.join(embl_dir, 'done'))
+        shutil.rmtree(extra_ref_dir)
         iva.common.syscall('touch ' + embl_done_file)
 
     iva.common.syscall('touch ' + final_done_file)
