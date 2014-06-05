@@ -1,7 +1,9 @@
 import inspect
 import sys
 import os
+import tempfile
 import shutil
+import re
 import urllib.request
 import iva
 import fastaq
@@ -9,7 +11,52 @@ import fastaq
 class Error (Exception): pass
 
 
-def build_kraken_virus_db(outdir, threads=1, minimizer_len=13, max_db_size=4):
+def download_extra_refs(outdir, extra_ref_file):
+    if extra_ref_file is None:
+        return
+
+    done_file = os.path.join(outdir, 'done')
+    if os.path.exists(done_file):
+        print('Extra references already downloaded. Skipping.')
+        return
+
+    if os.path.exists(outdir):
+        shutil.rmtree(outdir)
+
+    try:
+        os.mkdir(outdir)
+    except:
+        raise Error('Error mkdir ' + outdir)
+
+    f_ids = fastaq.utils.open_file_read(extra_ref_file)
+    for line in f_ids:
+        tmpdir = tempfile.mkdtemp(prefix='tmp.get_files.', dir=outdir)
+        gis = line.rstrip().split()
+
+        for gi in gis:
+            download_from_genbank(os.path.join(tmpdir, gi + '.fasta'), 'fasta', gi)
+            download_from_genbank(os.path.join(tmpdir, gi + '.gb'), 'gb', gi)
+     
+        f = fastaq.utils.open_file_read(os.path.join(tmpdir, gis[0] + '.gb'))
+        oganism = None
+        for line in f:
+            if line.startswith('  ORGANISM'):
+                organism = line.split(maxsplit=1)[1].rstrip()
+                break
+        if organism is None:
+            raise Error('Error getting ORGANISM line from file ', os.path.join(tmpdir, gis[0] + '.gb'))
+        fastaq.utils.close(f)
+        dirname = re.sub('\W', '_', organism)
+        os.rename(tmpdir, os.path.join(outdir, dirname))
+        
+    fastaq.utils.close(f_ids)
+    iva.common.syscall('touch ' + done_file)
+
+
+def build_kraken_virus_db(outdir, threads=1, minimizer_len=13, max_db_size=4, extra_ref_file=None):
+    extra_ref_dir = os.path.join(outdir, 'Extra_ref')
+    download_extra_refs(extra_ref_dir, extra_ref_file)
+    
     tasks = [
         ('kraken-build --download-taxonomy --db ' + outdir, 'progress.kraken-build.taxonomy.done'),
         ('kraken-build --download-library viruses --db ' + outdir, 'progress.kraken-build.library.done'),
@@ -59,6 +106,7 @@ def download_from_genbank(outfile, filetype, gi):
     fastaq.utils.close(f)
 
 
+
 def make_embl_files(indir):
     original_dir = os.getcwd()
     this_module_dir =os.path.dirname(inspect.getfile(inspect.currentframe()))
@@ -83,7 +131,7 @@ def make_embl_files(indir):
     os.chdir(original_dir)
 
 
-def setup_ref_db(outdir, threads=1, minimizer_len=13, max_db_size=3):
+def setup_ref_db(outdir, threads=1, minimizer_len=13, max_db_size=3, extra_ref_file=None):
     final_done_file = 'progress.setup.done'
     embl_done_file = 'progess.embl.done'
     outdir = os.path.abspath(outdir)
@@ -110,7 +158,7 @@ def setup_ref_db(outdir, threads=1, minimizer_len=13, max_db_size=3):
     if os.path.exists('progress.kraken-build.clean.done'):
         print('Kraken database already made. Skipping.')
     else:
-        build_kraken_virus_db(kraken_dir, threads=threads, minimizer_len=minimizer_len, max_db_size=max_db_size)
+        build_kraken_virus_db(kraken_dir, threads=threads, minimizer_len=minimizer_len, max_db_size=max_db_size, extra_ref_file=extra_ref_file)
 
 
     if os.path.exists(embl_done_file):
