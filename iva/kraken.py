@@ -2,6 +2,7 @@ import inspect
 import sys
 import os
 import shutil
+import urllib.request
 import iva
 import fastaq
 
@@ -43,6 +44,19 @@ def get_genbank_virus_files(outdir):
     iva.common.syscall('wget -q ftp://ftp.ncbi.nlm.nih.gov/genomes/Viruses/all.gbk.tar.gz')
     iva.common.syscall('tar -xf all.gbk.tar.gz')
     os.chdir(cwd)
+
+
+def download_from_genbank(outfile, filetype, gi):
+    assert filetype in ['gb', 'fasta']
+    url = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&rettype=' + filetype + '&retmode=text&id=' + gi
+    try:
+        file_contents = urllib.request.urlopen(url).read().decode().rstrip()
+    except:
+        raise Error('Error downloading gi ' + gi + ' using:\n' + url)
+
+    f = fastaq.utils.open_file_write(outfile)
+    print(file_contents, file=f)
+    fastaq.utils.close(f)
 
 
 def make_embl_files(indir):
