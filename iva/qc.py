@@ -469,7 +469,8 @@ class Qc:
             assert os.path.exists(self.assembly_bam)
             tmp_reads = self.outprefix + '.tmp.subsample.reads.fastq'
             mapping.subsample_bam(self.assembly_bam, tmp_reads, coverage=20)
-            self.embl_dir = kraken.choose_reference(self.ref_db, tmp_reads, self.kraken_prefix, preload=self.kraken_preload, threads=self.threads)
+            db = kraken.Database(self.ref_db, threads=self.threads, preload=self.kraken_preload)
+            self.embl_dir = db.choose_reference(tmp_reads, self.kraken_prefix)
             os.unlink(tmp_reads)
         else:
             self.embl_dir = os.path.abspath(self.embl_dir)

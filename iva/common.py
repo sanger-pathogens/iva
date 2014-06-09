@@ -14,7 +14,9 @@ class abspathAction(argparse.Action):
         setattr(namespace, self.dest, os.path.abspath(value))
 
 
-def syscall(cmd, allow_fail=False):
+def syscall(cmd, allow_fail=False, verbose=False):
+    if verbose:
+        print('syscall:', cmd, flush=True)
     try:
         subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as error:

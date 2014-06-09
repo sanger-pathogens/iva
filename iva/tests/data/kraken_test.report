@@ -7,6 +7,7 @@
  38.55	429013	0	G	11646	          Lentivirus
  38.55	429013	4902	-	11652	            Primate lentivirus group
  38.08	423791	423791	S	11676	              Human immunodeficiency virus 1
+ 38.08	423792	423792	S	11676	              Not a real species and should be ignored
   0.03	320	0	S	11723	              Simian immunodeficiency virus
   0.03	320	0	-	12830	                Simian immunodeficiency virus - mnd
   0.03	320	320	-	159122	                  Simian immunodeficiency virus SIV-mnd 2
