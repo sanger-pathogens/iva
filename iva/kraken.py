@@ -3,6 +3,7 @@ import sys
 import os
 import tempfile
 import shutil
+import time
 import re
 import urllib.request
 import iva
@@ -37,6 +38,7 @@ class Database:
         self.kraken_gi_taxid_nucl_dmp = os.path.join(self.kraken_taxon_dir, 'gi_taxid_nucl.dmp')
         self.embl_root = os.path.join(self.rootdir, 'EMBL')
         self.extra_refs_dir = os.path.join(self.rootdir, 'Extra_refs')
+        self.added_to_kraken = set()
 
 
         self.tasks = [
@@ -88,13 +90,27 @@ class Database:
         fastaq.utils.close(f)
 
         
-    def _download_from_genbank(self, outfile, filetype, gi):
+    def _download_from_genbank(self, outfile, filetype, gi, max_tries=5, delay=3):
         assert filetype in ['gb', 'fasta']
-        url = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&rettype=' + filetype + '&retmode=text&id=' + gi
-        try:
-            file_contents = urllib.request.urlopen(url).read().decode().rstrip()
-        except:
-            raise Error('Error downloading gi ' + gi + ' using:\n' + url)
+        file_ok = False
+
+        for i in range(max_tries):
+            try:
+                url = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&rettype=' + filetype + '&retmode=text&id=' + gi
+                file_contents = urllib.request.urlopen(url).read().decode().rstrip()
+            except:
+                time.sleep(delay)
+                continue
+
+            if (filetype == 'fasta' and file_contents.startswith('>')) \
+               or (filetype == 'gb' and file_contents.startswith('LOCUS')):
+                file_ok = True
+                break
+            else:
+                time.sleep(delay)
+
+        if not file_ok:
+            raise Error('Error downloading gi ' + gi + ' using:\n' + url + '\nI got this:\n' + file_contents)
 
         f = fastaq.utils.open_file_write(outfile)
         print(file_contents, file=f)
@@ -154,24 +170,26 @@ class Database:
         # update names.dmp: append new_taxon with whatever name that kraken will report
         # update nodes.dmp: append new_taxon with original parent taxon
         # update gi_taxid_nucl.dmp: append new_gi, new_taxon
-        line = str(new_taxon) + '\t|\tadded.' + str(new_taxon) +  '\t|\t\t|\tscientific name\t|'
-        self._append_to_file(self.kraken_names_dmp, line)
-        line = '\t|\t'.join([
-            str(new_taxon),
-            parent_taxon,
-            'species',
-            'HI',
-            '9',
-            '1',
-            '1',
-            '1',
-            '0',
-            '1',
-            '1',
-            '0',
-            '',
-        ]) + '\t|'
-        self._append_to_file(self.kraken_nodes_dmp, line)
+        if new_taxon not in self.added_to_kraken:
+            line = str(new_taxon) + '\t|\tadded.' + str(new_taxon) +  '\t|\t\t|\tscientific name\t|'
+            self._append_to_file(self.kraken_names_dmp, line)
+            line = '\t|\t'.join([
+                str(new_taxon),
+                parent_taxon,
+                'species',
+                'HI',
+                '9',
+                '1',
+                '1',
+                '1',
+                '0',
+                '1',
+                '1',
+                '0',
+                '',
+            ]) + '\t|'
+            self._append_to_file(self.kraken_nodes_dmp, line)
+        self.added_to_kraken.add(new_taxon)
         self._append_to_file(self.kraken_gi_taxid_nucl_dmp, str(new_gi) + '\t' + str(new_taxon)) 
         iva.common.syscall('kraken-build --add-to-library ' + fa_file + ' --db ' + self.kraken_db, verbose=self.verbose)
 
