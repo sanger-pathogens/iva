@@ -481,7 +481,7 @@ class Qc:
             assert self.ref_db is not None
             assert os.path.exists(self.assembly_bam)
             tmp_reads = self.outprefix + '.tmp.subsample.reads.fastq'
-            mapping.subsample_bam(self.assembly_bam, tmp_reads, coverage=20)
+            mapping.subsample_bam(self.assembly_bam, tmp_reads, coverage=40)
             db = kraken.Database(self.ref_db, threads=self.threads, preload=self.kraken_preload)
             self.embl_dir = db.choose_reference(tmp_reads, self.kraken_prefix)
             os.unlink(tmp_reads)
