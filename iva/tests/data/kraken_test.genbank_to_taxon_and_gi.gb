@@ -1,0 +1,28 @@
+LOCUS       XY123456                12 bp    DNA     linear   VRL 01-APR-2014
+DEFINITION  Mock genome
+ACCESSION   XY123456
+VERSION     XY123456.1  GI:42
+KEYWORDS    .
+SOURCE      Spam
+  ORGANISM  Eggs
+            Monty; Python; Swallow; African;
+REFERENCE   1  (bases 1 to 12)
+  AUTHORS   Cheese,J
+  TITLE     Genome X reveals insights into Y
+  JOURNAL   The journal for yet another draft genome
+   PUBMED   42
+FEATURES             Location/Qualifiers
+     source          1..12
+                     /organism="Eggs"
+                     /mol_type="genomic DNA"
+                     /db_xref="taxon:43"
+     CDS             1..12
+                     /gene="short"
+                     /codon_start=1
+                     /product="SPAM"
+                     /protein_id="44"
+                     /translation="SPAM"
+ORIGIN      
+        1 agcccggcga tg
+//
+

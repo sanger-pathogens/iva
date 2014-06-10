@@ -38,6 +38,9 @@ class Qc:
            raise Error('Must provide either embl_dir or ref_db to Qc object. Cannot continue')
 
         self.embl_dir = embl_dir
+        if self.embl_dir is not None:
+            self.embl_dir = os.path.abspath(self.embl_dir)
+
         self.ref_db = ref_db
 
         files_to_check = [assembly_fasta, reads_fr, reads_fwd, reads_rev]
@@ -53,6 +56,7 @@ class Qc:
         self.threads = threads
         self.kraken_preload = kraken_preload
         self.kraken_prefix = self.outprefix + '.kraken'
+        self.ref_info_file = self.outprefix + '.ref_info'
         self.ratt_config = None if ratt_config is None else os.path.abspath(ratt_config)
         self.ratt_outdir = self.outprefix + '.ratt'
         self.reapr = reapr
@@ -463,16 +467,28 @@ class Qc:
         os.unlink(self.assembly_bam[:-4] + '.unsorted.bam')
 
 
+    def _write_ref_info(self, filename):
+        assert self.embl_dir is not None
+        files = os.listdir(self.embl_dir)
+        f = fastaq.utils.open_file_write(filename)
+        print('EMBL_directory', self.embl_dir, sep='\t', file=f)
+        print('Files', '\t'.join(files), sep='\t', file=f)
+        fastaq.utils.close(f)
+
+
     def _choose_reference_genome(self):
         if self.embl_dir is None:
             assert self.ref_db is not None
             assert os.path.exists(self.assembly_bam)
             tmp_reads = self.outprefix + '.tmp.subsample.reads.fastq'
-            mapping.subsample_bam(self.assembly_bam, tmp_reads, coverage=20)
-            self.embl_dir = kraken.choose_reference(self.ref_db, tmp_reads, self.kraken_prefix, preload=self.kraken_preload, threads=self.threads)
+            mapping.subsample_bam(self.assembly_bam, tmp_reads, coverage=40)
+            db = kraken.Database(self.ref_db, threads=self.threads, preload=self.kraken_preload)
+            self.embl_dir = db.choose_reference(tmp_reads, self.kraken_prefix)
             os.unlink(tmp_reads)
         else:
             self.embl_dir = os.path.abspath(self.embl_dir)
+
+        self._write_ref_info(self.ref_info_file)
 
 
     def _map_reads_to_reference(self):

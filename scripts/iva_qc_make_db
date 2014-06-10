@@ -10,16 +10,22 @@ parser = argparse.ArgumentParser(
 )
 
 parser.add_argument('outdir', help='Name of output directory', metavar='Directory_name')
+parser.add_argument('--add_to_ref', action=iva.common.abspathAction, help='Filename of Genbank IDs or GI numbers to be added to database. Format is: whitespace separated list of GI numbers on each line. One line defines one genome (e.g. flu is 8 segements, so put 8 GI numbers on one line for one flu reference)', metavar='Filename')
 parser.add_argument('--threads', type=int, help='Number of threads to use [%(default)s]', metavar='INT', default=1)
 parser.add_argument('--minimizer_len', type=int, help='Number to pass to kraken-build minimizer_len option [%(default)s]', default=13, metavar='INT')
 parser.add_argument('--max_db_size', type=int, help='Number to pass to kraken-build max_db_size option [%(default)s]', default=3, metavar='INT')
+parser.add_argument('--verbose', action='store_true', help='Be verbose')
 options = parser.parse_args()
 
 iva.external_progs.write_prog_info('iva_qc_make_db', '-')
 
-iva.kraken.setup_ref_db(
+db = iva.kraken.Database(
     options.outdir,
+    extra_refs_file=options.add_to_ref,
     threads=options.threads,
     minimizer_len=options.minimizer_len,
-    max_db_size=options.max_db_size
+    max_db_size=options.max_db_size,
+    verbose=options.verbose,
 )
+
+db.build()
