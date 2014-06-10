@@ -40,6 +40,7 @@ ratt_stats = [
      'gene_models_not_transferred',
 ]
 
+default_ratt_config = os.path.join(os.path.dirname(inspect.getfile(inspect.currentframe())), 'ratt', 'ratt.config')
 
 reapr_stats = [
     'bases',
@@ -117,13 +118,14 @@ def run_gage(reference, scaffolds, outdir, nucmer_minid=80):
     return stats
 
 
+
 def run_ratt(embl_dir, assembly, outdir, config_file=None, transfer='Species'):
     embl_dir = os.path.abspath(embl_dir)
     assembly = os.path.abspath(assembly)
     this_module_dir =os.path.dirname(inspect.getfile(inspect.currentframe()))
     ratt_dir = os.path.join(this_module_dir, 'ratt')
     if config_file is None:
-        ratt_config = os.path.join(ratt_dir, 'ratt.config')
+        ratt_config = default_ratt_config
     else:
         ratt_config = os.path.abspath(config_file)
 
