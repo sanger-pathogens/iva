@@ -7,19 +7,19 @@ import iva
 
 parser = argparse.ArgumentParser(
     description = 'IVA QC. Version: ' + iva.common.version,
-    usage = '%(prog)s [options] {(--embl_dir | --ref_db) directory} <assembly.fasta> <prefix of output files>',
+    usage = '%(prog)s [options] {(-f <reads_1.fq> -r <reads_2.fq>) | --fr reads.fq} {(--embl_dir | --ref_db) <directory>} <assembly.fasta> <prefix of output files>',
     epilog = 'You must supply reads in one of two ways: 1) both --reads_fwd and --reads_rev; or 2) --fr. Also, you must either supply a reference with --embl_dir, or choose one automatically from a database with --ref_db.',
 )
 
 parser.add_argument('assembly_fasta', action=iva.common.abspathAction, help='Name of assembly fasta file to be compared to reference', metavar='assembly.fasta')
 parser.add_argument('output_prefix', help='Prefix to use for name of all output files', metavar='prefix of output files')
 
-ref_group = parser.add_argument_group('Reference options (REQUIRED)')
+ref_group = parser.add_argument_group('Reference options (REQUIRED: either --embl_dir or --ref_db)')
 ref_group.add_argument('--embl_dir', help='Directory of reference EMBL files. If not used, must use --ref_db', metavar='Directory')
 ref_group.add_argument('--ref_db', help='Directory of database made by iva_qc_make_db. If not used, must use --embl_dir', metavar='Directory')
 
 
-reads_group = parser.add_argument_group('Reads options')
+reads_group = parser.add_argument_group('Reads options (REQUIRED: either --fr, or (-f and -r))')
 reads_group.add_argument('-f', '--reads_fwd', action=iva.common.abspathAction, help='Name of forwards reads fasta or fastq file. Must be used with --reads_rev', metavar='filename[.gz]')
 reads_group.add_argument('-r', '--reads_rev', action=iva.common.abspathAction, help='Name of reverse reads fasta or fastq file. Must be used with --reads_rev', metavar='filename[.gz]')
 reads_group.add_argument('--fr', action=iva.common.abspathAction, dest='reads_fr', help='Name of interleaved fasta/q file', metavar='filename[.gz]')
@@ -27,9 +27,9 @@ reads_group.add_argument('--fr', action=iva.common.abspathAction, dest='reads_fr
 
 mummer_group = parser.add_argument_group('MUMmer options')
 mummer_group.add_argument('--cds_min_hit_length', type=int, help='Minimum hit length when running nucmer of CDS sequences against contigs [%(default)s]', metavar='INT', default=30)
-mummer_group.add_argument('--cds_min_hit_id', type=float, help='Minimum hit percent identity when running nucmer of CDS sequences against contigs [%(default)s]', metavar='FLOAT', default=80)
+mummer_group.add_argument('--cds_min_hit_id', type=float, help='Minimum hit percent identity when running nucmer of CDS sequences against contigs [%(default)s]', metavar='FLOAT', default=75)
 mummer_group.add_argument('--ctg_min_hit_length', type=int, help='Minimum hit length when running nucmer of contigs against reference [%(default)s]', metavar='INT', default=100)
-mummer_group.add_argument('--ctg_min_hit_id', type=float, help='Minimum hit percent identity when running nucmer of contigs against reference [%(default)s]', metavar='FLOAT', default=80)
+mummer_group.add_argument('--ctg_min_hit_id', type=float, help='Minimum hit percent identity when running nucmer of contigs against reference [%(default)s]', metavar='FLOAT', default=75)
 
 
 mapping_group = parser.add_argument_group('SMALT mapping options')
@@ -39,7 +39,7 @@ mapping_group.add_argument('-y', '--smalt_id', type=float, help='Minimum identit
 
 
 external_group = parser.add_argument_group('External tools')
-external_group.add_argument('--gage_minid', help='Minimum percent identity used when GAGE runs nucmer', metavar='INT in (0,100)', default=80)
+external_group.add_argument('--gage_minid', help='Minimum percent identity used when GAGE runs nucmer', metavar='INT in (0,100)', default=75)
 external_group.add_argument('--kraken_preload', action='store_true', help='Use the --preload option when running kraken')
 external_group.add_argument('--ratt_config', help='Specify your own RATT config file', metavar='filename')
 

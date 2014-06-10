@@ -23,10 +23,10 @@ class Qc:
         contig_layout_plot_title="IVA QC contig layout and read depth",
         threads=1,
         nucmer_min_cds_hit_length=20,
-        nucmer_min_cds_hit_id=80,
+        nucmer_min_cds_hit_id=75,
         nucmer_min_ctg_hit_length=100,
-        nucmer_min_ctg_hit_id=80,
-        gage_nucmer_minid=80,
+        nucmer_min_ctg_hit_id=75,
+        gage_nucmer_minid=75,
         smalt_k=15,
         smalt_s=3,
         smalt_id=0.5,
@@ -73,7 +73,7 @@ class Qc:
             fastaq.tasks.deinterleave(reads_fr, self.reads_fwd, self.reads_rev)
 
         if not (None not in [self.reads_fwd, self.reads_rev] or reads_fr is not None):
-            raise Error('IVA QC needs reads_fr or both reads_fwd and reads_rev, if assembly_bam or ref_bam not supplied')
+            raise Error('IVA QC needs reads_fr or both reads_fwd and reads_rev')
 
         def unzip_file(infile, outfile):
             common.syscall('gunzip -c ' + infile + ' > ' + outfile)
@@ -105,7 +105,6 @@ class Qc:
                 processes[0].join()
 
         self.min_ref_cov = min_ref_cov
-        #self._set_ref_seq_data()
         self._set_assembly_fasta_data(assembly_fasta)
         self.threads = threads
         self.contig_layout_plot_title = contig_layout_plot_title
