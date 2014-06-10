@@ -6,7 +6,6 @@ import sys
 import iva
 
 parser = argparse.ArgumentParser(
-    description = 'IVA QC. Version: ' + iva.common.version,
     usage = '%(prog)s [options] {(-f <reads_1.fq> -r <reads_2.fq>) | --fr reads.fq} {(--embl_dir | --ref_db) <directory>} <assembly.fasta> <prefix of output files>',
     epilog = 'You must supply reads in one of two ways: 1) both --reads_fwd and --reads_rev; or 2) --fr. Also, you must either supply a reference with --embl_dir, or choose one automatically from a database with --ref_db.',
 )
@@ -48,6 +47,7 @@ other_group = parser.add_argument_group('Other options')
 other_group.add_argument('--ctg_layout_plot_title', help='Title to use in contig layout plot [%(default)s]', default='IVA QC contig layout and read depth', metavar='STRING')
 other_group.add_argument('--min_ref_cov', help='Minimum read coverage of the reference, on each strand, to count as OK coverage [%(default)s]', default=5, metavar='INT')
 other_group.add_argument('--threads', type=int, help='Number of threads to use [%(default)s]', default=1, metavar='INT')
+other_group.add_argument('--version', action='version', version=iva.common.version)
 
 
 options = parser.parse_args()
