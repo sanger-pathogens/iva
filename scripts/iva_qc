@@ -81,6 +81,7 @@ qc = iva.qc.Qc(
     kraken_preload=options.kraken_preload,
     ratt_config=options.ratt_config,
     reapr=iva.external_progs.is_in_path('reapr'),
+    blast_for_act=iva.external_progs.is_in_path('blastn') and iva.external_progs.is_in_path('makeblastdb')
 )
 
 qc.run()

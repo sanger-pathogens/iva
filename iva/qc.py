@@ -31,6 +31,7 @@ class Qc:
         smalt_s=3,
         smalt_id=0.5,
         reapr=False,
+        blast_for_act=False,
         kraken_preload=False,
     ):
 
@@ -61,6 +62,9 @@ class Qc:
         self.ratt_outdir = self.outprefix + '.ratt'
         self.reapr = reapr
         self.reapr_outdir = self.outprefix + '.reapr'
+        self.blast_for_act = blast_for_act
+        self.blast_out = self.outprefix + '.assembly_v_ref.blastn'
+        self.act_script = self.outprefix + '.assembly_v_ref.act.sh'
         self.gage_outdir = self.outprefix + '.gage'
         self.gage_nucmer_minid = gage_nucmer_minid
         self.files_to_clean = []
@@ -468,7 +472,7 @@ class Qc:
 
     def _write_ref_info(self, filename):
         assert self.embl_dir is not None
-        files = os.listdir(self.embl_dir)
+        files = sorted(os.listdir(self.embl_dir))
         f = fastaq.utils.open_file_write(filename)
         print('EMBL_directory', self.embl_dir, sep='\t', file=f)
         print('Files', '\t'.join(files), sep='\t', file=f)
@@ -489,6 +493,13 @@ class Qc:
 
         self._write_ref_info(self.ref_info_file)
 
+
+    def _make_act_files(self):
+        if not self.blast_for_act:
+            return
+
+        qc_external.run_blastn_and_write_act_script(self.assembly_fasta, self.ref_fasta, self.blast_out, self.act_script)
+            
 
     def _map_reads_to_reference(self):
         assert os.path.exists(self.ref_fasta)
@@ -592,6 +603,7 @@ class Qc:
         self._map_reads_to_assembly()
         self._choose_reference_genome()
         self._set_ref_seq_data()
+        self._make_act_files()
         self._map_reads_to_reference()
         self._calculate_incorrect_assembly_bases()
         self._calculate_contig_placement()
