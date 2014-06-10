@@ -387,7 +387,10 @@ class Database:
                 max_count = int(a[2])
 
         fastaq.utils.close(f)
-        return os.path.join(self.embl_root, most_common_dir)
+        if most_common_dir is None:
+            return None
+        else:
+            return os.path.join(self.embl_root, most_common_dir)
 
 
     def choose_reference(self, reads, outprefix):
