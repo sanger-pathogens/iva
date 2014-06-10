@@ -13,6 +13,8 @@ def is_in_path(prog):
 
 
 prog_to_version_cmd = {
+    'blastn': ('blastn -version', re.compile('^blastn: (.*)$')),
+    'makeblastdb': ('makeblastdb -version', re.compile('makeblastdb: (.*)$')),
     'kmc': ('kmc', re.compile('^K-Mer Counter \(KMC\) ver\. (.*) \(.*\)$')),
     'kmc_dump': ('kmc_dump', re.compile('^KMC dump ver. (.*) \(.*\)$')),
     'kraken': ('kraken --version', re.compile('^Kraken version (.*)$')),
@@ -44,6 +46,8 @@ qc_progs = [
 
 
 qc_progs_optional = [
+    'blastn',
+    'makeblastdb',
     'kraken',
     'kraken-build',
     'reapr',
