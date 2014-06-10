@@ -53,6 +53,7 @@ class Qc:
         self.threads = threads
         self.kraken_preload = kraken_preload
         self.kraken_prefix = self.outprefix + '.kraken'
+        self.ref_info_file = self.outprefix + '.ref_info'
         self.ratt_config = None if ratt_config is None else os.path.abspath(ratt_config)
         self.ratt_outdir = self.outprefix + '.ratt'
         self.reapr = reapr
@@ -463,6 +464,15 @@ class Qc:
         os.unlink(self.assembly_bam[:-4] + '.unsorted.bam')
 
 
+    def _write_ref_info(self, filename):
+        assert self.embl_dir is not None
+        files = os.listdir(self.embl_dir)
+        f = fastaq.utils.open_file_write(filename)
+        print('EMBL_directory', self.embl_dir, sep='\t', file=f)
+        print('Files', '\t'.join(files), sep='\t', file=f)
+        fastaq.utils.close(f)
+
+
     def _choose_reference_genome(self):
         if self.embl_dir is None:
             assert self.ref_db is not None
@@ -474,6 +484,8 @@ class Qc:
             os.unlink(tmp_reads)
         else:
             self.embl_dir = os.path.abspath(self.embl_dir)
+
+        self._write_ref_info(self.ref_info_file)
 
 
     def _map_reads_to_reference(self):
