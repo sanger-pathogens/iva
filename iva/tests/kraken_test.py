@@ -84,5 +84,6 @@ class TestKraken(unittest.TestCase):
     def test_get_most_common_species_dir(self):
         '''Test get_most_common_species'''
         report = os.path.join(data_dir, 'kraken_test.report')
-        self.assertEqual('Human_immunodeficiency_virus_1', self.db._get_most_common_species_dir(report))
+        expected = os.path.join(self.db.embl_root, 'Human_immunodeficiency_virus_1')
+        self.assertEqual(expected, self.db._get_most_common_species_dir(report))
 

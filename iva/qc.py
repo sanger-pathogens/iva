@@ -38,6 +38,9 @@ class Qc:
            raise Error('Must provide either embl_dir or ref_db to Qc object. Cannot continue')
 
         self.embl_dir = embl_dir
+        if self.embl_dir is not None:
+            self.embl_dir = os.path.abspath(self.embl_dir)
+
         self.ref_db = ref_db
 
         files_to_check = [assembly_fasta, reads_fr, reads_fwd, reads_rev]
