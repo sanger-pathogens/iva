@@ -39,7 +39,7 @@ mapping_group.add_argument('-y', '--smalt_id', type=float, help='Minimum identit
 
 
 external_group = parser.add_argument_group('External tools')
-external_group.add_argument('--gage_minid', help='Minimum percent identity used when GAGE runs nucmer [%(default)s]', metavar='INT in (0,100)', default=80)
+external_group.add_argument('--gage_minid', help='Minimum percent identity used when GAGE runs nucmer [%(default)s]', metavar='INT in [0,100]', default=75)
 external_group.add_argument('--kraken_preload', action='store_true', help='Use the --preload option when running kraken')
 external_group.add_argument('--ratt_config', help='Specify your own RATT config file [%(default)s]', metavar='filename', default=iva.qc_external.default_ratt_config)
 
