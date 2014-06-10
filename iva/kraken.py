@@ -318,7 +318,8 @@ class Database:
             for fname in gbk_files:
                 self._genbank2embl(fname, re.sub('\.gbk$', '', fname) + '.embl')
                 os.unlink(fname)
-                print(fname, end=' ', flush=True)
+                if self.verbose:
+                    print(fname, end=' ', flush=True)
 
             os.chdir(original_dir)
             if self.verbose:
