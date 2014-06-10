@@ -140,19 +140,38 @@ Increase the maximum insert size from 500bp (default) to 1000bp:
 #### QC examples
 
 The script `iva_qc` needs a reference genome that is used to compare
-with the assembly. You can supply your own, in the form of a directory
-of EMBL files:
+with the assembly. It also needs read pairs, given in the same way as when
+assembliing. If you supply your own EMBL files:
 
-    iva_qc --embl_dir /dir/of/embl/files/ assembly.fasta prefix_of_output_files
+    iva_qc --embl_dir /dir/of/embl/files/ -f reads_1.fq -r reads_2.fq assembly.fasta prefix_of_output_files
 
 Alternatively, the closest reference to the input assembly can be found
-automatically (using kraken). Build a database in a new directory called
+automatically (using Kraken). Build a database in a new directory called
 `Database_dir` with:
 
     iva_qc_make_db Database_dir
 
-This script will downlaod all required data. If it dies then on restarting it,
-it will continue where it last finished. Once you have made the database,
+This script will download all required data and uses Kraken's default, which
+is to get all viruses from RefSeq. If it dies then on restarting it,
+it will try to continue from the last successful stage.
+
+You can add your own references to the Kraken default database using Genbank
+IDs or GI numbers. These must be put into a file, with one line corresponding
+to one reference genome.
+Each line should have at least one ID, with IDs separated by whitespace.
+For example, suppose you want to add a flu genome whose 8 segments had
+IDs 1 2 3 4 5 6 7 8, and a different genome with just one Genbank record
+with ID 9. The file would look like this:
+
+    1 2 3 4 5 6 7 8
+    9
+
+Make the database by running:
+
+    iva_qc_make_db --add_to_ref ids_file Database_dir
+
+
+Once you have made the database,
 you can use it with the QC script by running:
 
     iva_qc --ref_db Database_dir assembly.fasta prefix_of_output_files
