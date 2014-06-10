@@ -71,7 +71,7 @@ def dummy_reapr_stats():
     return {x:'NA' for x in reapr_stats}
 
 
-def run_gage(reference, scaffolds, outdir, nucmer_minid=80):
+def run_gage(reference, scaffolds, outdir, nucmer_minid=75):
     this_module_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
     gage_dir = os.path.join(this_module_dir, 'gage')
     reference = os.path.abspath(reference)
