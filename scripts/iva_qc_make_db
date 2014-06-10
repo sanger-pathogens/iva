@@ -5,7 +5,6 @@ import argparse
 import iva
 
 parser = argparse.ArgumentParser(
-    description = 'IVA QC. Version: ' + iva.common.version,
     usage = '%(prog)s [options] <output directory>',
 )
 
@@ -15,6 +14,7 @@ parser.add_argument('--threads', type=int, help='Number of threads to use [%(def
 parser.add_argument('--minimizer_len', type=int, help='Number to pass to kraken-build minimizer_len option [%(default)s]', default=13, metavar='INT')
 parser.add_argument('--max_db_size', type=int, help='Number to pass to kraken-build max_db_size option [%(default)s]', default=3, metavar='INT')
 parser.add_argument('--verbose', action='store_true', help='Be verbose')
+parser.add_argument('--version', action='version', version=iva.common.version)
 options = parser.parse_args()
 
 iva.external_progs.write_prog_info('iva_qc_make_db', '-')

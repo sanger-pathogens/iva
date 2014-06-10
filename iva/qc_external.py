@@ -40,6 +40,7 @@ ratt_stats = [
      'gene_models_not_transferred',
 ]
 
+default_ratt_config = os.path.join(os.path.dirname(inspect.getfile(inspect.currentframe())), 'ratt', 'ratt.config')
 
 reapr_stats = [
     'bases',
@@ -70,7 +71,7 @@ def dummy_reapr_stats():
     return {x:'NA' for x in reapr_stats}
 
 
-def run_gage(reference, scaffolds, outdir, nucmer_minid=80):
+def run_gage(reference, scaffolds, outdir, nucmer_minid=75):
     this_module_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
     gage_dir = os.path.join(this_module_dir, 'gage')
     reference = os.path.abspath(reference)
@@ -123,7 +124,7 @@ def run_ratt(embl_dir, assembly, outdir, config_file=None, transfer='Species'):
     this_module_dir =os.path.dirname(inspect.getfile(inspect.currentframe()))
     ratt_dir = os.path.join(this_module_dir, 'ratt')
     if config_file is None:
-        ratt_config = os.path.join(ratt_dir, 'ratt.config')
+        ratt_config = default_ratt_config
     else:
         ratt_config = os.path.abspath(config_file)
 
@@ -231,3 +232,28 @@ def run_reapr(assembly, reads_fwd, reads_rev, bam, outdir):
     return stats
 
 
+def run_blastn_and_write_act_script(assembly, reference, blast_out, script_out):
+    tmpdir = tempfile.mkdtemp(prefix='tmp.blastn.', dir=os.getcwd())
+    assembly_union = os.path.join(tmpdir, 'assembly.union.fa')
+    reference_union = os.path.join(tmpdir, 'reference.union.fa')
+    fastaq.tasks.to_fasta_union(assembly, assembly_union, seqname='assembly_union')
+    fastaq.tasks.to_fasta_union(reference, reference_union, seqname='reference_union')
+    common.syscall('makeblastdb -dbtype nucl -in ' + reference_union)
+    cmd = ' '.join([
+        'blastn',
+        '-task blastn',
+        '-db', reference_union,
+        '-query', assembly_union,
+        '-out', blast_out,
+        '-outfmt 6',
+        '-evalue 0.01',
+        '-dust no',
+    ])
+    common.syscall(cmd)
+
+    f = fastaq.utils.open_file_write(script_out)
+    print('#!/usr/bin/env bash', file=f)
+    print('act', reference, blast_out, assembly, file=f)
+    fastaq.utils.close(f)
+    common.syscall('chmod 755 ' + script_out)
+    shutil.rmtree(tmpdir)

@@ -23,14 +23,15 @@ class Qc:
         contig_layout_plot_title="IVA QC contig layout and read depth",
         threads=1,
         nucmer_min_cds_hit_length=20,
-        nucmer_min_cds_hit_id=80,
+        nucmer_min_cds_hit_id=75,
         nucmer_min_ctg_hit_length=100,
-        nucmer_min_ctg_hit_id=80,
-        gage_nucmer_minid=80,
+        nucmer_min_ctg_hit_id=75,
+        gage_nucmer_minid=75,
         smalt_k=15,
         smalt_s=3,
         smalt_id=0.5,
         reapr=False,
+        blast_for_act=False,
         kraken_preload=False,
     ):
 
@@ -61,6 +62,9 @@ class Qc:
         self.ratt_outdir = self.outprefix + '.ratt'
         self.reapr = reapr
         self.reapr_outdir = self.outprefix + '.reapr'
+        self.blast_for_act = blast_for_act
+        self.blast_out = self.outprefix + '.assembly_v_ref.blastn'
+        self.act_script = self.outprefix + '.assembly_v_ref.act.sh'
         self.gage_outdir = self.outprefix + '.gage'
         self.gage_nucmer_minid = gage_nucmer_minid
         self.files_to_clean = []
@@ -73,7 +77,7 @@ class Qc:
             fastaq.tasks.deinterleave(reads_fr, self.reads_fwd, self.reads_rev)
 
         if not (None not in [self.reads_fwd, self.reads_rev] or reads_fr is not None):
-            raise Error('IVA QC needs reads_fr or both reads_fwd and reads_rev, if assembly_bam or ref_bam not supplied')
+            raise Error('IVA QC needs reads_fr or both reads_fwd and reads_rev')
 
         def unzip_file(infile, outfile):
             common.syscall('gunzip -c ' + infile + ' > ' + outfile)
@@ -105,7 +109,6 @@ class Qc:
                 processes[0].join()
 
         self.min_ref_cov = min_ref_cov
-        #self._set_ref_seq_data()
         self._set_assembly_fasta_data(assembly_fasta)
         self.threads = threads
         self.contig_layout_plot_title = contig_layout_plot_title
@@ -469,7 +472,7 @@ class Qc:
 
     def _write_ref_info(self, filename):
         assert self.embl_dir is not None
-        files = os.listdir(self.embl_dir)
+        files = sorted(os.listdir(self.embl_dir))
         f = fastaq.utils.open_file_write(filename)
         print('EMBL_directory', self.embl_dir, sep='\t', file=f)
         print('Files', '\t'.join(files), sep='\t', file=f)
@@ -490,6 +493,13 @@ class Qc:
 
         self._write_ref_info(self.ref_info_file)
 
+
+    def _make_act_files(self):
+        if not self.blast_for_act:
+            return
+
+        qc_external.run_blastn_and_write_act_script(self.assembly_fasta, self.ref_fasta, self.blast_out, self.act_script)
+            
 
     def _map_reads_to_reference(self):
         assert os.path.exists(self.ref_fasta)
@@ -593,6 +603,7 @@ class Qc:
         self._map_reads_to_assembly()
         self._choose_reference_genome()
         self._set_ref_seq_data()
+        self._make_act_files()
         self._map_reads_to_reference()
         self._calculate_incorrect_assembly_bases()
         self._calculate_contig_placement()

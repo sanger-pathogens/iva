@@ -9,7 +9,6 @@ import iva
 
 
 parser = argparse.ArgumentParser(
-    description = 'IVA - Iterative Virus Assembler. Version: ' + iva.common.version,
     usage = '%(prog)s [options] {-f reads_fwd -r reads_rev | --fr reads} <output directory>')
 
 parser.add_argument('outdir', help='Name of output directory (must not already exist)', metavar='Output directory')
@@ -63,9 +62,9 @@ trimming_group.add_argument('--min_trimmed_length', type=int, help='Minimum leng
 
 other_group = parser.add_argument_group('Other options')
 other_group.add_argument('-i', '--max_insert', type=int, help='Maximum insert size (includes read length). Reads with inferred insert size more than the maximum will not be used to extend contigs [%(default)s]', default=500, metavar='INT')
-other_group.add_argument('--min_orf', type=int, help='Minimum length in nucleotides of ORFs to report in final gff file [%(default)s]', default=300, metavar='INT')
 other_group.add_argument('-t', '--threads', type=int, help='Number of threads to use [%(default)s]', default=1, metavar='INT')
 other_group.add_argument('--strand_bias', type=float, help='Set strand bias cutoff of mapped reads when trimming contig ends, in the interval [0,0.5]. A value of x means that a base needs min(fwd_depth, rev_depth) / total_depth <= x. [%(default)s]', default=0.1, metavar='FLOAT in [0,0.5]')
+other_group.add_argument('--version', action='version', version=iva.common.version)
 
 options = parser.parse_args()
 if options.seed_stop_length == 0:
