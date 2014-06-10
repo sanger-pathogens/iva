@@ -488,6 +488,8 @@ class Qc:
             db = kraken.Database(self.ref_db, threads=self.threads, preload=self.kraken_preload)
             self.embl_dir = db.choose_reference(tmp_reads, self.kraken_prefix)
             os.unlink(tmp_reads)
+            if self.embl_dir is None:
+                raise Error('Unable to determine reference genome automatically. Cannot continue')
         else:
             self.embl_dir = os.path.abspath(self.embl_dir)
 
