@@ -26,9 +26,9 @@ reads_group.add_argument('--fr', action=iva.common.abspathAction, dest='reads_fr
 
 mummer_group = parser.add_argument_group('MUMmer options')
 mummer_group.add_argument('--cds_min_hit_length', type=int, help='Minimum hit length when running nucmer of CDS sequences against contigs [%(default)s]', metavar='INT', default=30)
-mummer_group.add_argument('--cds_min_hit_id', type=float, help='Minimum hit percent identity when running nucmer of CDS sequences against contigs [%(default)s]', metavar='FLOAT', default=75)
+mummer_group.add_argument('--cds_min_hit_id', type=float, help='Minimum hit percent identity when running nucmer of CDS sequences against contigs [%(default)s]', metavar='FLOAT', default=80)
 mummer_group.add_argument('--ctg_min_hit_length', type=int, help='Minimum hit length when running nucmer of contigs against reference [%(default)s]', metavar='INT', default=100)
-mummer_group.add_argument('--ctg_min_hit_id', type=float, help='Minimum hit percent identity when running nucmer of contigs against reference [%(default)s]', metavar='FLOAT', default=75)
+mummer_group.add_argument('--ctg_min_hit_id', type=float, help='Minimum hit percent identity when running nucmer of contigs against reference [%(default)s]', metavar='FLOAT', default=80)
 
 
 mapping_group = parser.add_argument_group('SMALT mapping options')
@@ -38,7 +38,7 @@ mapping_group.add_argument('-y', '--smalt_id', type=float, help='Minimum identit
 
 
 external_group = parser.add_argument_group('External tools')
-external_group.add_argument('--gage_minid', help='Minimum percent identity used when GAGE runs nucmer [%(default)s]', metavar='INT in [0,100]', default=75)
+external_group.add_argument('--gage_minid', help='Minimum percent identity used when GAGE runs nucmer [%(default)s]', metavar='INT in [0,100]', default=80)
 external_group.add_argument('--kraken_preload', action='store_true', help='Use the --preload option when running kraken')
 external_group.add_argument('--ratt_config', help='Specify your own RATT config file [%(default)s]', metavar='filename', default=iva.qc_external.default_ratt_config)
 
