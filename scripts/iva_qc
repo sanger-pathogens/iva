@@ -46,6 +46,7 @@ external_group.add_argument('--ratt_config', help='Specify your own RATT config 
 other_group = parser.add_argument_group('Other options')
 other_group.add_argument('--ctg_layout_plot_title', help='Title to use in contig layout plot [%(default)s]', default='IVA QC contig layout and read depth', metavar='STRING')
 other_group.add_argument('--min_ref_cov', help='Minimum read coverage of the reference, on each strand, to count as OK coverage [%(default)s]', default=5, metavar='INT')
+other_group.add_argument('--noclean', action='store_true', help='Do not clean temporary files')
 other_group.add_argument('--threads', type=int, help='Number of threads to use [%(default)s]', default=1, metavar='INT')
 other_group.add_argument('--version', action='version', version=iva.common.version)
 
@@ -81,7 +82,8 @@ qc = iva.qc.Qc(
     kraken_preload=options.kraken_preload,
     ratt_config=options.ratt_config,
     reapr=iva.external_progs.is_in_path('reapr'),
-    blast_for_act=iva.external_progs.is_in_path('blastn') and iva.external_progs.is_in_path('makeblastdb')
+    blast_for_act=iva.external_progs.is_in_path('blastn') and iva.external_progs.is_in_path('makeblastdb'),
+    clean=not options.noclean,
 )
 
 qc.run()
