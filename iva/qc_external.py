@@ -71,7 +71,7 @@ def dummy_reapr_stats():
     return {x:'NA' for x in reapr_stats}
 
 
-def run_gage(reference, scaffolds, outdir, nucmer_minid=80):
+def run_gage(reference, scaffolds, outdir, nucmer_minid=80, clean=True):
     this_module_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
     gage_dir = os.path.join(this_module_dir, 'gage')
     reference = os.path.abspath(reference)
@@ -80,13 +80,15 @@ def run_gage(reference, scaffolds, outdir, nucmer_minid=80):
     scaffs = 'scaffolds.fa'
     contigs = 'contigs.fa'
     gage_out = 'gage.out'
+    gage_script = 'run.sh'
     cwd = os.getcwd()
     os.mkdir(outdir)
     os.chdir(outdir)
     os.symlink(reference, ref)
     os.symlink(scaffolds, scaffs)
     fastaq.tasks.scaffolds_to_contigs(scaffs, contigs, number_contigs=True)
-    cmd = ' '.join([
+    f = fastaq.utils.open_file_write(gage_script)
+    print(' '.join([
         'sh',
         os.path.join(gage_dir, 'getCorrectnessStats.sh'),
         ref,
@@ -94,8 +96,9 @@ def run_gage(reference, scaffolds, outdir, nucmer_minid=80):
         scaffs,
         str(nucmer_minid),
         '>', gage_out
-    ])
-    common.syscall(cmd)
+        ]), file=f)
+    fastaq.utils.close(f)
+    common.syscall('bash ' + gage_script)
     stats = dummy_gage_stats()
     wanted_stats = set(gage_stats)
     f = fastaq.utils.open_file_read(gage_out)
@@ -114,11 +117,38 @@ def run_gage(reference, scaffolds, outdir, nucmer_minid=80):
                 else:
                     stats[a[0]] = float(stat)
     fastaq.utils.close(f)
+
+    if clean:
+        to_clean = [
+            'contigs.fa.delta',
+            'contigs.fa.fdelta',
+            'contigs.fa.matches.lens',
+            'out.1coords',
+            'out.1delta',
+            'out.mcoords',
+            'out.mdelta',
+            'out.qdiff',
+            'out.rdiff',
+            'out.snps',
+            'out.unqry',
+            'scaffolds.fa.coords',
+            'scaffolds.fa.delta',
+            'scaffolds.fa.err',
+            'scaffolds.fa.fdelta',
+            'scaffolds.fa.tiling',
+            'tmp_scf.fasta',
+        ]
+        for f in to_clean:
+            try:
+                os.unlink(f)
+            except:
+                pass
+
     os.chdir(cwd)
     return stats
 
 
-def run_ratt(embl_dir, assembly, outdir, config_file=None, transfer='Species'):
+def run_ratt(embl_dir, assembly, outdir, config_file=None, transfer='Species', clean=True):
     embl_dir = os.path.abspath(embl_dir)
     assembly = os.path.abspath(assembly)
     this_module_dir =os.path.dirname(inspect.getfile(inspect.currentframe()))
@@ -170,11 +200,21 @@ def run_ratt(embl_dir, assembly, outdir, config_file=None, transfer='Species'):
             if len(a) == 2 and a[0].isdigit() and a[1] in matches:
                 stats[matches[a[1]]] = int(a[0])
     fastaq.utils.close(f)
+
+    if clean:
+        for d in ['Query', 'Reference', 'Sequences']:
+            try:
+                shutil.rmtree(d)
+            except:
+                pass
+
+        common.syscall('rm query.* Reference.* nucmer.* out.*')
+
     os.chdir(cwd)
     return stats
 
 
-def run_reapr(assembly, reads_fwd, reads_rev, bam, outdir):
+def run_reapr(assembly, reads_fwd, reads_rev, bam, outdir, clean=True):
     assembly = os.path.abspath(assembly)
     reads_fwd = os.path.abspath(reads_fwd)
     reads_rev = os.path.abspath(reads_rev)
@@ -227,6 +267,30 @@ def run_reapr(assembly, reads_fwd, reads_rev, bam, outdir):
     for i in range(len(columns)):
         if columns[i] in stats:
             stats[columns[i]] = int(values[i])
+
+    if clean:
+        files = [
+            'assembly.fa',
+            'assembly.fa.fai',
+            'assembly.info',
+            'perfect.hist',
+            'perfect.perfect_cov.gz',
+            'perfect.perfect_cov.gz.tbi',
+            'renamed.bam',
+        ]
+
+        for f in files:
+            try:
+                os.unlink(f)
+            except:
+                pass
+
+        os.rename(os.path.join('Out', '05.summary.report.txt'), '05.summary.report.txt')
+
+        try:
+            shutil.rmtree('Out')
+        except:
+            pass
 
     os.chdir(cwd)
     return stats

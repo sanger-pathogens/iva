@@ -33,6 +33,7 @@ class Qc:
         reapr=False,
         blast_for_act=False,
         kraken_preload=False,
+        clean=True,
     ):
 
         if embl_dir is None and ref_db is None:
@@ -68,6 +69,7 @@ class Qc:
         self.gage_outdir = self.outprefix + '.gage'
         self.gage_nucmer_minid = gage_nucmer_minid
         self.files_to_clean = []
+        self.clean = clean
 
         if reads_fr:
             self.reads_fwd = self.outprefix + '.reads_1'
@@ -587,16 +589,16 @@ class Qc:
 
 
     def _calculate_gage_stats(self):
-        self.gage_stats = qc_external.run_gage(self.ref_fasta, self.assembly_fasta, self.gage_outdir, nucmer_minid=self.gage_nucmer_minid)
+        self.gage_stats = qc_external.run_gage(self.ref_fasta, self.assembly_fasta, self.gage_outdir, nucmer_minid=self.gage_nucmer_minid, clean=self.clean)
 
 
     def _calculate_ratt_stats(self):
-        self.ratt_stats = qc_external.run_ratt(self.embl_dir, self.assembly_fasta, self.ratt_outdir, config_file=self.ratt_config)
+        self.ratt_stats = qc_external.run_ratt(self.embl_dir, self.assembly_fasta, self.ratt_outdir, config_file=self.ratt_config, clean=self.clean)
 
 
     def _calculate_reapr_stats(self):
         if self.reapr:
-            self.reapr_stats = qc_external.run_reapr(self.assembly_fasta, self.reads_fwd, self.reads_rev, self.assembly_bam, self.reapr_outdir)
+            self.reapr_stats = qc_external.run_reapr(self.assembly_fasta, self.reads_fwd, self.reads_rev, self.assembly_bam, self.reapr_outdir, clean=self.clean)
         else:
             self.reapr_stats = qc_external.dummy_reapr_stats()
 
