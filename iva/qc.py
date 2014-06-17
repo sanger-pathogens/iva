@@ -695,34 +695,21 @@ class Qc:
 
 
         print('pdf(file="', outprefix, '.pdf")', sep='', file=f)
-        print('layout(matrix(c(1,2), 2, 1, byrow = TRUE), heights=c(2,1))', file=f)
+        print('layout(matrix(c(1,2,3), 3, 1, byrow = TRUE), heights=c(3,1.2,1.2))', file=f)
+        print('par(mar=c(1, 4, 2, 0.5))', file=f)
 
         # ---------- contig layout plot ------------------------
-        print('plot(-100, type="n", xlim=c(0,', ref_length, '), ylim=c(0, ', number_of_contigs + 2, '), yaxt="n", ylab="", xlab="")', sep='', file=f)
+        print('plot(-100, type="n", xlim=c(0,', ref_length, '), ylim=c(0, ', number_of_contigs, '), yaxt="n", ylab="", xlab="")', sep='', file=f)
         print('title("', self.contig_layout_plot_title, '", ylab="Contigs")', sep='', file=f)
-        for name in self.ref_ids:
-            offset = self.ref_length_offsets[name]
-            print(self._cov_to_R_string(self.ok_cov_ref_regions[name], 'black', offset, 1.3, 0.25), file=f)
-            print(self._cov_to_R_string(self.low_cov_ref_regions_fwd[name], 'red', offset, 1, 0.25), file=f)
-            print(self._cov_to_R_string(self.low_cov_ref_regions_rev[name], 'red', offset, 0.7, 0.25), file=f)
-
-            if name in self.ref_pos_covered_by_contigs:
-                print(self._cov_to_R_string(self.ref_pos_covered_by_contigs[name], 'black', offset, 2.3, 0.25), file=f)
-
-            if name in self.should_have_assembled:
-                print(self._cov_to_R_string(self.should_have_assembled[name], 'red', offset, 1.7, 0.25), file=f)
-
-            print(self._cov_to_R_string(self.ref_pos_not_covered_by_contigs[name], 'black', offset, 2, 0.25), file=f)
-
         print(vertical_lines, file=f)
 
         if number_of_contigs > 0:
-            print('contig_names=c("ref read cov", "ref contig cov", "', '", "'.join(contig_names), '")', sep='', file=f)
-            print('axis(2, at=c(1:', number_of_contigs + 2, '), labels=contig_names, las=2, cex.axis=0.3)', sep='', file=f)
+            print('contig_names=c("', '", "'.join(contig_names), '")', sep='', file=f)
+            print('axis(2, at=c(1:', number_of_contigs, '), labels=contig_names, las=2, cex.axis=0.3)', sep='', file=f)
 
             for i in range(len(contig_names)):
                 contig_name = contig_names[i]
-                y_centre = i + 3
+                y_centre = i + 1
                 contig_positions = self.contig_placement[contig_name]
                 for contig_coords, ref_name, ref_coords, same_strand, repetitive in contig_positions:
                     offset = self.ref_length_offsets[ref_name]
@@ -740,10 +727,31 @@ class Qc:
                             y_centre + 0.5 * contig_height, ',',
                             'col="', colour, '")', sep='', file=f)
 
+        # ----------- read coverage heatmap ---------------------
+        print('par(mar=c(0, 4, 1, 0.5))', file=f)
+        print('plot(-100, type="n", xlim=c(0,', ref_length, '), ylim=c(0, ', 3, '), xaxt="n", yaxt="n", ylab="Contig/Read coverage OK", xlab="", frame.plot=F)', sep='', file=f)
+        print('axis(2, at=c(1,2), labels=c("Reads", "Contigs"), las=2, cex.axis=0.6)', sep='', file=f)
+
+        for name in self.ref_ids:
+            offset = self.ref_length_offsets[name]
+            print(self._cov_to_R_string(self.ok_cov_ref_regions[name], 'black', offset, 1.3, 0.25), file=f)
+            print(self._cov_to_R_string(self.low_cov_ref_regions_fwd[name], 'red', offset, 1, 0.25), file=f)
+            print(self._cov_to_R_string(self.low_cov_ref_regions_rev[name], 'red', offset, 0.7, 0.25), file=f)
+
+            if name in self.ref_pos_covered_by_contigs:
+                print(self._cov_to_R_string(self.ref_pos_covered_by_contigs[name], 'black', offset, 2.3, 0.25), file=f)
+
+            if name in self.should_have_assembled:
+                print(self._cov_to_R_string(self.should_have_assembled[name], 'red', offset, 1.7, 0.25), file=f)
+
+            print(self._cov_to_R_string(self.ref_pos_not_covered_by_contigs[name], 'black', offset, 2, 0.25), file=f)
+        print(vertical_lines, file=f)
+
         # ----------- read depth on reference plot --------------
         self._write_ref_coverage_to_files_for_R(self.outprefix + '.read_coverage_on_ref')
         print('fwd_ref_cov = scan("', self.outprefix + '.read_coverage_on_ref.fwd', '")', sep='', file=f)
         print('rev_ref_cov = scan("', self.outprefix + '.read_coverage_on_ref.rev', '")', sep='', file=f)
+        print('par(mar=c(5, 4, 0, 0.5))', file=f)
         print('plot(fwd_ref_cov, type="l", xlim=c(0, length(fwd_ref_cov) + 1), ylim=c(-max(rev_ref_cov), max(fwd_ref_cov)), col="blue", frame.plot=F, ylab="Read depth", xlab="Position in reference")', file=f)
         print('lines(-rev_ref_cov, col="blue")', file=f)
         print('abline(h=0, lty=2)', file=f)
