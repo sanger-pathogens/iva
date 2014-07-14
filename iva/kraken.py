@@ -14,7 +14,7 @@ class Error (Exception): pass
 
 
 class Database:
-    def __init__(self, rootdir, extra_refs_file=None, threads=1, minimizer_len=13, max_db_size=3, preload=False, verbose=False):
+    def __init__(self, rootdir, extra_refs_file=None, threads=1, minimizer_len=13, max_db_size=3, preload=False, verbose=False, skip_virus_download=False):
         self.rootdir = os.path.abspath(rootdir)
         if extra_refs_file is None:
             self.extra_refs_file = None
@@ -38,8 +38,11 @@ class Database:
         self.kraken_gi_taxid_nucl_dmp = os.path.join(self.kraken_taxon_dir, 'gi_taxid_nucl.dmp')
         self.embl_root = os.path.join(self.rootdir, 'EMBL')
         self.extra_refs_dir = os.path.join(self.rootdir, 'Extra_refs')
+        self.skip_virus_download = skip_virus_download
         self.added_to_kraken = set()
 
+        if self.skip_virus_download and extra_refs_file is None:
+            raise Error('Cannot create database. skip_virus_download is True and no extra_refs_file provided')
 
         self.tasks = [
             'download',
@@ -259,7 +262,8 @@ class Database:
                 self._mkdir(d, rmtree=True)
 
             iva.common.syscall('kraken-build --download-taxonomy --db ' + self.kraken_db, verbose=self.verbose)
-            iva.common.syscall('kraken-build --download-library viruses --db ' + self.kraken_db, verbose=self.verbose)
+            if not self.skip_virus_download:
+                iva.common.syscall('kraken-build --download-library viruses --db ' + self.kraken_db, verbose=self.verbose)
         
             if self.extra_refs_file is not None:
                 self._load_extra_ref_info()
