@@ -342,7 +342,8 @@ class Database:
 
     def build(self):
         self._build_kraken_virus_db()
-        self._get_genbank_virus_files()
+        if not self.skip_virus_download:
+            self._get_genbank_virus_files()
         self._clean()
 
 
