@@ -15,6 +15,7 @@ class TestQc(unittest.TestCase):
         reads_1 = os.path.join(data_dir,'qc_test.reads_1.fq')
         reads_2 = os.path.join(data_dir,'qc_test.reads_2.fq')
         self.qc = qc.Qc(assembly_fasta, 'tmp.qc', embl_dir=ref_embl, reads_fwd=reads_1, reads_rev=reads_2)
+        self.qc.assembly_is_empty = False
 
 
     def tearDown(self):

@@ -161,10 +161,13 @@ class Qc:
 
     def _set_assembly_fasta_data(self, fasta_filename):
         self.assembly_fasta = fasta_filename
+        self.assembly_lengths = {}
+        self.assembly_is_empty = os.path.getsize(self.assembly_fasta) == 0
+        if self.assembly_is_empty:
+            return
         self.assembly_fasta_fai = self.assembly_fasta + '.fai'
         if not os.path.exists(self.assembly_fasta_fai):
             common.syscall('samtools faidx ' + self.assembly_fasta)
-        self.assembly_lengths = {}
         fastaq.tasks.lengths_from_fai(self.assembly_fasta_fai, self.assembly_lengths)
 
 
@@ -272,7 +275,8 @@ class Qc:
     def _map_cds_to_assembly(self):
         if not os.path.exists(self.ref_cds_fasta):
             self._gff_and_fasta_to_cds()
-        mummer.run_nucmer(self.ref_cds_fasta, self.assembly_fasta, self.cds_nucmer_coords_in_assembly, min_length=self.nucmer_min_cds_hit_length, min_id=self.nucmer_min_cds_hit_id)
+        if not self.assembly_is_empty:
+            mummer.run_nucmer(self.ref_cds_fasta, self.assembly_fasta, self.cds_nucmer_coords_in_assembly, min_length=self.nucmer_min_cds_hit_length, min_id=self.nucmer_min_cds_hit_id)
 
 
     def _mummer_coords_file_to_dict(self, filename):
@@ -291,6 +295,8 @@ class Qc:
 
 
     def _calculate_cds_assembly_stats(self):
+        if self.assembly_is_empty:
+            return
         self._map_cds_to_assembly()
         hits = self._mummer_coords_file_to_dict(self.cds_nucmer_coords_in_assembly)
         contigs = {}
@@ -328,7 +334,10 @@ class Qc:
 
 
     def _calculate_refseq_assembly_stats(self):
-        refhits = self._hash_nucmer_hits_by_ref(self.assembly_vs_ref_mummer_hits)
+        if self.assembly_is_empty:
+            refhits = {}
+        else:
+            refhits = self._hash_nucmer_hits_by_ref(self.assembly_vs_ref_mummer_hits)
 
         for name in self.ref_ids:
             assert name not in self.refseq_assembly_stats
@@ -371,6 +380,12 @@ class Qc:
 
 
     def _calculate_ref_positions_covered_by_contigs(self):
+        if self.assembly_is_empty:
+            self.ref_pos_not_covered_by_contigs = {}
+            for seq, lngth in self.ref_lengths.items():
+                self.ref_pos_not_covered_by_contigs[seq] = [fastaq.intervals.Interval(0, lngth - 1)]
+            return
+
         for seq in self.assembly_vs_ref_mummer_hits:
             for hit in self.assembly_vs_ref_mummer_hits[seq]:
                 if hit.ref_name not in self.ref_pos_covered_by_contigs:
@@ -433,7 +448,10 @@ class Qc:
 
 
     def _calculate_incorrect_assembly_bases(self):
-        self.incorrect_assembly_bases = mapping.find_incorrect_ref_bases(self.assembly_bam, self.assembly_fasta)
+        if self.assembly_is_empty:
+            self.incorrect_assembly_bases = {}
+        else: 
+            self.incorrect_assembly_bases = mapping.find_incorrect_ref_bases(self.assembly_bam, self.assembly_fasta)
 
 
     def _contig_placement_in_reference(self, hits):
@@ -445,6 +463,8 @@ class Qc:
 
 
     def _calculate_contig_placement(self):
+        if self.assembly_is_empty:
+            return
         self._get_contig_hits_to_reference()
         self.contig_placement = {qry_name: self._contig_placement_in_reference(self.assembly_vs_ref_mummer_hits[qry_name]) for qry_name in self.assembly_vs_ref_mummer_hits}
 
@@ -468,8 +488,9 @@ class Qc:
 
 
     def _map_reads_to_assembly(self):
-        mapping.map_reads(self.reads_fwd, self.reads_rev, self.assembly_fasta, self.assembly_bam[:-4], sort=True, threads=self.threads, index_k=self.smalt_k, index_s=self.smalt_s, minid=self.smalt_id, extra_smalt_map_ops='-x')
-        os.unlink(self.assembly_bam[:-4] + '.unsorted.bam')
+        if not self.assembly_is_empty:
+            mapping.map_reads(self.reads_fwd, self.reads_rev, self.assembly_fasta, self.assembly_bam[:-4], sort=True, threads=self.threads, index_k=self.smalt_k, index_s=self.smalt_s, minid=self.smalt_id, extra_smalt_map_ops='-x')
+            os.unlink(self.assembly_bam[:-4] + '.unsorted.bam')
 
 
     def _write_ref_info(self, filename):
@@ -499,7 +520,7 @@ class Qc:
 
 
     def _make_act_files(self):
-        if not self.blast_for_act:
+        if self.assembly_is_empty or not self.blast_for_act:
             return
 
         qc_external.run_blastn_and_write_act_script(self.assembly_fasta, self.ref_fasta, self.blast_out, self.act_script)
@@ -589,15 +610,22 @@ class Qc:
 
 
     def _calculate_gage_stats(self):
-        self.gage_stats = qc_external.run_gage(self.ref_fasta, self.assembly_fasta, self.gage_outdir, nucmer_minid=self.gage_nucmer_minid, clean=self.clean)
+        if self.assembly_is_empty:
+            self.gage_stats = qc_external.dummy_gage_stats()
+            self.gage_stats['Missing Reference Bases'] = sum(self.ref_lengths.values())
+        else:
+            self.gage_stats = qc_external.run_gage(self.ref_fasta, self.assembly_fasta, self.gage_outdir, nucmer_minid=self.gage_nucmer_minid, clean=self.clean)
 
 
     def _calculate_ratt_stats(self):
-        self.ratt_stats = qc_external.run_ratt(self.embl_dir, self.assembly_fasta, self.ratt_outdir, config_file=self.ratt_config, clean=self.clean)
+        if self.assembly_is_empty:
+            self.ratt_stats = qc_external.dummy_ratt_stats()
+        else:
+            self.ratt_stats = qc_external.run_ratt(self.embl_dir, self.assembly_fasta, self.ratt_outdir, config_file=self.ratt_config, clean=self.clean)
 
 
     def _calculate_reapr_stats(self):
-        if self.reapr:
+        if self.reapr and not self.assembly_is_empty:
             self.reapr_stats = qc_external.run_reapr(self.assembly_fasta, self.reads_fwd, self.reads_rev, self.assembly_bam, self.reapr_outdir, clean=self.clean)
         else:
             self.reapr_stats = qc_external.dummy_reapr_stats()
