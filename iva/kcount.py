@@ -1,8 +1,10 @@
 import os
+import sys
 import tempfile
 import shutil
 import fastaq
-from iva import common
+import pysam
+from iva import common, mapping
 
 class Error (Exception): pass
 
@@ -92,7 +94,7 @@ def _run_kmc(reads, outprefix, kmer, min_count, max_count, verbose=0):
     # RAM available on the machine.
     ran_ok = _run_kmc_with_script('run_kmc.sh', reads, kmer_counts_file, kmer, min_count, max_count, 32, verbose, True)
     if not ran_ok:
-        print('First try of running kmc failed. Trying again with -m4 instead of -m32...')
+        print('First try of running kmc failed. Trying again with -m4 instead of -m32...', flush=True)
         ran_ok = _run_kmc_with_script('run_kmc.sh', reads, kmer_counts_file, kmer, min_count, max_count, 4, verbose, False)
 
     os.chdir(original_dir)
@@ -104,45 +106,100 @@ def _run_kmc(reads, outprefix, kmer, min_count, max_count, verbose=0):
     return kmer_counts_file
 
 
-def _kmc_to_kmer_counts(infile, number, kmers_to_ignore=None, contigs_to_check=None):
+def _kmc_to_kmer_counts(infile, number, kmers_to_ignore=None, contigs_to_check=None, verbose=0, threads=1):
     '''Makes a dict of the most common kmers from the kmer counts output file of kmc'''
-    if kmers_to_ignore is None:
-        kmers_to_ignore = set()
-    if contigs_to_check is None:
-        contigs_to_check = {}
-    f = fastaq.utils.open_file_read(infile)
     counts = {}
+    if os.path.getsize(infile) == 0:
+        return counts
+    tmpdir = tempfile.mkdtemp(prefix='tmp.common_kmers.', dir=os.getcwd())
+    ref_seqs_file = os.path.join(tmpdir, 'ref.fa')
+    counts_fasta_file = os.path.join(tmpdir, 'counts.fa')
+    using_refs = _write_ref_seqs_to_be_checked(ref_seqs_file, kmers_to_ignore=kmers_to_ignore, contigs_to_check=contigs_to_check)
 
-    for line in f:
-        if len(counts) >= number:
-            break
+    if not using_refs:
+        if verbose > 2:
+            print('No existing kmers or contigs to check against. Using most common kmer for seed', flush=True)
+        f = fastaq.utils.open_file_read(infile)
+        for line in f:
+            if len(counts) >= number:
+                break
+            try:
+                kmer, count = line.rstrip().split()
+                count = int(count)
+            except:
+                raise Error('Error getting kmer info from this line:\n' + line)
+
+            counts[kmer] = count
+        fastaq.utils.close(f)
+    else:
+        if verbose > 2:
+            print('Existing kmers or contigs to check against. Running mapping', flush=True)
+        mapping_prefix = os.path.join(tmpdir, 'map')
+        bam = mapping_prefix + '.bam'
+        _counts_file_to_fasta(infile, counts_fasta_file)
+        mapping.map_reads(counts_fasta_file, None, ref_seqs_file, mapping_prefix, minid=0.9, index_k=9, index_s=1, sort=False, verbose=verbose, required_flag='0x4', threads=threads)
+
+        sam_reader = pysam.Samfile(bam, "rb")
+        for sam in sam_reader.fetch(until_eof=True):
+            if len(counts) >= number:
+                break
+            try:
+                count = sam.qname.split('_')[1]
+            except:
+                raise Error('Error getting count from sequence name in bam:\n' + sam.qname)
+
+            counts[sam.seq.decode()] = count
+        sam_reader.close()
+
+    shutil.rmtree(tmpdir) 
+    return counts
+
+
+def _write_ref_seqs_to_be_checked(outfile, kmers_to_ignore=None, contigs_to_check=None):
+    if (kmers_to_ignore is None or len(kmers_to_ignore) == 0) and (contigs_to_check is None or len(contigs_to_check) == 0):
+        return False
+
+    f = fastaq.utils.open_file_write(outfile)
+    i = 1
+
+    if kmers_to_ignore is not None:
+        for kmer in kmers_to_ignore:
+            print('>', i, sep='', file=f)
+            print(kmer, file=f)
+            i += 1
+         
+    if contigs_to_check is not None and len(contigs_to_check) > 0:
+        original_line_length = fastaq.sequences.Fasta.line_length
+        fastaq.sequences.Fasta.line_length = 0
+        for name in contigs_to_check:
+            print(contigs_to_check[name].fa, file=f)
+        fastaq.sequences.Fasta.line_length = original_line_length
+
+    fastaq.utils.close(f)
+    return True
+
+
+def _counts_file_to_fasta(infile, outfile):
+    fin = fastaq.utils.open_file_read(infile)
+    fout = fastaq.utils.open_file_write(outfile)
+    i = 1
+    for line in fin:
         try:
             kmer, count = line.rstrip().split()
             count = int(count)
         except:
             raise Error('Error getting kmer info from this line:\n' + line)
-
-        assert kmer not in counts
-
-        if kmer in kmers_to_ignore:
-            continue
-
-        for contig in contigs_to_check:
-            if len(contigs_to_check[contig].fa.search(kmer)):
-                continue
-
-        counts[kmer] = count
-
-    fastaq.utils.close(f)
-    return counts
+        
+        print('>', i, '_', count, sep='', file=fout)
+        print(kmer, file=fout)
+        i += 1
+        
+    fastaq.utils.close(fin)
+    fastaq.utils.close(fout)
 
 
-def get_most_common_kmers(reads1, reads2, kmer_length=None, head=100000, min_count=10, max_count=100000000, most_common=100, method='kmc', verbose=0, ignore_kmers=None, contigs_to_check=None):
+def get_most_common_kmers(reads1, reads2, kmer_length=None, head=100000, min_count=10, max_count=100000000, most_common=100, method='kmc', verbose=0, ignore_seqs=None, contigs_to_check=None, threads=1):
     '''Gets the most common kmers from a pair of interleaved read FASTA or FASTQ files. Takes the first N sequences (determined by head).  Returns a dict of kmer=>frequency. If kmer length is not given, use min(0.8 * median read length, 95)'''
-    if ignore_kmers is None:
-        ignore_kmers = set()
-    if contigs_to_check is None:
-        contigs_to_check = {}
     tmpdir = tempfile.mkdtemp(prefix='tmp.common_kmers.', dir=os.getcwd())
     counts = {}
     reads = os.path.join(tmpdir, 'reads.fa')
@@ -155,7 +212,7 @@ def get_most_common_kmers(reads1, reads2, kmer_length=None, head=100000, min_cou
 
     if method == 'kmc':
         counts_file = _run_kmc(reads, os.path.join(tmpdir, 'out'), kmer_length, min_count, max_count, verbose=verbose)
-        counts = _kmc_to_kmer_counts(counts_file, most_common, kmers_to_ignore=ignore_kmers, contigs_to_check=contigs_to_check)
+        counts = _kmc_to_kmer_counts(counts_file, most_common, kmers_to_ignore=ignore_seqs, contigs_to_check=contigs_to_check, verbose=verbose, threads=threads)
     else:
         raise Error('Method "' + method + '" not supported in kcount.get_most_common_kmers(). Cannot continue.')
 

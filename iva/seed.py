@@ -8,11 +8,11 @@ from iva import kcount, kmers, mapping
 class Error (Exception): pass
 
 class Seed:
-    def __init__(self, extend_length=50, overlap_length=None, reads1=None, reads2=None, seq=None, ext_min_cov=5, ext_min_ratio=2, verbose=0, seed_length=None, seed_min_count=10, seed_max_count=100000000, threads=1, kmers_to_ignore=None, contigs_to_check=None):
+    def __init__(self, extend_length=50, overlap_length=None, reads1=None, reads2=None, seq=None, ext_min_cov=5, ext_min_ratio=2, verbose=0, seed_length=None, seed_min_count=10, seed_max_count=100000000, threads=1, sequences_to_ignore=None, contigs_to_check=None):
         if contigs_to_check is None:
             contigs_to_check = {}
-        if kmers_to_ignore is None:
-            kmers_to_ignore = set()
+        if sequences_to_ignore is None:
+            sequences_to_ignore = set()
         self.verbose = verbose
         self.threads = threads
         self.extend_length = extend_length
@@ -23,11 +23,11 @@ class Seed:
         if seq is None:
             if reads1 is None:
                 raise Error('Cannot construct Seed object. Need reads when no seq has been given')
-            kmer_counts = kcount.get_most_common_kmers(reads1, reads2, most_common=1, min_count=seed_min_count, max_count=seed_max_count, kmer_length=seed_length, verbose=self.verbose, ignore_kmers=kmers_to_ignore, contigs_to_check=contigs_to_check)
+            kmer_counts = kcount.get_most_common_kmers(reads1, reads2, most_common=1, min_count=seed_min_count, max_count=seed_max_count, kmer_length=seed_length, verbose=self.verbose, ignore_seqs=sequences_to_ignore, contigs_to_check=contigs_to_check)
             if len(kmer_counts) == 1:
                 self.seq = list(kmer_counts.keys())[0]
                 if self.verbose:
-                    print('Made new seed. kmer coverage', list(kmer_counts.values())[0], 'and seed is', self.seq)
+                    print('Made new seed. kmer coverage', list(kmer_counts.values())[0], 'and seed is', self.seq, flush=True)
             else:
                 self.seq = None
         else:

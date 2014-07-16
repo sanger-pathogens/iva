@@ -578,27 +578,23 @@ class Assembly:
         made_seed = False
 
         for i in range(max_attempts):
-            s = seed.Seed(reads1=seed_reads1, reads2=seed_reads2, extend_length=self.seed_ext_max_bases, seed_length=self.seed_start_length, seed_min_count=self.seed_min_kmer_count, seed_max_count=self.seed_max_kmer_count, ext_min_cov=self.seed_min_cov, ext_min_ratio=self.seed_min_ratio, verbose=self.verbose, threads=self.threads, kmers_to_ignore=self.used_seeds, contigs_to_check=self.contigs)
+            s = seed.Seed(reads1=seed_reads1, reads2=seed_reads2, extend_length=self.seed_ext_max_bases, seed_length=self.seed_start_length, seed_min_count=self.seed_min_kmer_count, seed_max_count=self.seed_max_kmer_count, ext_min_cov=self.seed_min_cov, ext_min_ratio=self.seed_min_ratio, verbose=self.verbose, threads=self.threads, sequences_to_ignore=self.used_seeds, contigs_to_check=self.contigs)
 
             if s.seq is None:
                 break
-
-            self.used_seeds.add(s.seq)
-            seed_fa = fastaq.sequences.Fasta('x', s.seq)
-            seed_fa.revcomp()
-            self.used_seeds.add(seed_fa.seq)
 
             if self.seed_overlap_length is None:
                 s.overlap_length = len(s.seq)
             else:
                 s.overlap_length = self.seed_overlap_length
             s.extend(reads1, reads2, self.seed_stop_length)
+            self.used_seeds.add(s.seq)
 
             if len(s.seq) >= 0.75 * self.seed_stop_length:
                 made_seed = True
                 break
             elif self.verbose:
-                print("    Couldn't extend seed enough. That was attempt", i+1, 'of', max_attempts)
+                print("    Couldn't extend seed enough. That was attempt", i+1, 'of', max_attempts, flush=True)
 
         if len(self.contigs):
             shutil.rmtree(tmpdir)
@@ -607,7 +603,7 @@ class Assembly:
             return None
 
         if self.verbose:
-            print("    Extended seed OK.")
+            print("    Extended seed OK.", flush=True)
         new_name = 'seeded.' + '1'.zfill(5)
         i = 1
         while new_name in self.contigs:

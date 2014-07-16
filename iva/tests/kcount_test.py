@@ -49,6 +49,16 @@ class TestKcount(unittest.TestCase):
         self.assertDictEqual(counts, expected)
 
 
+    def test_counts_file_to_fasta(self):
+        '''Test _counts_file_to_fasta'''
+        outfile = 'tmp.kmer_counts_to_fa.fa'
+        expected = os.path.join(data_dir, 'kcount_test.kmc_counts.fa')
+        infile = os.path.join(data_dir, 'kcount_test.kmc_counts')
+        kcount._counts_file_to_fasta(infile, outfile)
+        self.assertTrue(filecmp.cmp(outfile, expected, shallow=False))
+        os.unlink(outfile)
+
+
     def test_get_most_common_kmers(self):
         '''Test get_most_common_kmers'''
         reads1 = os.path.join(data_dir, 'kcount_test.get_commonest_kmer_1.fa')
