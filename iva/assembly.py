@@ -331,12 +331,8 @@ class Assembly:
         assert(len(self.contigs))
         if self.verbose:
             print('{:-^79}'.format(' ' + out_prefix + ' start extension subiteration 0001 '))
-        #bam = out_prefix + '.1.map.bam'
+
         bases_added = self._extend_with_reads(reads_prefix, out_prefix + '.1', no_map_contigs)
-        #self._map_reads(reads_prefix + '_1.fa', reads_prefix + '_2.fa', out_prefix + '.1.map', no_map_contigs=no_map_contigs)
-        #bases_added = self._extend_contigs_with_bam(bam)
-        #if self.clean:
-        #    os.unlink(bam)
 
         if bases_added == 0:
             return
@@ -350,12 +346,7 @@ class Assembly:
                 print('{:-^79}'.format(' ' + out_prefix + ' start extension subiteration ' + str(i).zfill(4) + ' '))
 
             iter_prefix = out_prefix + '.' + str(i)
-            #bam = iter_prefix + '.map.bam'
             bases_added = self._extend_with_reads(reads_prefix, iter_prefix, no_map_contigs)
-            #self._map_reads(reads_prefix + '_1.fa', reads_prefix + '_2.fa', iter_prefix + '.map', no_map_contigs=no_map_contigs)
-            #bases_added = self._extend_contigs_with_bam(bam)
-            #if self.clean:
-            #    os.unlink(bam)
 
             if bases_added == 0:
                 if not try_contig_trim:
