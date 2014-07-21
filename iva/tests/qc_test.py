@@ -28,6 +28,7 @@ class TestQc(unittest.TestCase):
             'tmp.qc.reference.fa',
             'tmp.qc.reference.fa.fai',
             'tmp.qc.reference.gff',
+            'tmp.qc.assembly_contigs_hit_ref.fasta',
         ]
         for f in files_to_clean:
             if os.path.exists(f):
@@ -241,6 +242,18 @@ class TestQc(unittest.TestCase):
             'F:1-2341:-':  [mummer.NucmerHit('\t'.join(['1', '2341', '2341', '1', '2341', '2341', '100.00', '2341', '2341', '1', '+', 'F', 'F:1-2341:-']))]
         }
         self.assertDictEqual(expected, self.qc.assembly_vs_ref_mummer_hits)
+
+
+    def test_write_fasta_contigs_hit_ref(self):
+        '''test _write_fasta_contigs_hit_ref'''
+        self.qc.ref_fasta = os.path.join(data_dir, 'qc_test.reference.fa')
+        self.qc._set_ref_fa_data()
+        self.qc.ref_gff = os.path.join(data_dir, 'qc_test.reference.cds.gff')
+        self.qc.assembly_fasta =  os.path.join(data_dir, 'qc_test.assembly.fasta')
+        self.qc._get_contig_hits_to_reference()
+        self.qc._write_fasta_contigs_hit_ref()
+        self.assertTrue(filecmp.cmp(os.path.join(data_dir, 'qc_test.write_fasta_contigs_hit_ref.fa'), 'tmp.qc.assembly_contigs_hit_ref.fasta', shallow=False))
+
 
 
     def test_hash_nucmer_hits_by_ref(self):

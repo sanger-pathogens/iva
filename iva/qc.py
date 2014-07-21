@@ -62,6 +62,7 @@ class Qc:
         self.ratt_outdir = self.outprefix + '.ratt'
         self.blast_for_act = blast_for_act
         self.blast_out = self.outprefix + '.assembly_v_ref.blastn'
+        self.fasta_assembly_contigs_hit_ref = self.outprefix + '.assembly_contigs_hit_ref.fasta'
         self.act_script = self.outprefix + '.assembly_v_ref.act.sh'
         self.gage_outdir = self.outprefix + '.gage'
         self.gage_nucmer_minid = gage_nucmer_minid
@@ -319,6 +320,15 @@ class Qc:
         mummer.run_nucmer(self.assembly_fasta, self.ref_fasta, self.assembly_vs_ref_coords, min_id=self.nucmer_min_ctg_hit_id, min_length=self.nucmer_min_ctg_hit_length)
         self.assembly_vs_ref_mummer_hits = self._mummer_coords_file_to_dict(self.assembly_vs_ref_coords)
 
+
+    def _write_fasta_contigs_hit_ref(self):
+        contigs = {}
+        fastaq.tasks.file_to_dict(self.assembly_fasta, contigs)
+        f = fastaq.utils.open_file_write(self.fasta_assembly_contigs_hit_ref)
+        for qry_name in sorted(self.assembly_vs_ref_mummer_hits): 
+            print(contigs[qry_name], file=f)
+        fastaq.utils.close(f)
+        
 
     def _hash_nucmer_hits_by_ref(self, hits):
         d = {}
@@ -629,6 +639,7 @@ class Qc:
         self._map_reads_to_reference()
         self._calculate_incorrect_assembly_bases()
         self._calculate_contig_placement()
+        self._write_fasta_contigs_hit_ref()
         self._calculate_ref_read_coverage()
         self._calculate_ref_read_region_coverage()
         self._calculate_ref_positions_covered_by_contigs()
