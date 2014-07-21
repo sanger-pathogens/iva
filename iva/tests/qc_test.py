@@ -458,20 +458,6 @@ class TestQc(unittest.TestCase):
         self.assertEqual(names, ['A:10-1017:+', 'B:1-1778:-', 'C:1-1413:+,E:1-200:-', 'D:1-1000:+', 'E:400-700:-', 'F:1-2341:-', 'F:1-2341:+'])
 
 
-    def test_write_ref_info(self):
-        '''test _write_ref_info'''
-        embl_dir = os.path.join(data_dir, 'qc_test.write_ref_info.embl_dir')
-        self.qc.embl_dir = embl_dir
-        expected = ['EMBL_directory\t' + embl_dir + '\n', 'Files\tone.embl\tthree.embl\ttwo.embl\n']
-        tmpfile = 'tmp.write_ref_info.out'
-        self.qc._write_ref_info(tmpfile)
-        f = fastaq.utils.open_file_read(tmpfile)
-        got = f.readlines()
-        fastaq.utils.close(f)
-        self.assertEqual(expected, got)
-        os.unlink(tmpfile)
-
-
     def test_calculate_ref_read_coverage(self):
         '''test _calculate_ref_read_coverage'''
         self.qc.ref_fasta = os.path.join(data_dir, 'qc_test.calculate_ref_read_coverage.ref.fa')

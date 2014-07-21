@@ -42,6 +42,8 @@ class Qc:
         if self.embl_dir is not None:
             self.embl_dir = os.path.abspath(self.embl_dir)
 
+        self.embl_files = []
+
         self.ref_db = ref_db
 
         files_to_check = [assembly_fasta, reads_fr, reads_fwd, reads_rev]
@@ -57,7 +59,6 @@ class Qc:
         self.threads = threads
         self.kraken_preload = kraken_preload
         self.kraken_prefix = self.outprefix + '.kraken'
-        self.ref_info_file = self.outprefix + '.ref_info'
         self.ratt_config = None if ratt_config is None else os.path.abspath(ratt_config)
         self.ratt_outdir = self.outprefix + '.ratt'
         self.blast_for_act = blast_for_act
@@ -137,6 +138,8 @@ class Qc:
         self.should_have_assembled = {}
         self.contig_placement = {}
         self.stats_keys = [
+            'ref_EMBL_dir',
+            'ref_EMBL_files',
             'ref_bases',
             'ref_sequences',
             'ref_bases_assembled',
@@ -523,7 +526,7 @@ class Qc:
         else:
             self.embl_dir = os.path.abspath(self.embl_dir)
 
-        self._write_ref_info(self.ref_info_file)
+        self.embl_files = sorted(os.listdir(self.embl_dir))
 
 
     def _make_act_files(self):
@@ -661,6 +664,8 @@ class Qc:
 
 
     def _calculate_stats(self):
+        self.stats['ref_EMBL_dir'] = self.embl_dir
+        self.stats['ref_EMBL_files'] = ' '.join(self.embl_files)
         self.stats['ref_bases'] = sum(self.ref_lengths.values())
         self.stats['ref_sequences'] = len(self.ref_lengths)
         self.stats['ref_bases_assembled'] = sum([fastaq.intervals.length_sum_from_list(l) for l in list(self.ref_pos_covered_by_contigs.values())])
