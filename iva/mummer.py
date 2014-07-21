@@ -11,7 +11,7 @@ HIT_AT_END = 1
 HIT_AT_BOTH_ENDS = 2
 HIT_NO_ENDS = 3
 
-def run_nucmer(query, ref, outfile, min_id=95, min_length=100):
+def run_nucmer(query, ref, outfile, min_id=95, min_length=100, breaklen=200):
     query = os.path.abspath(query)
     ref = os.path.abspath(ref)
     outfile = os.path.abspath(outfile)
@@ -20,7 +20,7 @@ def run_nucmer(query, ref, outfile, min_id=95, min_length=100):
     os.chdir(tmpdir)
     script = 'run_nucmer.sh'
     f = fastaq.utils.open_file_write(script)
-    print('nucmer --maxmatch -p p', ref, query, file=f)
+    print('nucmer --maxmatch -p p -b', breaklen, ref, query, file=f)
     print('delta-filter -i', min_id, '-l', min_length, 'p.delta > p.delta.filter', file=f)
     print('show-coords -dTlro p.delta.filter >', outfile, file=f)
     fastaq.utils.close(f)

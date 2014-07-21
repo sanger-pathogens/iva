@@ -320,7 +320,7 @@ class Qc:
 
 
     def _get_contig_hits_to_reference(self):
-        mummer.run_nucmer(self.assembly_fasta, self.ref_fasta, self.assembly_vs_ref_coords, min_id=self.nucmer_min_ctg_hit_id, min_length=self.nucmer_min_ctg_hit_length)
+        mummer.run_nucmer(self.assembly_fasta, self.ref_fasta, self.assembly_vs_ref_coords, min_id=self.nucmer_min_ctg_hit_id, min_length=self.nucmer_min_ctg_hit_length, breaklen=500)
         self.assembly_vs_ref_mummer_hits = self._mummer_coords_file_to_dict(self.assembly_vs_ref_coords)
 
 
