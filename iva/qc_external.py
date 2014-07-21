@@ -42,22 +42,6 @@ ratt_stats = [
 
 default_ratt_config = os.path.join(os.path.dirname(inspect.getfile(inspect.currentframe())), 'ratt', 'ratt.config')
 
-reapr_stats = [
-    'bases',
-    'error_free',
-    'FCD',
-    'FCD_gap',
-    'frag_cov',
-    'frag_cov_gap',
-    'low_score',
-    'link',
-    'soft_clipped',
-    'collapsed_repeat',
-    'read_cov',
-    'low_perfect_cov',
-    'read_orientation',
-]
-
 
 def dummy_gage_stats():
     return {x:'NA' for x in gage_stats}
@@ -65,10 +49,6 @@ def dummy_gage_stats():
 
 def dummy_ratt_stats():
     return {x:'NA' for x in ratt_stats}
-
-
-def dummy_reapr_stats():
-    return {x:'NA' for x in reapr_stats}
 
 
 def run_gage(reference, scaffolds, outdir, nucmer_minid=80, clean=True):
@@ -209,88 +189,6 @@ def run_ratt(embl_dir, assembly, outdir, config_file=None, transfer='Species', c
                 pass
 
         common.syscall('rm query.* Reference.* nucmer.* out.*')
-
-    os.chdir(cwd)
-    return stats
-
-
-def run_reapr(assembly, reads_fwd, reads_rev, bam, outdir, clean=True):
-    assembly = os.path.abspath(assembly)
-    reads_fwd = os.path.abspath(reads_fwd)
-    reads_rev = os.path.abspath(reads_rev)
-    bam = os.path.abspath(bam)
-
-    cmd = 'samtools view ' + bam + r''' | awk '$9>0 {i++; s+=$9; if (i>10){exit}} END{if (i==0) {print -1} else {print s/i}}' '''
-    insert_size = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).communicate()[0].decode().split('\n')[:-1][0]
-    insert_size = int(float(insert_size))
-    if insert_size == -1:
-        print('Warning: couldn\'t estimate insert size from BAM, so did not run REAPR. I tried:', file=sys.stderr)
-        print(cmd)
-        return dummy_reapr_stats()
-
-    cwd = os.getcwd()
-    try:
-        os.mkdir(outdir)
-        os.chdir(outdir)
-    except:
-        raise Error('Error mkdir ' + outdir)
-
-
-    cmd_facheck = 'reapr facheck ' + assembly
-    if not common.syscall(cmd_facheck, allow_fail=True):
-        common.syscall(cmd_facheck + ' assembly')
-        assembly = 'assembly.fa'
-        cmd_rename = 'reapr seqrename assembly.info ' + bam + ' renamed.bam'
-        common.syscall(cmd_rename)
-        bam = 'renamed.bam'
-
-    cmd_perfectmap = ' '.join(['reapr perfectmap', assembly, reads_fwd, reads_rev, str(insert_size), 'perfect'])
-    cmd_pipeline = ' '.join(['reapr pipeline', assembly, bam, 'Out', 'perfect'])
-
-    try:
-        common.syscall(cmd_perfectmap)
-        common.syscall(cmd_pipeline)
-    except:
-        os.chdir(cwd)
-        return dummy_reapr_stats()
-
-    reapr_tsv = os.path.join('Out', '05.summary.report.tsv')
-    if not os.path.exists(reapr_tsv):
-        os.chdir(cwd)
-        return dummy_reapr_stats()
-
-    stats = dummy_reapr_stats()
-    f = fastaq.utils.open_file_read(reapr_tsv)
-    columns = f.readline().rstrip().split('\t')
-    values = f.readline().rstrip().split('\t')
-    fastaq.utils.close(f)
-    for i in range(len(columns)):
-        if columns[i] in stats:
-            stats[columns[i]] = int(values[i])
-
-    if clean:
-        files = [
-            'assembly.fa',
-            'assembly.fa.fai',
-            'assembly.info',
-            'perfect.hist',
-            'perfect.perfect_cov.gz',
-            'perfect.perfect_cov.gz.tbi',
-            'renamed.bam',
-        ]
-
-        for f in files:
-            try:
-                os.unlink(f)
-            except:
-                pass
-
-        os.rename(os.path.join('Out', '05.summary.report.txt'), '05.summary.report.txt')
-
-        try:
-            shutil.rmtree('Out')
-        except:
-            pass
 
     os.chdir(cwd)
     return stats

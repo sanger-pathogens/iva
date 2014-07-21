@@ -21,7 +21,6 @@ prog_to_version_cmd = {
     'kraken-build': ('kraken-build --version', re.compile('^Kraken version (.*)$')),
     'nucmer': ('nucmer --version', re.compile('^NUCmer \(NUCleotide MUMmer\) version (.*)$')),
     'R': ('R --version', re.compile('^R version (.*) \(.*\) --')),
-    'reapr': ('reapr', re.compile('^REAPR version: (.*)$')),
     'smalt': ('smalt version', re.compile('^Version: (.*)$')),
     'samtools': ('samtools', re.compile('^Version: (.*)$')),
 }
@@ -50,7 +49,6 @@ qc_progs_optional = [
     'makeblastdb',
     'kraken',
     'kraken-build',
-    'reapr',
 ]
 
 

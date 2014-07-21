@@ -30,7 +30,6 @@ class Qc:
         smalt_k=15,
         smalt_s=3,
         smalt_id=0.5,
-        reapr=False,
         blast_for_act=False,
         kraken_preload=False,
         clean=True,
@@ -61,8 +60,6 @@ class Qc:
         self.ref_info_file = self.outprefix + '.ref_info'
         self.ratt_config = None if ratt_config is None else os.path.abspath(ratt_config)
         self.ratt_outdir = self.outprefix + '.ratt'
-        self.reapr = reapr
-        self.reapr_outdir = self.outprefix + '.reapr'
         self.blast_for_act = blast_for_act
         self.blast_out = self.outprefix + '.assembly_v_ref.blastn'
         self.act_script = self.outprefix + '.assembly_v_ref.act.sh'
@@ -624,13 +621,6 @@ class Qc:
             self.ratt_stats = qc_external.run_ratt(self.embl_dir, self.assembly_fasta, self.ratt_outdir, config_file=self.ratt_config, clean=self.clean)
 
 
-    def _calculate_reapr_stats(self):
-        if self.reapr and not self.assembly_is_empty:
-            self.reapr_stats = qc_external.run_reapr(self.assembly_fasta, self.reads_fwd, self.reads_rev, self.assembly_bam, self.reapr_outdir, clean=self.clean)
-        else:
-            self.reapr_stats = qc_external.dummy_reapr_stats()
-
-
     def _do_calculations(self):
         self._map_reads_to_assembly()
         self._choose_reference_genome()
@@ -647,7 +637,6 @@ class Qc:
         self._calculate_refseq_assembly_stats()
         self._calculate_gage_stats()
         self._calculate_ratt_stats()
-        self._calculate_reapr_stats()
         self._calculate_stats()
 
 
@@ -684,8 +673,6 @@ class Qc:
             print('gage_' + stat.replace(' ', '_'), self.gage_stats[stat], sep='\t', file=f)
         for stat in qc_external.ratt_stats:
             print('ratt_' + stat.replace(' ', '_'), self.ratt_stats[stat], sep='\t', file=f)
-        for stat in qc_external.reapr_stats:
-            print('reapr_' + stat.replace(' ', '_'), self.reapr_stats[stat], sep='\t', file=f)
 
         fastaq.utils.close(f)
 
@@ -696,7 +683,6 @@ class Qc:
         print('\t'.join([str(self.stats[x]) for x in self.stats_keys]),
               '\t'.join([str(self.gage_stats[x]) for x in qc_external.gage_stats]),
               '\t'.join([str(self.ratt_stats[x]) for x in qc_external.ratt_stats]),
-              '\t'.join([str(self.reapr_stats[x]) for x in qc_external.reapr_stats]),
               sep='\t', file=f)
         fastaq.utils.close(f)
 
