@@ -695,7 +695,9 @@ class Qc:
 
     def _write_stats_tsv(self):
         f = fastaq.utils.open_file_write(self.stats_file_tsv)
-        print('\t'.join([x.replace(' ', '_') for x in self.stats_keys + qc_external.gage_stats]), file=f)
+        print('\t'.join([x.replace(' ', '_') for x in self.stats_keys]), end='\t', file=f)
+        print('\t'.join(['gage_' + x.replace(' ', '_') for x in qc_external.gage_stats]), end='\t', file=f)
+        print('\t'.join(['ratt_' + x.replace(' ', '_') for x in qc_external.ratt_stats]), file=f)
         print('\t'.join([str(self.stats[x]) for x in self.stats_keys]),
               '\t'.join([str(self.gage_stats[x]) for x in qc_external.gage_stats]),
               '\t'.join([str(self.ratt_stats[x]) for x in qc_external.ratt_stats]),
