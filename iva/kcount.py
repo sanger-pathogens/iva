@@ -94,7 +94,8 @@ def _run_kmc(reads, outprefix, kmer, min_count, max_count, verbose=0):
     # RAM available on the machine.
     ran_ok = _run_kmc_with_script('run_kmc.sh', reads, kmer_counts_file, kmer, min_count, max_count, 32, verbose, True)
     if not ran_ok:
-        print('First try of running kmc failed. Trying again with -m4 instead of -m32...', flush=True)
+        if self.verbose:
+            print('First try of running kmc failed. Trying again with -m4 instead of -m32...', flush=True)
         ran_ok = _run_kmc_with_script('run_kmc.sh', reads, kmer_counts_file, kmer, min_count, max_count, 4, verbose, False)
 
     os.chdir(original_dir)
