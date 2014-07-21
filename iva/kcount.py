@@ -172,7 +172,8 @@ def _write_ref_seqs_to_be_checked(outfile, kmers_to_ignore=None, contigs_to_chec
         original_line_length = fastaq.sequences.Fasta.line_length
         fastaq.sequences.Fasta.line_length = 0
         for name in contigs_to_check:
-            print(contigs_to_check[name].fa, file=f)
+            if len(contigs_to_check[name].fa) > 20:
+                print(contigs_to_check[name].fa, file=f)
         fastaq.sequences.Fasta.line_length = original_line_length
 
     fastaq.utils.close(f)
