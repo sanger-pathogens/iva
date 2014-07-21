@@ -6,7 +6,7 @@ from iva import contig, mapping, seed, mummer, graph, edge
 import fastaq
 
 class Assembly:
-    def __init__(self, contigs_file=None, map_index_k=15, map_index_s=3, threads=1, max_insert=1000, map_minid=0.5, min_clip=3, ext_min_cov=5, ext_min_ratio=2, ext_bases=100, verbose=0, seed_min_cov=5, seed_min_ratio=10, seed_min_kmer_count=200, seed_max_kmer_count=1000000000, seed_start_length=None, seed_stop_length=500, seed_overlap_length=None, make_new_seeds=False, contig_iter_trim=10, seed_ext_max_bases=50, max_contigs=None, clean=True, strand_bias=0.2):
+    def __init__(self, contigs_file=None, map_index_k=15, map_index_s=3, threads=1, max_insert=1000, map_minid=0.5, min_clip=3, ext_min_cov=5, ext_min_ratio=2, ext_bases=100, verbose=0, seed_min_cov=5, seed_min_ratio=10, seed_min_kmer_count=200, seed_max_kmer_count=1000000000, seed_start_length=None, seed_stop_length=500, seed_overlap_length=None, make_new_seeds=False, contig_iter_trim=10, seed_ext_max_bases=50, max_contigs=50, clean=True, strand_bias=0.2):
         self.contigs = {}
         self.contig_lengths = {}
         self.map_index_k = map_index_k
@@ -44,8 +44,11 @@ class Assembly:
                 self._add_contig(contigs[ctg])
 
 
-    def _add_contig(self, ctg):
+    def _add_contig(self, ctg, min_length=1):
+        if len(ctg) < min_length:
+            return
         assert ctg.id not in self.contigs
+        assert len(ctg) > 0
         self.contigs[ctg.id] = contig.Contig(ctg, verbose=self.verbose)
         self.contig_lengths[ctg.id] = [[len(self.contigs[ctg.id]), 0, 0]]
 
@@ -254,8 +257,7 @@ class Assembly:
         sorted_bam = tmp_prefix + '.bam'
         unsorted_bam = tmp_prefix + '.unsorted.bam'
         original_map_minid = self.map_minid
-        if break_contigs:
-            self.map_minid = 0.9
+        self.map_minid = 0.9
         self._map_reads(reads_prefix + '_1.fa', reads_prefix + '_2.fa', tmp_prefix, sort_reads=True)
         self.map_minid = original_map_minid
         new_contigs = []
@@ -275,7 +277,7 @@ class Assembly:
             self._remove_contig(ctg)
 
         for ctg in new_contigs:
-            self._add_contig(ctg)
+            self._add_contig(ctg, min_length=0.75 * self.self.seed_stop_length)
 
 
         if out_prefix is not None:
@@ -328,31 +330,51 @@ class Assembly:
     def _read_pair_extension_iterations(self, reads_prefix, out_prefix, no_map_contigs=None):
         if no_map_contigs is None:
             no_map_contigs = set()
-        assert(len(self.contigs))
+        assert(len(self.contigs) > len(no_map_contigs))
         if self.verbose:
-            print('{:-^79}'.format(' ' + out_prefix + ' start extension subiteration 0001 '))
+            print('{:-^79}'.format(' ' + out_prefix + ' start extension subiteration 0001 '), flush=True)
 
         bases_added = self._extend_with_reads(reads_prefix, out_prefix + '.1', no_map_contigs)
+        current_reads_prefix = reads_prefix
 
         if bases_added == 0:
-            return
+            return True
         try_contig_trim = False
         i = 1
 
         while self._worth_extending() or try_contig_trim:
             i += 1
             if self.verbose:
-                print()
-                print('{:-^79}'.format(' ' + out_prefix + ' start extension subiteration ' + str(i).zfill(4) + ' '))
+                print('{:-^79}'.format(' ' + out_prefix + ' start extension subiteration ' + str(i).zfill(4) + ' '), flush=True)
 
+            if i % 5 == 0:
+                tmpdir = tempfile.mkdtemp(prefix='tmp.filter_reads.', dir=os.getcwd())
+                tmp_prefix = os.path.join(tmpdir, 'out')
+                bam = tmp_prefix + '.bam'
+                original_map_minid = self.map_minid
+                self.map_minid = 0.9
+                self._map_reads(current_reads_prefix + '_1.fa', current_reads_prefix + '_2.fa', tmp_prefix)
+                self.map_minid = original_map_minid
+                filter_prefix = reads_prefix + '.subiter.' + str(i) + '.reads'
+                mapping.bam_file_to_fasta_pair_files(bam, filter_prefix + '_1.fa', filter_prefix + '_2.fa', remove_proper_pairs=True)
+                if current_reads_prefix != reads_prefix:
+                    os.unlink(current_reads_prefix + '_1.fa')
+                    os.unlink(current_reads_prefix + '_2.fa')
+                current_reads_prefix = filter_prefix
+                shutil.rmtree(tmpdir)
+                    
             iter_prefix = out_prefix + '.' + str(i)
-            bases_added = self._extend_with_reads(reads_prefix, iter_prefix, no_map_contigs)
+            bases_added = self._extend_with_reads(current_reads_prefix, iter_prefix, no_map_contigs)
 
             if bases_added == 0:
                 if not try_contig_trim:
                     if self.verbose:
                         print('    No bases added. Try trimming contigs')
                     self._trim_strand_biased_ends(reads_prefix, tag_as_trimmed=False)
+                    if len(self.contigs) <= len(no_map_contigs):
+                        if self.verbose:
+                            print('       lost contigs during trimming. No more iterations')
+                        return False
                     self.trim_contigs(self.contig_iter_trim)
                     try_contig_trim = True
                 else:
@@ -362,75 +384,48 @@ class Assembly:
             else:
                 try_contig_trim = False
 
+        if current_reads_prefix != reads_prefix:
+            os.unlink(current_reads_prefix + '_1.fa')
+            os.unlink(current_reads_prefix + '_2.fa')
+        return True
+
 
     def read_pair_extend(self, reads_prefix, out_prefix):
         assert(len(self.contigs))
         current_reads_prefix = reads_prefix
         i = 1
-        if len(self.contigs) == 1:
-            last_contig_added = list(self.contigs.keys())[0]
-        else:
-            last_contig_added = None
-        if self.verbose:
-            print('{:_^79}'.format(' START ITERATION 001 '))
-        self._read_pair_extension_iterations(current_reads_prefix, out_prefix + '.1')
-        current_contig_set = set()
+        new_seed_name = 'dummy'
 
-        while self.make_new_seeds and len(self.contigs) < self.max_contigs:
+        while 1:
+            if self.verbose:
+                print('{:_^79}'.format(' START ITERATION ' + str(i) + ' '), flush=True)
+            self._read_pair_extension_iterations(current_reads_prefix, out_prefix + '.' + str(i))
             filtered_reads_prefix = out_prefix + '.' + str(i) + '.filtered'
-            if self.verbose:
-                print('{:_^79}'.format(' Trim contig ends '))
-
-            if self.verbose:
-                print('{:_^79}'.format(' Try making new seed '))
-            new_seed = self.add_new_seed_contig(current_reads_prefix + '_1.fa', current_reads_prefix + '_2.fa', contig_name=last_contig_added)
-
-            if new_seed is None:
-                if last_contig_added is not None:
-                    self._trim_strand_biased_ends(current_reads_prefix, tag_as_trimmed=True, out_prefix=filtered_reads_prefix)
-                    current_contig_set.add(last_contig_added)
-                    self._remove_contained_contigs(current_contig_set)
-                    self._merge_overlapping_contigs(current_contig_set, min_overlap_length=500, end_tolerance=10, min_identity=99)
-                    if current_reads_prefix != reads_prefix and self.clean:
-                        os.unlink(current_reads_prefix + '_1.fa')
-                        os.unlink(current_reads_prefix + '_2.fa')
-                    current_reads_prefix = filtered_reads_prefix
-                    new_seed = self.add_new_seed_contig(current_reads_prefix + '_1.fa', current_reads_prefix + '_2.fa')
-                    current_contig_set = set()
-            elif last_contig_added is not None:
-                    current_contig_set.add(last_contig_added)
-
-            if new_seed is None:
-                break
-
-            last_contig_added  = new_seed
+            self._trim_strand_biased_ends(reads_prefix, tag_as_trimmed=True, out_prefix=filtered_reads_prefix)
+            self._remove_contained_contigs(list(self.contigs.keys()))
+            self._merge_overlapping_contigs(list(self.contigs.keys()), min_overlap_length=200, end_tolerance=50, min_identity=98)
+            if reads_prefix != current_reads_prefix:
+                os.unlink(current_reads_prefix + '_1.fa')
+                os.unlink(current_reads_prefix + '_2.fa')
+            current_reads_prefix = filtered_reads_prefix
             i += 1
+            reads_left = os.path.getsize(current_reads_prefix + '_1.fa') > 0 and os.path.getsize(current_reads_prefix + '_2.fa') > 0
+
+            if not self.make_new_seeds or new_seed_name is None or not self.make_new_seeds or len(self.contigs) >= self.max_contigs or not reads_left:
+                if reads_prefix != current_reads_prefix:
+                    os.unlink(current_reads_prefix + '_1.fa')
+                    os.unlink(current_reads_prefix + '_2.fa')
+                break 
+
             if self.verbose:
-                print('{:_^79}'.format(' START ITERATION ' + str(i).zfill(3) + ' '))
-            self._read_pair_extension_iterations(current_reads_prefix, out_prefix + '.' + str(i), no_map_contigs=current_contig_set)
-
-        if not self.clean:
-            self.write_contigs_to_file('contigs.before_cleaning.fasta', order_by_orfs=True)
-        else:
-            for j in range(i+1):
-                for k in [1,2]:
-                    fname = 'iteration.' + str(j) + '.filtered_' + str(k) + '.fa'
-                    if os.path.exists(fname):
-                        os.unlink(fname)
-
-        self._trim_strand_biased_ends(reads_prefix, tag_as_trimmed=True, break_contigs=True)
-        if not self.clean:
-            self.write_contigs_to_file('contigs.clean.01.after_strand_bias.fasta', order_by_orfs=True)
-        self._remove_contained_contigs(list(self.contigs.keys()))
-        if not self.clean:
-            self.write_contigs_to_file('contigs.clean.02.after_remove_containing.fasta', order_by_orfs=True)
-        self._merge_overlapping_contigs(list(self.contigs.keys()), min_overlap_length=200, end_tolerance=50, min_identity=99)
+                print('{:_^79}'.format(' Try making new seed '), flush=True)
+            new_seed_name = self.add_new_seed_contig(current_reads_prefix + '_1.fa', current_reads_prefix + '_2.fa')
 
 
     def _run_nucmer(self, contigs_to_use=None):
         if contigs_to_use is None:
             contigs_to_use = set()
-        if len(contigs_to_use) <= 1:
+        if len(contigs_to_use) + len(self.contigs) <= 1:
             return []
         tmpdir = tempfile.mkdtemp(prefix='tmp.remove_self_contigs.', dir=os.getcwd())
         nucmer_out = os.path.join(tmpdir, 'nucmer.out')
@@ -550,7 +545,7 @@ class Assembly:
         os.unlink(out_prefix + '.bam')
 
 
-    def add_new_seed_contig(self, reads1, reads2, contig_name=None, remove_seed_strand_bias=True, max_attempts=10):
+    def add_new_seed_contig(self, reads1, reads2, contig_name=None, max_attempts=10):
         if len(self.contigs):
             tmpdir = tempfile.mkdtemp(prefix='tmp.make_seed.', dir=os.getcwd())
             tmp_prefix = os.path.join(tmpdir, 'out')
@@ -571,7 +566,7 @@ class Assembly:
         for i in range(max_attempts):
             s = seed.Seed(reads1=seed_reads1, reads2=seed_reads2, extend_length=self.seed_ext_max_bases, seed_length=self.seed_start_length, seed_min_count=self.seed_min_kmer_count, seed_max_count=self.seed_max_kmer_count, ext_min_cov=self.seed_min_cov, ext_min_ratio=self.seed_min_ratio, verbose=self.verbose, threads=self.threads, sequences_to_ignore=self.used_seeds, contigs_to_check=self.contigs)
 
-            if s.seq is None:
+            if s.seq is None or len(s.seq) == 0:
                 break
 
             if self.seed_overlap_length is None:
@@ -590,7 +585,7 @@ class Assembly:
         if len(self.contigs):
             shutil.rmtree(tmpdir)
 
-        if not made_seed:
+        if not made_seed or len(s.seq) == 0:
             return None
 
         if self.verbose:

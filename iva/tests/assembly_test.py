@@ -1,4 +1,5 @@
 import unittest
+import sys
 import os
 import filecmp
 import pysam
@@ -148,7 +149,7 @@ class TestAssembly(unittest.TestCase):
         a = assembly.Assembly(contigs_file=os.path.join(data_dir, 'assembly_test.fa'), verbose=3, min_clip=1, seed_min_cov=1, seed_min_kmer_count=1, seed_start_length=10, seed_overlap_length=5, seed_stop_length=20)
         reads1 = os.path.join(data_dir, 'assembly_test_add_new_seed_contig.reads_1.fa')
         reads2 = os.path.join(data_dir, 'assembly_test_add_new_seed_contig.reads_2.fa')
-        new_contig_name = a.add_new_seed_contig(reads1, reads2, remove_seed_strand_bias=False)
+        new_contig_name = a.add_new_seed_contig(reads1, reads2)
         self.assertEqual('seeded.00001', new_contig_name)
         self.assertTrue(new_contig_name in a.contigs)
 
