@@ -58,7 +58,7 @@ class Assembly:
             do_not_write = set()
         if only_write is None:
             only_write = set()
-      
+
         printed = 0
         if min_length is None:
             min_length = self.map_index_k + 1
@@ -362,7 +362,7 @@ class Assembly:
                     os.unlink(current_reads_prefix + '_2.fa')
                 current_reads_prefix = filter_prefix
                 shutil.rmtree(tmpdir)
-                    
+
             iter_prefix = out_prefix + '.' + str(i)
             bases_added = self._extend_with_reads(current_reads_prefix, iter_prefix, no_map_contigs)
 
@@ -403,7 +403,7 @@ class Assembly:
             filtered_reads_prefix = out_prefix + '.' + str(i) + '.filtered'
             self._trim_strand_biased_ends(reads_prefix, tag_as_trimmed=True, out_prefix=filtered_reads_prefix)
             self._remove_contained_contigs(list(self.contigs.keys()))
-            self._merge_overlapping_contigs(list(self.contigs.keys()), min_overlap_length=200, end_tolerance=50, min_identity=98)
+            self._merge_overlapping_contigs(list(self.contigs.keys()))
             if reads_prefix != current_reads_prefix:
                 os.unlink(current_reads_prefix + '_1.fa')
                 os.unlink(current_reads_prefix + '_2.fa')
@@ -415,7 +415,7 @@ class Assembly:
                 if reads_prefix != current_reads_prefix:
                     os.unlink(current_reads_prefix + '_1.fa')
                     os.unlink(current_reads_prefix + '_2.fa')
-                break 
+                break
 
             if self.verbose:
                 print('{:_^79}'.format(' Try making new seed '), flush=True)
@@ -465,7 +465,7 @@ class Assembly:
         return new_contig
 
 
-    def _merge_overlapping_contigs(self, contigs, min_overlap_length=200, end_tolerance=50, min_identity=99):
+    def _merge_overlapping_contigs(self, contigs):
         if len(contigs) <= 1:
             return
         hits = self._run_nucmer(contigs)
