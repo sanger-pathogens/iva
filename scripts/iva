@@ -102,7 +102,8 @@ except:
 
 os.chdir(options.outdir)
 
-iva.external_progs.write_prog_info('iva', 'info.txt')
+log_file = 'info.txt'
+iva.external_progs.write_prog_info('iva', log_file)
 
 reads_prefix = 'reads'
 reads_1 = reads_prefix + '_1.fa'
@@ -220,7 +221,11 @@ if options.contigs:
 elif not options.reference:
     seed_name = assembly.add_new_seed_contig(reads_1, reads_2)
     if seed_name is None:
-        print('Failed to make first seed. Cannot continue')
+        error_message = 'Failed to make first seed. Cannot continue'
+        print(error_message, file=sys.stderr)
+        with open(log_file, 'a') as f:
+            print(error_message, file=f)
+        f.close()
         sys.exit(1)
 
 assembly.read_pair_extend(reads_prefix, 'iteration')
