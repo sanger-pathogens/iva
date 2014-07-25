@@ -94,7 +94,7 @@ def _run_kmc(reads, outprefix, kmer, min_count, max_count, verbose=0):
     # RAM available on the machine.
     ran_ok = _run_kmc_with_script('run_kmc.sh', reads, kmer_counts_file, kmer, min_count, max_count, 32, verbose, True)
     if not ran_ok:
-        if self.verbose:
+        if verbose:
             print('First try of running kmc failed. Trying again with -m4 instead of -m32...', flush=True)
         ran_ok = _run_kmc_with_script('run_kmc.sh', reads, kmer_counts_file, kmer, min_count, max_count, 4, verbose, False)
 
@@ -152,7 +152,7 @@ def _kmc_to_kmer_counts(infile, number, kmers_to_ignore=None, contigs_to_check=N
             counts[sam.seq.decode()] = count
         sam_reader.close()
 
-    shutil.rmtree(tmpdir) 
+    shutil.rmtree(tmpdir)
     return counts
 
 
@@ -168,7 +168,7 @@ def _write_ref_seqs_to_be_checked(outfile, kmers_to_ignore=None, contigs_to_chec
             print('>', i, sep='', file=f)
             print(kmer, file=f)
             i += 1
-         
+
     if contigs_to_check is not None and len(contigs_to_check) > 0:
         original_line_length = fastaq.sequences.Fasta.line_length
         fastaq.sequences.Fasta.line_length = 0
@@ -191,11 +191,11 @@ def _counts_file_to_fasta(infile, outfile):
             count = int(count)
         except:
             raise Error('Error getting kmer info from this line:\n' + line)
-        
+
         print('>', i, '_', count, sep='', file=fout)
         print(kmer, file=fout)
         i += 1
-        
+
     fastaq.utils.close(fin)
     fastaq.utils.close(fout)
 
