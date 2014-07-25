@@ -48,6 +48,9 @@ The following are required to run an assembly with IVA.
    need to tell IVA where the Java jar file is to use Trimmomatic (see
    examples below).
 
+IVA is known to work with kmc version 2.0, MUMmer version 3.23, samtools
+version 0.1.19 and SMALT version 0.7.5.
+
 #### QC dependencies
 
 The QC scripts have the following dependencies, in addiition to MUMmer,
@@ -59,9 +62,6 @@ smalt and samtools:
    make your own reference database, or if you use a database to
    automatically choose the reference genome. Read the
    [paper] [kraken paper] for more information.
- * Optional: [reapr] [reapr code] will be used if it is installed
-   and found in your path. Read the [paper] [reapr paper] for more
-   information.
 
 The QC code is also bundled with the following (they do not need to be installed).
 
@@ -174,7 +174,20 @@ Make the database by running:
 Once you have made the database,
 you can use it with the QC script by running:
 
-    iva_qc --ref_db Database_dir assembly.fasta prefix_of_output_files
+    iva_qc --ref_db Database_dir -f reads_1.fq -r reads_2.fq assembly.fasta prefix_of_output_files
+
+
+#### Annotated assembly
+
+RATT is run as part of `iva_qc`. The default behaviour is to delete most
+intermediate files, including the `*.embl` files made by RATT. If you want
+these files, so that you have an annotated assembly, then either:
+
+ * run `iva_qc --noclean`, which will not delete any files
+ * or after running the script, you can regenerate the RATT output with
+   `bash out_prefix.ratt/run.sh`.
+
+All the RATT files will be in the directory `out_prefix.ratt/`.
 
 
 ------------------------------------------------------------------------------
@@ -204,9 +217,6 @@ URL http://www.R-project.org/.
 **RATT:** Otto, T. D., Dillon, G. P., Degrave, W. S. & Berriman, M.
 _RATT: Rapid Annotation Transfer Tool_. Nucleic Acids Res. 39, e57 (2011).
 
-**REAPR:** Hunt, M. et al. _REAPR: a universal tool for genome
-assembly evaluation_. Genome Biol. 14, R47 (2013).
-
 **SAMtools:** Li, H. et al. _The Sequence Alignment/Map format and SAMtools_.
 Bioinformatics 25, 2078-9 (2009).
 
@@ -230,8 +240,6 @@ flexible trimmer for Illumina Sequence Data_. Bioinformatics 1-7 (2014).
   [r code]: http://www.r-project.org/
   [ratt code]: http://ratt.sourceforge.net/
   [ratt paper]: http://nar.oxfordjournals.org/content/39/9/e57
-  [reapr code]: https://www.sanger.ac.uk/resources/software/reapr/
-  [reapr paper]: http://genomebiology.com/2013/14/5/R47/
   [samtools code]: http://samtools.sourceforge.net/
   [samtools paper]: http://bioinformatics.oxfordjournals.org/content/25/16/2078.abstract
   [smalt]: http://www.sanger.ac.uk/resources/software/smalt/
