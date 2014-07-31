@@ -5,6 +5,7 @@ import copy
 import fastaq
 import shutil
 import multiprocessing
+import collections
 from iva import mapping, mummer, qc_external, kraken, common
 
 class Error (Exception): pass
@@ -151,6 +152,7 @@ class Qc:
             'assembly_contigs',
             'assembly_contigs_hit_ref',
             'assembly_bases_reads_disagree',
+            'assembly_sum_longest_match_each_segment',
             'cds_number',
             'cds_assembled',
             'cds_assembled_ok',
@@ -328,10 +330,10 @@ class Qc:
         contigs = {}
         fastaq.tasks.file_to_dict(self.assembly_fasta, contigs)
         f = fastaq.utils.open_file_write(self.fasta_assembly_contigs_hit_ref)
-        for qry_name in sorted(self.assembly_vs_ref_mummer_hits): 
+        for qry_name in sorted(self.assembly_vs_ref_mummer_hits):
             print(contigs[qry_name], file=f)
         fastaq.utils.close(f)
-        
+
 
     def _hash_nucmer_hits_by_ref(self, hits):
         d = {}
@@ -359,7 +361,8 @@ class Qc:
                     'hits': len(hits),
                     'bases_assembled': fastaq.intervals.length_sum_from_list(coords),
                     'assembled': 0.9 <= fastaq.intervals.length_sum_from_list(coords) / self.ref_lengths[name],
-                    'assembled_ok': len(hits) == 1 and 0.9 <= hits[0].hit_length_ref / self.ref_lengths[name] <= 1.1
+                    'assembled_ok': len(hits) == 1 and 0.9 <= hits[0].hit_length_ref / self.ref_lengths[name] <= 1.1,
+                    'longest_matching_contig': self._longest_matching_contig(refhits, name),
                 }
             else:
                 self.refseq_assembly_stats[name] = {
@@ -367,6 +370,7 @@ class Qc:
                     'bases_assembled': 0,
                     'assembled': False,
                     'assembled_ok': False,
+                    'longest_matching_contig': 0,
                 }
 
 
@@ -441,26 +445,20 @@ class Qc:
         return unique, repetitive
 
 
-    def _get_longest_hit_index(self, hits):
+    def _longest_matching_contig(self, hits, refname):
         if len(hits) == 0:
-            return None
-        max_length = -1
-        index = -1
-        for i in range(len(hits)):
-            length = max(hits[i].qry_start, hits[i].qry_end) - min(hits[i].qry_start, hits[i].qry_end)
-            if length > max_length:
-                index = i
-                max_length = length
-
-        assert max_length != -1
-        assert index != -1
-        return index
+            return 0
+        hits_to_refname = [x for x in hits[refname] if x.ref_name == refname and x.qry_length <= 2 * x.ref_length]
+        if len(hits_to_refname) == 0:
+            return 0
+        else:
+            return max([x.qry_length for x in hits_to_refname])
 
 
     def _calculate_incorrect_assembly_bases(self):
         if self.assembly_is_empty:
             self.incorrect_assembly_bases = {}
-        else: 
+        else:
             self.incorrect_assembly_bases = mapping.find_incorrect_ref_bases(self.assembly_bam, self.assembly_fasta)
 
 
@@ -534,13 +532,13 @@ class Qc:
             return
 
         qc_external.run_blastn_and_write_act_script(self.assembly_fasta, self.ref_fasta, self.blast_out, self.act_script)
-            
+
 
     def _map_reads_to_reference(self):
         assert os.path.exists(self.ref_fasta)
         mapping.map_reads(self.reads_fwd, self.reads_rev, self.ref_fasta, self.ref_bam[:-4], sort=True, threads=self.threads, index_k=self.smalt_k, index_s=self.smalt_s, minid=self.smalt_id, extra_smalt_map_ops='-x')
         os.unlink(self.ref_bam[:-4] + '.unsorted.bam')
-        
+
 
     def _calculate_ref_read_coverage(self):
         if not os.path.exists(self.ref_bam):
@@ -676,6 +674,7 @@ class Qc:
         self.stats['assembly_contigs'] = len(self.assembly_lengths)
         self.stats['assembly_bases_in_ref'], self.stats['assembly_contigs_hit_ref'] = self._contigs_and_bases_that_hit_ref()
         self.stats['assembly_bases_reads_disagree'] = sum([len(x) for x in self.incorrect_assembly_bases.values()])
+        self.stats['assembly_sum_longest_match_each_segment'] = sum([x['longest_matching_contig'] for x in self.refseq_assembly_stats.values()])
         self.stats['cds_number'] = len(self.cds_assembly_stats)
         self.stats['cds_assembled'] = len([1 for x in self.cds_assembly_stats.values() if x['assembled']])
         self.stats['cds_assembled_ok'] = len([1 for x in self.cds_assembly_stats.values() if x['assembled_ok']])
