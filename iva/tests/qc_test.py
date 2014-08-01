@@ -99,7 +99,7 @@ class TestQc(unittest.TestCase):
         expected = [line.rstrip() for line in open(expected_out)][1:]
         got = [line.rstrip() for line in open(self.qc.cds_nucmer_coords_in_assembly)][1:]
         self.assertEqual(expected, got)
-        
+
 
     def test_mummer_coords_file_to_dict(self):
         '''test _mummer_coords_file_to_dict'''
@@ -218,7 +218,7 @@ class TestQc(unittest.TestCase):
                 'assembled_ok': False,
             }
         }
-       
+
         self.maxDiff = None
         self.assertEqual(expected, self.qc.cds_assembly_stats)
 
@@ -292,31 +292,35 @@ class TestQc(unittest.TestCase):
                 'bases_assembled': 1000,
                 'assembled': True,
                 'assembled_ok': True,
+                'longest_matching_contig': 1000,
             },
             'ref2': {
                 'hits': 1,
                 'bases_assembled': 800,
                 'assembled': False,
                 'assembled_ok': False,
+                'longest_matching_contig': 800,
             },
             'ref3': {
                 'hits': 2,
                 'bases_assembled': 1000,
                 'assembled': True,
                 'assembled_ok': False,
+                'longest_matching_contig': 500,
             },
             'ref4': {
                 'hits': 0,
                 'bases_assembled': 0,
                 'assembled': False,
                 'assembled_ok': False,
+                'longest_matching_contig': 0,
             }
         }
 
         self.qc._calculate_refseq_assembly_stats()
         self.maxDiff = None
         self.assertEqual(expected, self.qc.refseq_assembly_stats)
-        
+
 
     def test_invert_list(self):
         '''test _invert_list'''
@@ -340,7 +344,7 @@ class TestQc(unittest.TestCase):
         assert len(coords) == len(expected)
         for i in range(len(coords)):
             self.assertEqual(self.qc._invert_list(coords[i], 42), expected[i])
-       
+
 
     def test_calculate_ref_positions_covered_by_contigs(self):
         '''test _calculate_ref_positions_covered_by_contigs'''
@@ -370,7 +374,7 @@ class TestQc(unittest.TestCase):
         h4 = mummer.NucmerHit('\t'.join(['1', '10', '29', '40', '100', '100', '100.00', '100', '100', '1', '+', 'ref1', 'qry1']))
         h5 = mummer.NucmerHit('\t'.join(['1', '10', '70', '90', '100', '100', '100.00', '100', '100', '1', '+', 'ref1', 'qry1']))
         hits = [h1, h2, h3, h4, h5]
-       
+
         expected = [
             [],
             [h3, h4],
@@ -378,12 +382,12 @@ class TestQc(unittest.TestCase):
             [h2, h3],
             []
         ]
-       
+
         self.assertEqual(len(hits), len(expected))
 
         for i in range(len(hits)):
             self.assertEqual(self.qc._get_overlapping_qry_hits(hits, hits[i]), expected[i])
-             
+
 
     def test_get_unique_and_repetitive_from_contig_hits(self):
         '''test _get_unique_and_repetitive_from_contig_hits'''
@@ -398,17 +402,6 @@ class TestQc(unittest.TestCase):
         got_unique, got_repetitive  = self.qc._get_unique_and_repetitive_from_contig_hits(hits)
         self.assertEqual(expect_unique, got_unique)
         self.assertEqual(expect_repetitive, got_repetitive)
-
-
-    def test_get_longest_hit_index(self):
-        '''test _get_longest_hit_index'''
-        h1 = mummer.NucmerHit('\t'.join(['1', '10', '1', '10', '100', '100', '100.00', '100', '100', '1', '+', 'ref1', 'qry1']))
-        h2 = mummer.NucmerHit('\t'.join(['1', '10', '11', '1', '100', '100', '100.00', '100', '100', '1', '+', 'ref1', 'qry1']))
-        h3 = mummer.NucmerHit('\t'.join(['1', '10', '9', '1', '100', '100', '100.00', '100', '100', '1', '+', 'ref1', 'qry1']))
-        self.assertEqual(None, self.qc._get_longest_hit_index([]))
-        self.assertEqual(0, self.qc._get_longest_hit_index([h1]))
-        self.assertEqual(1, self.qc._get_longest_hit_index([h1, h2]))
-        self.assertEqual(1, self.qc._get_longest_hit_index([h1, h2, h3]))
 
 
     def test_contig_placement_in_reference(self):
@@ -445,7 +438,7 @@ class TestQc(unittest.TestCase):
             'F:1-2341:-': [(fastaq.intervals.Interval(0, 2340), 'F', fastaq.intervals.Interval(0, 2340), False, False)],
         }
         self.assertEqual(expected_placement, self.qc.contig_placement)
- 
+
 
     def test_get_R_plot_contig_order_from_contig_placement(self):
         '''test _get_R_plot_contig_order_from_contig_placement'''
