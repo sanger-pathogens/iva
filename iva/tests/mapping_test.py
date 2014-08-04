@@ -94,6 +94,19 @@ class TestMapping(unittest.TestCase):
         self.assertListEqual(cov, expected)
 
 
+    def test_remove_indels(self):
+        '''Test _remove_indels'''
+        self.assertEqual('acgt', ''.join(mapping._remove_indels(list('ac+1Xgt'), '+')))
+        self.assertEqual('ac+1Xgt', ''.join(mapping._remove_indels(list('ac+1Xgt'), '-')))
+        self.assertEqual('ac-1Xgt', ''.join(mapping._remove_indels(list('ac-1Xgt'), '+')))
+        self.assertEqual('acgt', ''.join(mapping._remove_indels(list('ac+2XXgt'), '+')))
+        self.assertEqual('acgt', ''.join(mapping._remove_indels(list('ac+10XXXXXXXXXXgt'), '+')))
+        self.assertEqual('acgt', ''.join(mapping._remove_indels(list('ac-10XXXXXXXXXXgt'), '-')))
+        self.assertEqual('a-1Xcgt', ''.join(mapping._remove_indels(list('a-1Xc+1Xg+10XXXXXXXXXXt'), '+')))
+        self.assertEqual('acgt', ''.join(mapping._remove_indels(list('+1Xacgt'), '+')))
+        self.assertEqual('acgt', ''.join(mapping._remove_indels(list('acgt+1X'), '+')))
+
+
     def test_strip_mpileup_coverage_string(self):
         '''Test strip_mpileup_coverage_string'''
         self.assertEqual('acgt', mapping.strip_mpileup_coverage_string('acg^[t'))
@@ -104,7 +117,8 @@ class TestMapping(unittest.TestCase):
         self.assertEqual('acgt', mapping.strip_mpileup_coverage_string('acg+10XXXXXXXXXXt'))
         self.assertEqual('acgt', mapping.strip_mpileup_coverage_string('ac-1Xgt'))
         self.assertEqual('acgt', mapping.strip_mpileup_coverage_string('acg-10XXXXXXXXXXt'))
-        
+        self.assertEqual('aaa', mapping.strip_mpileup_coverage_string('a-1Na^+a'))
+
 
     def test_consensus_base(self):
         '''Test consensus_base'''
@@ -126,10 +140,10 @@ class TestMapping(unittest.TestCase):
             ({'A': 2, 'C': 2, 'G': 3, 'a': 2, 'c': 2, 'g': 5}, None),
             ({'A': 2, 'C': 2, 'G': 4, 'a': 2, 'c': 2, 'g': 3}, None),
         ]
- 
+
         for counts_dict, expected in counts:
             self.assertEqual(expected, mapping.consensus_base_both_strands(counts_dict, forward_keys, reverse_keys, ratio=0.5))
-        
+
 
     def test_find_incorrect_ref_bases(self):
         '''Test find_incorrect_ref_bases'''

@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 import collections
 import fastaq
@@ -113,30 +114,33 @@ def get_bam_region_coverage(bam, seqname, seq_length, rev=False, verbose=0):
     return cov
 
 
+
+def _remove_indels(l, p_or_m):
+    while True:
+        try:
+            i = l.index(p_or_m)
+        except:
+            break
+
+        start_i = i
+        i += 1
+        assert l[i].isdigit()
+        while l[i].isdigit():
+            i += 1
+
+        indel_length = int(''.join(l[start_i+1:i]))
+        l = l[:start_i] + l[i + indel_length:]
+
+    return l
+
+
 def strip_mpileup_coverage_string(s):
+    s = re.sub('\^.', '', s)
     a = list(s)
-    i = 0
-    chars_to_delete = {
-        '$': 1,
-        '^': 2,
-        '*': 1,
-    }
-
-    while i < len(a):
-        if a[i] in chars_to_delete:
-            for j in range(chars_to_delete[a[i]]):
-                a.pop(i)
-        elif a[i] in ['-', '+']:
-            start_index = i
-            i += 1
-            while a[i].isdigit():
-                i += 1
-            count = ''.join(a[start_index+1:i])
-            a = a[0:start_index] + a[start_index + len(count) + int(count) + 1:]
-        else:
-            i += 1
-
-    return ''.join(a)
+    a = _remove_indels(a, '+')
+    a = _remove_indels(a, '-')
+    s = ''.join(a)
+    return re.sub('[*$]', '', s)
 
 
 def consensus_base(counts, keys, ratio=0.5):
