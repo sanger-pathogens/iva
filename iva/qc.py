@@ -361,7 +361,7 @@ class Qc:
                     'hits': len(hits),
                     'bases_assembled': fastaq.intervals.length_sum_from_list(coords),
                     'assembled': 0.9 <= fastaq.intervals.length_sum_from_list(coords) / self.ref_lengths[name],
-                    'assembled_ok': len(hits) == 1 and 0.9 <= hits[0].hit_length_ref / self.ref_lengths[name] <= 1.1,
+                    'assembled_ok': len(hits) == 1 and 0.9 <= hits[0].hit_length_ref / self.ref_lengths[name] <= 1.1 and 0.9 <= hits[0].qry_length / hits[0].hit_length_qry,
                     'longest_matching_contig': self._longest_matching_contig(refhits, name),
                 }
             else:
