@@ -198,7 +198,7 @@ def find_incorrect_ref_bases(bam, ref_fasta):
 
 
 def soft_clipped(sam):
-    if sam.cigar is None:
+    if sam.cigar is None or len(sam.cigar) == 0:
         return None
 
     return (sam.cigar[0][1] if sam.cigar[0][0] == 4 else 0, sam.cigar[-1][1] if sam.cigar[-1][0] == 4 else 0)
