@@ -58,6 +58,7 @@ iva_module_dir = os.path.dirname(iva.read_trim.__file__)
 adapters = os.path.abspath(os.path.join(iva_module_dir, 'read_trim', 'adapters.fasta'))
 trimming_group.add_argument('--adapters', action=iva.common.abspathAction, help='Fasta file of adapter sequences to be trimmed off reads. If used, must also use --trimmomatic. [' + adapters + ']', metavar='FILENAME')
 trimming_group.add_argument('--min_trimmed_length', type=int, help='Minimum length of read after trimming [%(default)s]', default=50, metavar='INT')
+trimming_group.add_argument('--pcr_primers', help='FASTA file of primers. The first perfect match found to a sequence in the primers file will be trimmed off the start of each read. This is run after trimmomatic (if --trimmomatic used)', metavar='FILENAME') 
 
 
 other_group = parser.add_argument_group('Other options')
@@ -154,6 +155,13 @@ else:
 
     for fname in to_delete:
         os.unlink(fname)
+
+if options.pcr_primers:
+    tmp_reads_1 = 'reads_1.pcr_trim.fa'
+    tmp_reads_2 = 'reads_2.pcr_trim.fa'
+    fastaq.tasks.sequence_trim(reads_1, reads_2, tmp_reads_1, tmp_reads_2, options.pcr_primers, min_length=options.min_trimmed_length)
+    os.rename(tmp_reads_1, reads_1)
+    os.rename(tmp_reads_2, reads_2)
 
 fastaq.sequences.Fasta.line_length = original_line_length
 
