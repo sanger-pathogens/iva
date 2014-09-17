@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="IVA : Iterative Virus Assembler">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>IVA</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/sanger-pathogens/iva">View on GitHub</a>
+
+          <h1 id="project_title">IVA</h1>
+          <h2 id="project_tagline">Iterative Virus Assembler</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/sanger-pathogens/iva/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/sanger-pathogens/iva/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a name="overview" class="anchor" href="#overview"><span class="octicon octicon-link"></span></a>Overview</h1>
+
+<p>IVA is a <em>de novo</em> assembler designed to assemble virus genomes that
+have no repeat sequences, using Illumina read pairs sequenced from
+mixed populations at extremely high and variable depth.</p>
+
+<p>Installation instructions are below. For usage help and examples, see
+the <a href="https://github.com/sanger-pathogens/iva/wiki">IVA wiki page</a>.</p>
+
+<hr><h1>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h1>
+
+<h2>
+<a name="install-the-dependencies" class="anchor" href="#install-the-dependencies"><span class="octicon octicon-link"></span></a>Install the dependencies</h2>
+
+<p>IVA has been developed for and tested on Linux and relies on
+some third-party tools that need to be installed first.
+For citations, see the References section at the end of this page.</p>
+
+<h4>
+<a name="assembly-dependencies" class="anchor" href="#assembly-dependencies"><span class="octicon octicon-link"></span></a>Assembly dependencies</h4>
+
+<p>The following are required to run an assembly with IVA.</p>
+
+<ul>
+<li>
+<a href="http://www.python.org/">Python 3</a> (IVA is written in Python 3) and the following packages:
+
+<ul>
+<li><a href="https://github.com/sanger-pathogens/Fastaq">Fastaq</a></li>
+<li><a href="https://pypi.python.org/pypi/networkx/">networkx</a></li>
+<li><a href="https://code.google.com/p/pysam/">Pysam</a></li>
+</ul>
+</li>
+<li>
+<a href="http://sun.aei.polsl.pl/kmc/download.html">KMC</a> installed, so that <code>kmc</code> and <code>kmc_dump</code> are in your path.</li>
+<li>
+<a href="http://mummer.sourceforge.net/">MUMmer</a> installed with its executables (ie <code>nucmer</code> etc)
+in your path.</li>
+<li>
+<a href="http://samtools.sourceforge.net/">Samtools</a> installed, so that <code>samtools</code> is in your path.</li>
+<li>
+<a href="http://www.sanger.ac.uk/resources/software/smalt/">SMALT</a> installed, so that <code>smalt</code> is in your path.</li>
+<li>Optional: <a href="http://www.usadellab.org/cms/?page=trimmomatic">Trimmomatic</a> - although this is optional, it is
+highly recommended.
+It is used to trim adapter sequences from reads before assembling and
+significantly improves the results.
+You don't need to add anything to your path, but will
+need to tell IVA where the Java jar file is to use Trimmomatic (see
+<a href="https://github.com/sanger-pathogens/iva/wiki/iva-examples">examples</a>).</li>
+</ul><p>IVA is known to work with kmc version 2.0, MUMmer version 3.23, samtools
+version 0.1.19 and SMALT version 0.7.5.</p>
+
+<h4>
+<a name="qc-dependencies" class="anchor" href="#qc-dependencies"><span class="octicon octicon-link"></span></a>QC dependencies</h4>
+
+<p>The QC scripts have the following dependencies, in addiition to MUMmer,
+smalt and samtools:</p>
+
+<ul>
+<li>
+<a href="http://www.r-project.org/">R</a> installed and in your path.</li>
+<li>Optional: <a href="http://ccb.jhu.edu/software/kraken/">kraken</a> installed, so that <code>kraken</code> and
+<code>kraken-build</code> are in your path. These are needed if you want to
+make your own reference database, or if you use a database to
+automatically choose the reference genome.</li>
+</ul><p>The QC code is also bundled with the following (they do not need to be installed).</p>
+
+<ul>
+<li>Analysis code from the <a href="http://gage.cbcb.umd.edu/index.html">GAGE</a> assembly evaluation
+project. We are grateful to the GAGE authors for permission to modify and
+redistribute this
+code.</li>
+<li>
+<a href="http://ratt.sourceforge.net/">RATT</a> is used to transfer annotation from a reference
+onto the assembly.</li>
+</ul><h2>
+<a name="install-iva" class="anchor" href="#install-iva"><span class="octicon octicon-link"></span></a>Install IVA</h2>
+
+<p>Once you have installed the dependencies, take a copy of the
+<a href="https://github.com/sanger-pathogens/iva/releases/latest">latest IVA release</a>.
+Then run the tests:</p>
+
+<pre><code>python3 setup.py test
+</code></pre>
+
+<p>If all the tests pass, then install with:</p>
+
+<pre><code>python3 setup.py install
+</code></pre>
+
+<p>Or if you don't have root access, then run:</p>
+
+<pre><code>python3 setup.py install --prefix /install/in/here
+</code></pre>
+
+<hr><h2>
+<a name="references" class="anchor" href="#references"><span class="octicon octicon-link"></span></a>References</h2>
+
+<p><a href="http://www.nature.com/nmeth/journal/v9/n1/full/nmeth.1814.html"><strong>Adapter sequences:</strong></a> Quail, M. a et al. <em>Optimal enzymes for amplifying sequencing libraries</em>. Nat. Methods 9, 10-1 (2012).</p>
+
+<p><a href="http://genome.cshlp.org/content/early/2012/01/12/gr.131383.111"><strong>GAGE:</strong></a> Salzberg, S. L. et al. <em>GAGE: A critical evaluation of genome
+assemblies and assembly algorithms</em>. Genome Res. 22, 557-67 (2012).</p>
+
+<p><a href="http://www.biomedcentral.com/1471-2105/14/160"><strong>KMC:</strong></a> Deorowicz, S., Debudaj-Grabysz, A. &amp; Grabowski, S. <em>Disk-based k-mer
+counting on a PC</em>. BMC Bioinformatics 14, 160 (2013).</p>
+
+<p><a href="http://genomebiology.com/2014/15/3/R46"><strong>Kraken:</strong></a> Wood, D. E. &amp; Salzberg, S. L. <em>Kraken: ultrafast metagenomic
+sequence classification using exact alignments</em>.
+Genome Biol. 15, R46 (2014).</p>
+
+<p><a href="http://genomebiology.com/2004/5/2/r12"><strong>MUMmer:</strong></a> Kurtz, S. et al. <em>Versatile and open software for comparing large
+genomes</em>. Genome Biol. 5, R12 (2004).</p>
+
+<p><strong>R:</strong> R Core Team (2013). <em>R: A language and environment for statistical
+computing</em>. R Foundation for Statistical Computing, Vienna, Austria.
+URL <a href="http://www.R-project.org/">http://www.R-project.org/</a>.</p>
+
+<p><a href="http://nar.oxfordjournals.org/content/39/9/e57"><strong>RATT:</strong></a> Otto, T. D., Dillon, G. P., Degrave, W. S. &amp; Berriman, M.
+<em>RATT: Rapid Annotation Transfer Tool</em>. Nucleic Acids Res. 39, e57 (2011).</p>
+
+<p><a href="http://bioinformatics.oxfordjournals.org/content/25/16/2078.abstract"><strong>SAMtools:</strong></a> Li, H. et al. <em>The Sequence Alignment/Map format and SAMtools</em>.
+Bioinformatics 25, 2078-9 (2009).</p>
+
+<p><a href="http://bioinformatics.oxfordjournals.org/content/early/2014/04/12/bioinformatics.btu170"><strong>Trimmomatic:</strong></a> Bolger, A. M., Lohse, M. &amp; Usadel, B. <em>Trimmomatic: A
+flexible trimmer for Illumina Sequence Data</em>. Bioinformatics 1-7 (2014).</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">IVA maintained by <a href="https://github.com/sanger-pathogens">sanger-pathogens</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
