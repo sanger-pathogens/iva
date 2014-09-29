@@ -90,14 +90,16 @@ def map_reads(reads_fwd, reads_rev, ref_fa, out_prefix, index_k=15, index_s=3, t
         os.unlink(fname)
 
 
-def get_bam_region_coverage(bam, seqname, seq_length, rev=False, verbose=0):
+def get_bam_region_coverage(bam, seqname, seq_length, rev=False, verbose=0, both_strands=False):
     assert os.path.exists(bam)
     assert os.path.exists(bam + '.bai')
     # mpileup only reports positions of non-zero coverage, so can't just
     # take its output. Need to add in the zero coverage bases
     cov = [0] * seq_length
 
-    if rev:
+    if both_strands:
+        flags = ''
+    elif rev:
         flags = '--rf 0x10'
     else:
         flags = '--ff 0x10'
@@ -112,7 +114,6 @@ def get_bam_region_coverage(bam, seqname, seq_length, rev=False, verbose=0):
         cov[pos - 1] = depth
 
     return cov
-
 
 
 def _remove_indels(l, p_or_m):

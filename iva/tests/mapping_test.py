@@ -94,6 +94,16 @@ class TestMapping(unittest.TestCase):
         self.assertListEqual(cov, expected)
 
 
+    def test_get_bam_region_coverage_fwd_And_rev(self):
+        '''Test get_bam_region_coverage both strands'''
+        bam = os.path.join(data_dir, 'mapping_test.smalt.out.sorted.bam')
+        cov = mapping.get_bam_region_coverage(bam, 'ref', 190, verbose=3, both_strands=True)
+        f = open(os.path.join(data_dir, 'mapping_test.smalt.out.sorted.bam.fwd_and_rev.cov'), 'rb')
+        expected = pickle.load(f)
+        f.close()
+        self.assertListEqual(cov, expected)
+       
+
     def test_remove_indels(self):
         '''Test _remove_indels'''
         self.assertEqual('acgt', ''.join(mapping._remove_indels(list('ac+1Xgt'), '+')))
