@@ -17,6 +17,9 @@ IVA has been developed for and tested on Linux and relies on
 some third-party tools that need to be installed first.
 For citations, see the References section at the bottom of this readme.
 
+You may also find it useful to read some
+[ubuntu install] [detailed installation instructions for Ubuntu].
+
 
 #### Assembly dependencies
 
@@ -44,7 +47,7 @@ version 0.1.19 and SMALT version 0.7.5.
 
 #### QC dependencies
 
-The QC scripts have the following dependencies, in addiition to MUMmer,
+The QC scripts have the following dependencies, in addition to MUMmer,
 smalt and samtools:
 
  * [R] [r code] installed and in your path.
@@ -67,7 +70,10 @@ The QC code is also bundled with the following (they do not need to be installed
 Installation
 ------------
 
-Install the dependencies and take a copy of the [latest IVA release] [IVA latest release].
+Before installing the dependencies, you may also find it useful to read some
+[ubuntu install] [detailed installation instructions for Ubuntu].
+Once the dependencies are installed, take a copy of the [latest IVA release] [IVA latest release].
+
 Then run the tests:
 
     python3 setup.py test
@@ -138,3 +144,4 @@ flexible trimmer for Illumina Sequence Data_. Bioinformatics 1-7 (2014).
   [smalt]: http://www.sanger.ac.uk/resources/software/smalt/
   [trimmo code]: http://www.usadellab.org/cms/?page=trimmomatic
   [trimmo paper]: http://bioinformatics.oxfordjournals.org/content/early/2014/04/12/bioinformatics.btu170
+  [ubuntu install]: https://github.com/sanger-pathogens/iva/wiki/Installation-notes-for-Ubuntu
