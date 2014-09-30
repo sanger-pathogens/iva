@@ -237,7 +237,18 @@ elif not options.reference:
         sys.exit(1)
 
 assembly.read_pair_extend(reads_prefix, 'iteration')
-assembly.write_contigs_to_file('contigs.fasta', min_length=100, order_by_orfs=True, prefix='contig')
+
+final_contigs = 'contigs.fasta'
+
+if options.trimmomatic or options.pcr_primers:
+    pre_trim_contigs = 'contigs.pre_trim.fasta'
+    assembly.write_contigs_to_file(pre_trim_contigs, min_length=100, order_by_orfs=True, prefix='contig')
+    iva.contig_trim.trim_primers_and_adapters(pre_trim_contigs, final_contigs, options.adapters, options.pcr_primers, min_length=100)
+    if not options.keep_files:
+        os.unlink(pre_trim_contigs)
+        os.unlink(pre_trim_contigs + '.fai')
+else:
+    assembly.write_contigs_to_file(final_contigs, min_length=100, order_by_orfs=True, prefix='contig')
 
 if not options.keep_files:
     os.unlink(reads_1)
