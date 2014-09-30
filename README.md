@@ -18,7 +18,7 @@ some third-party tools that need to be installed first.
 For citations, see the References section at the bottom of this readme.
 
 You may also find it useful to read some
-[ubuntu install] [detailed installation instructions for Ubuntu].
+[detailed installation instructions for Ubuntu] [ubuntu install].
 
 
 #### Assembly dependencies
@@ -71,7 +71,7 @@ Installation
 ------------
 
 Before installing the dependencies, you may also find it useful to read some
-[ubuntu install] [detailed installation instructions for Ubuntu].
+[detailed installation instructions for Ubuntu] [ubuntu install].
 Once the dependencies are installed, take a copy of the [latest IVA release] [IVA latest release].
 
 Then run the tests:
