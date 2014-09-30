@@ -2,6 +2,7 @@ __all__ = [
     'assembly',
     'common',
     'contig',
+    'contig_trim',
     'edge',
     'external_progs',
     'graph',
