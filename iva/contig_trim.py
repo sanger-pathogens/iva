@@ -4,7 +4,7 @@ import shutil
 import tempfile
 import fastaq
 import pysam
-from iva import mapping
+from iva import mapping, common
 
 class Error (Exception): pass
 
@@ -57,12 +57,12 @@ def _coverage_to_trimmed_coords(coverage, min_dist_to_end=25, window_length=10, 
         return None
 
 
-def trim_adapters(fasta_in, fasta_out, adapters, min_length=100, min_dist_to_end=25, window_length=10, min_pc=90):
-    '''Trim adapters/pcr primers off contig ends.'''
+def _trim_ends(fasta_in, fasta_out, to_trim, min_length=100, min_dist_to_end=25, window_length=10, min_pc=90):
+    '''Trim sequences off contig ends.'''
     tmpdir = tempfile.mkdtemp(prefix='tmp.adapter_trim.', dir=os.getcwd())
     tmp_prefix = os.path.join(tmpdir, 'out')
     sorted_bam = tmp_prefix + '.bam'
-    mapping.map_reads(adapters, None, fasta_in, tmp_prefix, index_k=9, index_s=1, threads=1, minid=0.75, sort=True, extra_smalt_map_ops='-d -1 -m 10')
+    mapping.map_reads(to_trim, None, fasta_in, tmp_prefix, index_k=9, index_s=1, threads=1, minid=0.75, sort=True, extra_smalt_map_ops='-d -1 -m 10')
 
     f_out = fastaq.utils.open_file_write(fasta_out)
     seq_reader = fastaq.sequences.file_reader(fasta_in)
@@ -79,4 +79,21 @@ def trim_adapters(fasta_in, fasta_out, adapters, min_length=100, min_dist_to_end
     fastaq.utils.close(f_out)
     shutil.rmtree(tmpdir)
 
+
+def trim_primers_and_adapters(fasta_in, fasta_out, adapters_fa, primers_fa, min_length=100, min_dist_to_end=25, window_length=10, min_pc=90):
+    '''Trim adapers and/or primers off contig ends'''
+    assert adapters_fa is not None or primers_fa is not None
+    tmpdir = tempfile.mkdtemp(prefix='tmp.trim.', dir=os.getcwd())
+    tmp_prefix = os.path.join(tmpdir, 'out')
+
+    if adapters_fa is None:
+        trim_query = primers_fa
+    elif primers_fa is None:
+        trim_query = adapters_fa
+    else:
+        trim_query = tmp_prefix + '.query.fa'
+        common.syscall('cat ' + adapters_fa + ' ' + primers_fa + ' > ' + trim_query)
+
+    _trim_ends(fasta_in, fasta_out, trim_query, min_length=min_length, min_dist_to_end=min_dist_to_end, window_length=window_length, min_pc=min_pc)
+    shutil.rmtree(tmpdir)
 

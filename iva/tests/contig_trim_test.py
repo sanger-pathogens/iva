@@ -59,12 +59,25 @@ class TestContigTrim(unittest.TestCase):
         got_rev = contig_trim._coverage_to_trimmed_coords(coverage_rev, min_dist_to_end=3, window_length=5, min_pc=80)
         
 
-    def test_trim_adapters(self):
-        '''Test trim_adapters'''
+    def test_trim_ends(self):
+        '''Test _trim_ends'''
+        before_trim = os.path.join(data_dir, 'contig_trim_test_contigs.fa')
+        expected_after_trim = os.path.join(data_dir, 'contig_trim_test_contigs.trimmed.fa')
+        adapters = os.path.join(data_dir, 'contig_trim_test_contigs.adapters_and_primers.fa')
+        tmp_out = 'tmp.trimmed.fa'
+        contig_trim._trim_ends(before_trim, tmp_out, adapters, min_length=20, min_dist_to_end=5, window_length=10, min_pc=90)
+        self.assertTrue(filecmp.cmp(tmp_out, expected_after_trim, shallow=False))
+        os.unlink(tmp_out)
+
+
+    def test_trim_primers_and_adapters(self):
+        '''Test trim_primers_and_adapters'''
         before_trim = os.path.join(data_dir, 'contig_trim_test_contigs.fa')
         expected_after_trim = os.path.join(data_dir, 'contig_trim_test_contigs.trimmed.fa')
         adapters = os.path.join(data_dir, 'contig_trim_test_contigs.adapters.fa')
+        primers = os.path.join(data_dir, 'contig_trim_test_contigs.primers.fa')
         tmp_out = 'tmp.trimmed.fa'
-        contig_trim.trim_adapters(before_trim, tmp_out, adapters, min_length=20, min_dist_to_end=5, window_length=10, min_pc=90)
+        contig_trim.trim_primers_and_adapters(before_trim, tmp_out, adapters, primers, min_length=20, min_dist_to_end=5, window_length=10, min_pc=90)
         self.assertTrue(filecmp.cmp(tmp_out, expected_after_trim, shallow=False))
         os.unlink(tmp_out)
+        
