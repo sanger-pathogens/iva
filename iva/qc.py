@@ -65,6 +65,7 @@ class Qc:
         self.blast_for_act = blast_for_act
         self.blast_out = self.outprefix + '.assembly_v_ref.blastn'
         self.fasta_assembly_contigs_hit_ref = self.outprefix + '.assembly_contigs_hit_ref.fasta'
+        self.fasta_assembly_contigs_not_hit_ref = self.outprefix + '.assembly_contigs_not_hit_ref.fasta'
         self.act_script = self.outprefix + '.assembly_v_ref.act.sh'
         self.gage_outdir = self.outprefix + '.gage'
         self.gage_nucmer_minid = gage_nucmer_minid
@@ -332,6 +333,15 @@ class Qc:
         f = fastaq.utils.open_file_write(self.fasta_assembly_contigs_hit_ref)
         for qry_name in sorted(self.assembly_vs_ref_mummer_hits):
             print(contigs[qry_name], file=f)
+        fastaq.utils.close(f)
+
+
+    def _write_fasta_contigs_not_hit_ref(self):
+        seq_reader = fastaq.sequences.file_reader(self.assembly_fasta)
+        f = fastaq.utils.open_file_write(self.fasta_assembly_contigs_not_hit_ref)
+        for seq in seq_reader:
+            if seq.id not in self.assembly_vs_ref_mummer_hits:
+                print(seq, file=f)
         fastaq.utils.close(f)
 
 
