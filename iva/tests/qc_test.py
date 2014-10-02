@@ -97,8 +97,10 @@ class TestQc(unittest.TestCase):
         self.qc._map_cds_to_assembly()
         # need to ignore first line of coords file because it has full paths
         # to input files
-        expected = [line.rstrip() for line in open(expected_out)][1:]
-        got = [line.rstrip() for line in open(self.qc.cds_nucmer_coords_in_assembly)][1:]
+        with open(expected_out) as f:
+            expected = [line.rstrip() for line in f.readlines()][1:]
+        with open(self.qc.cds_nucmer_coords_in_assembly) as f:
+            got = [line.rstrip() for line in f.readlines()][1:]
         self.assertEqual(expected, got)
 
 
