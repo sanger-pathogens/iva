@@ -584,7 +584,6 @@ class TestQc(unittest.TestCase):
         expected_fwd = {'1': expected_fwd, '2': [0] * 100}
         expected_rev = {'1': expected_rev, '2': [0] * 100}
         self.qc._calculate_ref_read_coverage()
-        print(self.qc.ref_coverage_fwd.keys(), expected_fwd.keys())
         self.assertEqual(self.qc.ref_coverage_fwd, expected_fwd)
         self.assertEqual(self.qc.ref_coverage_rev, expected_rev)
 
