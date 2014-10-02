@@ -7,7 +7,7 @@ def read(fname):
 
 setup(
     name='iva',
-    version='0.8.0',
+    version='0.9.0',
     description='Iterative Virus Assembler',
     long_description=read('README.md'),
     packages = find_packages(),
