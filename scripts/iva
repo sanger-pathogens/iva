@@ -54,6 +54,7 @@ seed_group.add_argument('--seed_ext_min_ratio', type=float, help='Sets N, where 
 
 trimming_group = parser.add_argument_group('Read trimming options')
 trimming_group.add_argument('--trimmomatic', action=iva.common.abspathAction, help='Provide location of trimmomatic.jar file to enable read trimming. Required if --adapters used', metavar='FILENAME')
+trimming_group.add_argument('--trimmo_qual', help='Trimmomatic options used to quality trim reads [%(default)s]', default='LEADING:10 TRAILING:10 SLIDINGWINDOW:4:20', metavar='STRING')
 iva_module_dir = os.path.dirname(iva.read_trim.__file__)
 adapters = os.path.abspath(os.path.join(iva_module_dir, 'read_trim', 'adapters.fasta'))
 trimming_group.add_argument('--adapters', action=iva.common.abspathAction, help='Fasta file of adapter sequences to be trimmed off reads. If used, must also use --trimmomatic. [' + adapters + ']', metavar='FILENAME')
@@ -131,7 +132,7 @@ else:
         trimmed_reads_prefix = 'reads.trimmed'
         if options.adapters is None:
             options.adapters = adapters
-        iva.read_trim.run_trimmomatic(reads_for_trimming_1, reads_for_trimming_2, trimmed_reads_prefix, options.trimmomatic, options.adapters, minlen=options.min_trimmed_length, verbose=options.verbose, threads=options.threads)
+        iva.read_trim.run_trimmomatic(reads_for_trimming_1, reads_for_trimming_2, trimmed_reads_prefix, options.trimmomatic, options.adapters, minlen=options.min_trimmed_length, verbose=options.verbose, threads=options.threads, qual_trim=options.trimmo_qual)
         fq_to_convert_to_fa_1 = trimmed_reads_prefix + '_1.fq'
         fq_to_convert_to_fa_2 = trimmed_reads_prefix + '_2.fq'
         to_delete.append(fq_to_convert_to_fa_1)
