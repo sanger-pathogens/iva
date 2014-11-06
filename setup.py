@@ -7,7 +7,7 @@ def read(fname):
 
 setup(
     name='iva',
-    version='0.9.0',
+    version='0.10.0',
     description='Iterative Virus Assembler',
     long_description=read('README.md'),
     packages = find_packages(),
@@ -17,6 +17,6 @@ setup(
     url='https://github.com/sanger-pathogens/iva',
     scripts=glob.glob('scripts/*'),
     test_suite='nose.collector',
-    install_requires=['nose >= 1.3', 'fastaq >= 1.4.1', 'networkx'],
+    install_requires=['nose >= 1.3', 'fastaq >= 1.6.0', 'networkx'],
     license='GPLv3',
 )
