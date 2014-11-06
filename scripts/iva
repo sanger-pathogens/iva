@@ -160,7 +160,7 @@ else:
 if options.pcr_primers:
     tmp_reads_1 = 'reads_1.pcr_trim.fa'
     tmp_reads_2 = 'reads_2.pcr_trim.fa'
-    fastaq.tasks.sequence_trim(reads_1, reads_2, tmp_reads_1, tmp_reads_2, options.pcr_primers, min_length=options.min_trimmed_length)
+    fastaq.tasks.sequence_trim(reads_1, reads_2, tmp_reads_1, tmp_reads_2, options.pcr_primers, min_length=options.min_trimmed_length, check_revcomp=True)
     os.rename(tmp_reads_1, reads_1)
     os.rename(tmp_reads_2, reads_2)
 
