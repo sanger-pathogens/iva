@@ -30,3 +30,11 @@ def syscall(cmd, allow_fail=False, verbose=False):
             sys.exit(1)
 
     return True
+
+
+def decode(x):
+    try:
+        s = x.decode()
+    except:
+        return x
+    return s

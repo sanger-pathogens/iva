@@ -100,7 +100,7 @@ class Database:
         for i in range(max_tries):
             try:
                 url = 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&rettype=' + filetype + '&retmode=text&id=' + gi
-                file_contents = urllib.request.urlopen(url).read().decode().rstrip()
+                file_contents = iva.common.decode(urllib.request.urlopen(url).read()).rstrip()
             except:
                 time.sleep(delay)
                 continue

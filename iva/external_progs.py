@@ -68,7 +68,7 @@ def get_version(prog, must_be_in_path=True):
 
     cmd, regex = prog_to_version_cmd[prog]
     cmd_output = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-    cmd_output = cmd_output[0].decode().split('\n')[:-1] + cmd_output[1].decode().split('\n')[:-1]
+    cmd_output = common.decode(cmd_output[0]).split('\n')[:-1] + common.decode(cmd_output[1]).split('\n')[:-1]
     for line in cmd_output:
         hits = regex.search(line)
         if hits:
