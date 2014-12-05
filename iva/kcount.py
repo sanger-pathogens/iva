@@ -149,7 +149,7 @@ def _kmc_to_kmer_counts(infile, number, kmers_to_ignore=None, contigs_to_check=N
             except:
                 raise Error('Error getting count from sequence name in bam:\n' + sam.qname)
 
-            counts[sam.seq.decode()] = count
+            counts[common.decode(sam.seq)] = count
         sam_reader.close()
 
     shutil.rmtree(tmpdir)

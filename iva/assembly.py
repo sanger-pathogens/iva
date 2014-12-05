@@ -2,7 +2,7 @@ import os
 import pysam
 import tempfile
 import shutil
-from iva import contig, mapping, seed, mummer, graph, edge
+from iva import contig, mapping, seed, mummer, graph, edge, common
 import fastaq
 
 class Assembly:
@@ -158,10 +158,10 @@ class Assembly:
                 if sam_type == mapping.CAN_EXTEND_LEFT:
                     name = mapping.get_ref_name(sam, sam_reader)
                     clipped = mapping.soft_clipped(sam)[0]
-                    self.contigs[name].add_left_kmer(sam.seq[:clipped].decode())
+                    self.contigs[name].add_left_kmer(common.decode(sam.seq[:clipped]))
                 elif sam_type == mapping.CAN_EXTEND_RIGHT:
                     name = mapping.get_ref_name(sam, sam_reader)
-                    self.contigs[name].add_right_kmer(sam.seq[sam.qend:].decode())
+                    self.contigs[name].add_right_kmer(common.decode(sam.seq[sam.qend:]))
 
                 if out_prefix is not None and sam_type in keep_read_types:
                     if sam.is_read1:

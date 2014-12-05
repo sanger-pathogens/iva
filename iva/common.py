@@ -2,7 +2,7 @@ import argparse
 import os
 import sys
 import subprocess
-version = '0.10.0'
+version = '0.10.1'
 
 class abspathAction(argparse.Action):
     def __call__(self, parser, namespace, value, option_string):
@@ -30,3 +30,11 @@ def syscall(cmd, allow_fail=False, verbose=False):
             sys.exit(1)
 
     return True
+
+
+def decode(x):
+    try:
+        s = x.decode()
+    except:
+        return x
+    return s

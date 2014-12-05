@@ -107,7 +107,7 @@ def get_bam_region_coverage(bam, seqname, seq_length, rev=False, verbose=0, both
     mpileup_cmd = 'samtools mpileup -r ' + seqname + ' ' + flags + ' ' + bam + ' | cut -f 2,4'
     if verbose >= 2:
         print('    get_bam_region_coverage:', mpileup_cmd)
-    mpileup_out = subprocess.Popen(mpileup_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).communicate()[0].decode().split('\n')[:-1]
+    mpileup_out = common.decode(subprocess.Popen(mpileup_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).communicate()[0]).split('\n')[:-1]
 
     for line in mpileup_out:
         pos, depth = [int(killer_rabbit) for killer_rabbit in line.rstrip().split()]
@@ -174,7 +174,7 @@ def find_incorrect_ref_bases(bam, ref_fasta):
     bad_bases = {}
     fastaq.tasks.file_to_dict(ref_fasta, ref_seqs)
     mpileup_cmd = 'samtools mpileup ' + bam + ' | cut -f 1,2,5'
-    mpileup_out = subprocess.Popen(mpileup_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).communicate()[0].decode().split('\n')[:-1]
+    mpileup_out = common.decode(subprocess.Popen(mpileup_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).communicate()[0]).split('\n')[:-1]
 
     for line in mpileup_out:
         # somteimes mpileup has an empty bases column, so skip those
@@ -214,7 +214,7 @@ def sam_to_fasta(s):
     else:
         raise Error('Read', name, 'must be first of second of pair according to flag. Cannot continue')
 
-    seq = fastaq.sequences.Fasta(name, s.seq.decode())
+    seq = fastaq.sequences.Fasta(name, common.decode(s.seq))
     if s.is_reverse:
         seq.revcomp()
 

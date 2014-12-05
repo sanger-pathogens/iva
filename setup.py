@@ -7,7 +7,7 @@ def read(fname):
 
 setup(
     name='iva',
-    version='0.10.0',
+    version='0.10.1',
     description='Iterative Virus Assembler',
     long_description=read('README.md'),
     packages = find_packages(),
@@ -18,5 +18,6 @@ setup(
     scripts=glob.glob('scripts/*'),
     test_suite='nose.collector',
     install_requires=['nose >= 1.3', 'fastaq >= 1.6.0', 'networkx'],
+    dependency_links=['http://github.com/sanger-pathogens/fastaq/tarball/master#egg=fastaq-1.7.0'],
     license='GPLv3',
 )

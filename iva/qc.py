@@ -651,6 +651,7 @@ class Qc:
         self._calculate_incorrect_assembly_bases()
         self._calculate_contig_placement()
         self._write_fasta_contigs_hit_ref()
+        self._write_fasta_contigs_not_hit_ref()
         self._calculate_ref_read_coverage()
         self._calculate_ref_read_region_coverage()
         self._calculate_ref_positions_covered_by_contigs()
