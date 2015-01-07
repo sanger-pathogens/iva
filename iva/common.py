@@ -2,7 +2,7 @@ import argparse
 import os
 import sys
 import subprocess
-version = '0.10.1'
+version = '0.10.2'
 
 class abspathAction(argparse.Action):
     def __call__(self, parser, namespace, value, option_string):
