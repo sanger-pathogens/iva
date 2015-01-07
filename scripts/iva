@@ -167,7 +167,7 @@ if options.pcr_primers:
 fastaq.sequences.Fasta.line_length = original_line_length
 
 if options.contigs:
-    contigs = 'contigs.fasta'
+    contigs = 'contigs_to_extend.fasta'
     fastaq.tasks.to_fasta(options.contigs, contigs, line_length=60, strip_after_first_whitespace=True)
 elif options.reference:
     reference = 'reference_in.fasta'
