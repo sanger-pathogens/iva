@@ -78,13 +78,17 @@ def run_gage(reference, scaffolds, outdir, nucmer_minid=80, clean=True):
         '>', gage_out
         ]), file=f)
     fastaq.utils.close(f)
-    common.syscall('bash ' + gage_script)
+    common.syscall('bash ' + gage_script, allow_fail=True)
+    if not os.path.exists(gage_out):
+        raise Error('Error running GAGE\nbash ' + gage_script)
     stats = dummy_gage_stats()
     wanted_stats = set(gage_stats)
     f = fastaq.utils.open_file_read(gage_out)
+    got_all_stats = False
 
     for line in f:
         if line.startswith('Corrected Contig Stats'):
+            got_all_stats = True
             break
         elif ':' in line:
             a = line.rstrip().split(': ')
@@ -97,6 +101,9 @@ def run_gage(reference, scaffolds, outdir, nucmer_minid=80, clean=True):
                 else:
                     stats[a[0]] = float(stat)
     fastaq.utils.close(f)
+
+    if not got_all_stats:
+        raise Error('Error running GAGE\nbash ' + gage_script)
 
     if clean:
         to_clean = [
