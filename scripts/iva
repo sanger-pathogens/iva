@@ -33,8 +33,8 @@ mapping_group.add_argument('-y', '--smalt_id', type=float, help='Minimum identit
 contig_group = parser.add_argument_group('Contig options')
 contig_group.add_argument('--ctg_first_trim', type=int, help='Number of bases to trim off the end of every contig before extending for the first time [%(default)s]', default=25, metavar='INT')
 contig_group.add_argument('--ctg_iter_trim', type=int, help='During iterative extension, number of bases to trim off the end of a contig when extension fails (then try extending again) [%(default)s]', default=10, metavar='INT')
-contig_group.add_argument('--ext_min_cov', type=int, help='Minimum kmer depth needed to use that kmer to extend a contig [%(default)s]', default=5, metavar='INT')
-contig_group.add_argument('--ext_min_ratio', type=float, help='Sets N, where kmer for extension must be at least N times more abundant than next most common kmer [%(default)s]', default=2, metavar='FLOAT')
+contig_group.add_argument('--ext_min_cov', type=int, help='Minimum kmer depth needed to use that kmer to extend a contig [%(default)s]', default=10, metavar='INT')
+contig_group.add_argument('--ext_min_ratio', type=float, help='Sets N, where kmer for extension must be at least N times more abundant than next most common kmer [%(default)s]', default=4, metavar='FLOAT')
 contig_group.add_argument('--ext_max_bases', type=int, help='Maximum number of bases to try to extend on each iteration [%(default)s]', default=100, metavar='INT')
 contig_group.add_argument('--ext_min_clip', type=int, help='Set minimum number of bases soft clipped off a read for those bases to be used for extension [%(default)s]', default=3, metavar='INT')
 contig_group.add_argument('--max_contigs', type=int, help='Maximum number of contigs allowed in the assembly. No more seeds generated if the cutoff is reached [%(default)s]', metavar='INT', default=50)
@@ -48,8 +48,8 @@ seed_group.add_argument('--seed_min_kmer_cov', type=int, help='Minimum kmer cove
 seed_group.add_argument('--seed_max_kmer_cov', type=int, help='Maximum kmer coverage of initial seed [%(default)s]', default=1000000, metavar='INT')
 seed_group.add_argument('--seed_ext_max_bases', type=int, help='Maximum number of bases to try to extend on each iteration [%(default)s]', default=50, metavar='INT')
 seed_group.add_argument('--seed_overlap_length', type=int, help='Number of overlapping bases needed between read and seed to use that read to extend [seed_start_length]', metavar='INT')
-seed_group.add_argument('--seed_ext_min_cov', type=int, help='Minimum kmer depth needed to use that kmer to extend a contig [%(default)s]', default=5, metavar='INT')
-seed_group.add_argument('--seed_ext_min_ratio', type=float, help='Sets N, where kmer for extension must be at least N times more abundant than next most common kmer [%(default)s]', default=2, metavar='FLOAT')
+seed_group.add_argument('--seed_ext_min_cov', type=int, help='Minimum kmer depth needed to use that kmer to extend a contig [%(default)s]', default=10, metavar='INT')
+seed_group.add_argument('--seed_ext_min_ratio', type=float, help='Sets N, where kmer for extension must be at least N times more abundant than next most common kmer [%(default)s]', default=4, metavar='FLOAT')
 
 
 trimming_group = parser.add_argument_group('Read trimming options')
