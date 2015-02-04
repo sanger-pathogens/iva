@@ -1,5 +1,5 @@
 import networkx
-from fastaq import intervals
+from pyfastaq import intervals
 from iva import edge
 
 class Error (Exception): pass

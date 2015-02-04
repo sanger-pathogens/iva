@@ -4,7 +4,7 @@ import shutil
 import os
 import filecmp
 import pysam
-import fastaq
+import pyfastaq
 from iva import mapping
 
 modules_dir = os.path.dirname(os.path.abspath(mapping.__file__))
@@ -193,8 +193,8 @@ class TestMapping(unittest.TestCase):
     def test_sam_to_fasta(self):
         '''Test sam_to_fasta'''
         expected_seqs = {}
-        fastaq.tasks.file_to_dict(os.path.join(data_dir, 'mapping_test.reads_1.fasta'), expected_seqs)
-        fastaq.tasks.file_to_dict(os.path.join(data_dir, 'mapping_test.reads_2.fasta'), expected_seqs)
+        pyfastaq.tasks.file_to_dict(os.path.join(data_dir, 'mapping_test.reads_1.fasta'), expected_seqs)
+        pyfastaq.tasks.file_to_dict(os.path.join(data_dir, 'mapping_test.reads_2.fasta'), expected_seqs)
         sam_reader = pysam.Samfile(os.path.join(data_dir, 'mapping_test.smalt.out.bam'), "rb")
         for sam in sam_reader.fetch(until_eof=True):
             fa = mapping.sam_to_fasta(sam)

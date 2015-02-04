@@ -4,7 +4,7 @@ import sys
 import shutil
 import multiprocessing
 from iva import mapping, seed
-import fastaq
+import pyfastaq
 
 class Error (Exception): pass
 
@@ -30,7 +30,7 @@ class SeedProcessor:
         self.seed_max_count = seed_max_count
 
         self.original_seeds = {}
-        fastaq.tasks.file_to_dict(seeds_fasta, self.original_seeds)
+        pyfastaq.tasks.file_to_dict(seeds_fasta, self.original_seeds)
         self.processed_seeds = {}
         self.tmpdir = None
         self.bam_file = None
@@ -71,9 +71,9 @@ class SeedProcessor:
             print('Making new seed for', seed_name, ' ... extending most common kmer')
 
         new_seed.extend(self.reads1, self.reads2, self.seed_stop_length)
-        f = fastaq.utils.open_file_write(tmp_prefix + '.' + seed_name + '.fa')
-        print(fastaq.sequences.Fasta('seed.' + seed_name, new_seed.seq[10:-10]), file=f)
-        fastaq.utils.close(f)
+        f = pyfastaq.utils.open_file_write(tmp_prefix + '.' + seed_name + '.fa')
+        print(pyfastaq.sequences.Fasta('seed.' + seed_name, new_seed.seq[10:-10]), file=f)
+        pyfastaq.utils.close(f)
         if self.verbose:
             print('Making new seed for', seed_name, ' ... finished')
 
@@ -106,13 +106,13 @@ class SeedProcessor:
         for seed_name in self.original_seeds:
             fname = tmp_prefix + '.' + seed_name + '.fa'
             if os.path.exists(fname):
-                fastaq.tasks.file_to_dict(fname, new_seeds)
+                pyfastaq.tasks.file_to_dict(fname, new_seeds)
 
         if len(new_seeds) == 0:
             raise Error('Error! did not make any new seeds. Cannot continue')
-        f = fastaq.utils.open_file_write(self.outfile)
+        f = pyfastaq.utils.open_file_write(self.outfile)
         for seq in new_seeds.values():
             print(seq, file=f)
-        fastaq.utils.close(f)
+        pyfastaq.utils.close(f)
         shutil.rmtree(self.tmpdir)
 

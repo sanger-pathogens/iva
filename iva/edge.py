@@ -1,5 +1,5 @@
 import copy
-from fastaq import intervals
+from pyfastaq import intervals
 
 class Error (Exception): pass
 

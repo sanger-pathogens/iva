@@ -17,7 +17,6 @@ setup(
     url='https://github.com/sanger-pathogens/iva',
     scripts=glob.glob('scripts/*'),
     test_suite='nose.collector',
-    install_requires=['nose >= 1.3', 'fastaq >= 1.6.0', 'networkx'],
-    dependency_links=['http://github.com/sanger-pathogens/fastaq/tarball/master#egg=fastaq-1.7.0'],
+    install_requires=['nose >= 1.3', 'pyfastaq >= 3.0.1', 'networkx', 'pysam'],
     license='GPLv3',
 )

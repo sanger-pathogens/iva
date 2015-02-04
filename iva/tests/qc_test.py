@@ -3,7 +3,7 @@ import os
 import filecmp
 import pysam
 from iva import qc, mummer
-import fastaq
+import pyfastaq
 
 modules_dir = os.path.dirname(os.path.abspath(qc.__file__))
 data_dir = os.path.join(modules_dir, 'tests', 'data')
@@ -48,14 +48,14 @@ class TestQc(unittest.TestCase):
         self.qc.ref_gff = os.path.join(data_dir, 'qc_test.get_ref_cds_from_gff.gff')
         coords = self.qc._get_ref_cds_from_gff()
         expected = {
-            'contig1': [(fastaq.intervals.Interval(1200, 1499), '+'),
-                        (fastaq.intervals.Interval(2999, 3901), '+'),
-                        (fastaq.intervals.Interval(4999, 5499), '+'),
-                        (fastaq.intervals.Interval(6999, 7599), '+'),
-                        (fastaq.intervals.Interval(10010, 10041), '-'),
-                        (fastaq.intervals.Interval(10089, 10999), '-')],
-            'contig2': [(fastaq.intervals.Interval(120, 149), '+'),
-                        (fastaq.intervals.Interval(299, 391), '+')]
+            'contig1': [(pyfastaq.intervals.Interval(1200, 1499), '+'),
+                        (pyfastaq.intervals.Interval(2999, 3901), '+'),
+                        (pyfastaq.intervals.Interval(4999, 5499), '+'),
+                        (pyfastaq.intervals.Interval(6999, 7599), '+'),
+                        (pyfastaq.intervals.Interval(10010, 10041), '-'),
+                        (pyfastaq.intervals.Interval(10089, 10999), '-')],
+            'contig2': [(pyfastaq.intervals.Interval(120, 149), '+'),
+                        (pyfastaq.intervals.Interval(299, 391), '+')]
         }
 
         self.assertEqual(coords, expected)
@@ -63,14 +63,14 @@ class TestQc(unittest.TestCase):
 
     def test_write_cds_seqs(self):
         '''test _write_cds_seqs'''
-        seq = fastaq.sequences.Fasta('seq', 'AGGTGTCACGTGTGTGTCATTCAGGGCA')
-        cds_list = [(fastaq.intervals.Interval(1,3), '+'),
-                    (fastaq.intervals.Interval(7, 9), '-'),
+        seq = pyfastaq.sequences.Fasta('seq', 'AGGTGTCACGTGTGTGTCATTCAGGGCA')
+        cds_list = [(pyfastaq.intervals.Interval(1,3), '+'),
+                    (pyfastaq.intervals.Interval(7, 9), '-'),
         ]
         outfile = 'tmp.write_cds_seqs.fa'
-        f = fastaq.utils.open_file_write(outfile)
+        f = pyfastaq.utils.open_file_write(outfile)
         self.qc._write_cds_seqs(cds_list, seq, f)
-        fastaq.utils.close(f)
+        pyfastaq.utils.close(f)
         self.assertTrue(filecmp.cmp(outfile, os.path.join(data_dir, 'qc_test.write_cds_seqs.fa'), shallow=False))
         os.unlink(outfile)
 
@@ -121,7 +121,7 @@ class TestQc(unittest.TestCase):
 
     def test_has_orf(self):
         '''test _has_orf'''
-        fa = fastaq.sequences.Fasta('a', 'ggggTAAxTAAxTAATTAxTTAxTTAgg')
+        fa = pyfastaq.sequences.Fasta('a', 'ggggTAAxTAAxTAATTAxTTAxTTAgg')
         self.assertFalse(self.qc._has_orf(fa, 0, 30, 30))
         self.assertTrue(self.qc._has_orf(fa, 0, 30, 20))
 
@@ -137,7 +137,7 @@ class TestQc(unittest.TestCase):
             'A:23-784:+': {
                 'strand': '+',
                 'length_in_ref': 762,
-                'ref_coords': fastaq.intervals.Interval(22, 783),
+                'ref_coords': pyfastaq.intervals.Interval(22, 783),
                 'ref_name': 'A',
                 'bases_assembled': 762,
                 'number_of_contig_hits': 1,
@@ -147,7 +147,7 @@ class TestQc(unittest.TestCase):
             'B:3-1733:+': {
                 'strand': '+',
                 'length_in_ref': 1731,
-                'ref_coords': fastaq.intervals.Interval(2, 1732),
+                'ref_coords': pyfastaq.intervals.Interval(2, 1732),
                 'ref_name': 'B',
                 'bases_assembled': 1731,
                 'number_of_contig_hits': 1,
@@ -157,7 +157,7 @@ class TestQc(unittest.TestCase):
             'C:3-1385:+': {
                 'strand': '+',
                 'length_in_ref': 1383,
-                'ref_coords': fastaq.intervals.Interval(2, 1384),
+                'ref_coords': pyfastaq.intervals.Interval(2, 1384),
                 'ref_name': 'C',
                 'bases_assembled': 1383,
                 'number_of_contig_hits': 1,
@@ -167,7 +167,7 @@ class TestQc(unittest.TestCase):
             'D:1-1542:+': {
                 'strand': '+',
                 'length_in_ref': 1542,
-                'ref_coords': fastaq.intervals.Interval(0, 1541),
+                'ref_coords': pyfastaq.intervals.Interval(0, 1541),
                 'ref_name': 'D',
                 'bases_assembled': 1000,
                 'number_of_contig_hits': 1,
@@ -177,7 +177,7 @@ class TestQc(unittest.TestCase):
             'E:3-719:+': {
                 'strand': '+',
                 'length_in_ref': 717,
-                'ref_coords': fastaq.intervals.Interval(2, 718),
+                'ref_coords': pyfastaq.intervals.Interval(2, 718),
                 'ref_name': 'E',
                 'bases_assembled': 499,
                 'number_of_contig_hits': 2,
@@ -187,7 +187,7 @@ class TestQc(unittest.TestCase):
             'E:290-793:-': {
                 'strand': '-',
                 'length_in_ref': 504,
-                'ref_coords': fastaq.intervals.Interval(289, 792),
+                'ref_coords': pyfastaq.intervals.Interval(289, 792),
                 'ref_name': 'E',
                 'bases_assembled': 301,
                 'number_of_contig_hits': 1,
@@ -197,7 +197,7 @@ class TestQc(unittest.TestCase):
             'F:25-2298:+': {
                 'strand': '+',
                 'length_in_ref': 2274,
-                'ref_coords': fastaq.intervals.Interval(24, 2297),
+                'ref_coords': pyfastaq.intervals.Interval(24, 2297),
                 'ref_name': 'F',
                 'bases_assembled': 2274,
                 'number_of_contig_hits': 2,
@@ -207,7 +207,7 @@ class TestQc(unittest.TestCase):
             'G:19-2175:+': {
                 'strand': '+',
                 'length_in_ref': 2157,
-                'ref_coords': fastaq.intervals.Interval(18, 2174),
+                'ref_coords': pyfastaq.intervals.Interval(18, 2174),
                 'ref_name': 'G',
                 'assembled': False,
                 'assembled_ok': False,
@@ -215,7 +215,7 @@ class TestQc(unittest.TestCase):
             'H:1-2307:+': {
                 'strand': '+',
                 'length_in_ref': 2307,
-                'ref_coords': fastaq.intervals.Interval(0, 2306),
+                'ref_coords': pyfastaq.intervals.Interval(0, 2306),
                 'ref_name': 'H',
                 'assembled': False,
                 'assembled_ok': False,
@@ -337,22 +337,22 @@ class TestQc(unittest.TestCase):
 
     def test_invert_list(self):
         '''test _invert_list'''
-        self.assertEqual(self.qc._invert_list([], 42), [fastaq.intervals.Interval(0,41)])
+        self.assertEqual(self.qc._invert_list([], 42), [pyfastaq.intervals.Interval(0,41)])
         coords = [
             [],
-            [fastaq.intervals.Interval(0, 41)],
-            [fastaq.intervals.Interval(1, 41)],
-            [fastaq.intervals.Interval(0, 40)],
-            [fastaq.intervals.Interval(10, 30)],
-            [fastaq.intervals.Interval(5, 10), fastaq.intervals.Interval(20, 30)],
+            [pyfastaq.intervals.Interval(0, 41)],
+            [pyfastaq.intervals.Interval(1, 41)],
+            [pyfastaq.intervals.Interval(0, 40)],
+            [pyfastaq.intervals.Interval(10, 30)],
+            [pyfastaq.intervals.Interval(5, 10), pyfastaq.intervals.Interval(20, 30)],
         ]
         expected = [
-            [fastaq.intervals.Interval(0, 41)],
+            [pyfastaq.intervals.Interval(0, 41)],
             [],
-            [fastaq.intervals.Interval(0, 0)],
-            [fastaq.intervals.Interval(41, 41)],
-            [fastaq.intervals.Interval(0, 9), fastaq.intervals.Interval(31, 41)],
-            [fastaq.intervals.Interval(0, 4), fastaq.intervals.Interval(11, 19), fastaq.intervals.Interval(31, 41)],
+            [pyfastaq.intervals.Interval(0, 0)],
+            [pyfastaq.intervals.Interval(41, 41)],
+            [pyfastaq.intervals.Interval(0, 9), pyfastaq.intervals.Interval(31, 41)],
+            [pyfastaq.intervals.Interval(0, 4), pyfastaq.intervals.Interval(11, 19), pyfastaq.intervals.Interval(31, 41)],
         ]
         assert len(coords) == len(expected)
         for i in range(len(coords)):
@@ -368,13 +368,13 @@ class TestQc(unittest.TestCase):
         self.qc._get_contig_hits_to_reference()
         self.qc._calculate_ref_positions_covered_by_contigs()
         expected = {
-            'A0': [fastaq.intervals.Interval(9, 239)],
-            'A': [fastaq.intervals.Interval(9, 1016)],
-            'B': [fastaq.intervals.Interval(0, 1777)],
-            'C': [fastaq.intervals.Interval(0, 1412)],
-            'D': [fastaq.intervals.Interval(0, 999)],
-            'E': [fastaq.intervals.Interval(0, 199), fastaq.intervals.Interval(399, 699)],
-            'F': [fastaq.intervals.Interval(0, 2340)],
+            'A0': [pyfastaq.intervals.Interval(9, 239)],
+            'A': [pyfastaq.intervals.Interval(9, 1016)],
+            'B': [pyfastaq.intervals.Interval(0, 1777)],
+            'C': [pyfastaq.intervals.Interval(0, 1412)],
+            'D': [pyfastaq.intervals.Interval(0, 999)],
+            'E': [pyfastaq.intervals.Interval(0, 199), pyfastaq.intervals.Interval(399, 699)],
+            'F': [pyfastaq.intervals.Interval(0, 2340)],
         }
         self.assertEqual(expected['F'], self.qc.ref_pos_covered_by_contigs['F'])
 
@@ -421,12 +421,12 @@ class TestQc(unittest.TestCase):
         '''test _contig_placement_in_reference'''
         h1 = mummer.NucmerHit('\t'.join(['1', '90', '100', '10', '100', '100', '100.00', '100', '100', '1', '+', 'ref1', 'qry1']))
         h2 = mummer.NucmerHit('\t'.join(['17', '36', '21', '40', '100', '100', '100.00', '100', '100', '1', '+', 'ref2', 'qry1']))
-        expected = [(fastaq.intervals.Interval(9, 99), 'ref1', fastaq.intervals.Interval(0, 89), False, False)]
+        expected = [(pyfastaq.intervals.Interval(9, 99), 'ref1', pyfastaq.intervals.Interval(0, 89), False, False)]
         self.assertEqual(self.qc._contig_placement_in_reference([h1]), expected)
 
         expected = [
-            (fastaq.intervals.Interval(9, 99), 'ref1', fastaq.intervals.Interval(0, 89), False, True),
-            (fastaq.intervals.Interval(20, 39), 'ref2', fastaq.intervals.Interval(16, 35), True, True)
+            (pyfastaq.intervals.Interval(9, 99), 'ref1', pyfastaq.intervals.Interval(0, 89), False, True),
+            (pyfastaq.intervals.Interval(20, 39), 'ref2', pyfastaq.intervals.Interval(16, 35), True, True)
         ]
 
         self.assertEqual(self.qc._contig_placement_in_reference([h1, h2]), expected)
@@ -440,15 +440,15 @@ class TestQc(unittest.TestCase):
         self.qc.assembly_fasta =  os.path.join(data_dir, 'qc_test.assembly.fasta')
         self.qc._calculate_contig_placement()
         expected_placement = {
-            'A:10-1017:+': [(fastaq.intervals.Interval(0, 230), 'A0', fastaq.intervals.Interval(9, 239), True, True),
-                            (fastaq.intervals.Interval(0, 1007), 'A', fastaq.intervals.Interval(9, 1016), True, True)],
-            'B:1-1778:-': [(fastaq.intervals.Interval(0, 1777), 'B', fastaq.intervals.Interval(0, 1777), False, False)],
-            'C:1-1413:+,E:1-200:-': [(fastaq.intervals.Interval(0, 1412), 'C', fastaq.intervals.Interval(0, 1412), True, False),
-                                     (fastaq.intervals.Interval(1413, 1612), 'E', fastaq.intervals.Interval(0, 199), True, False)],
-            'D:1-1000:+': [(fastaq.intervals.Interval(0, 999), 'D', fastaq.intervals.Interval(0, 999), True, False)],
-            'E:400-700:-': [(fastaq.intervals.Interval(0, 300), 'E', fastaq.intervals.Interval(399, 699), False, False)],
-            'F:1-2341:+': [(fastaq.intervals.Interval(0, 2340), 'F', fastaq.intervals.Interval(0, 2340), True, False)],
-            'F:1-2341:-': [(fastaq.intervals.Interval(0, 2340), 'F', fastaq.intervals.Interval(0, 2340), False, False)],
+            'A:10-1017:+': [(pyfastaq.intervals.Interval(0, 230), 'A0', pyfastaq.intervals.Interval(9, 239), True, True),
+                            (pyfastaq.intervals.Interval(0, 1007), 'A', pyfastaq.intervals.Interval(9, 1016), True, True)],
+            'B:1-1778:-': [(pyfastaq.intervals.Interval(0, 1777), 'B', pyfastaq.intervals.Interval(0, 1777), False, False)],
+            'C:1-1413:+,E:1-200:-': [(pyfastaq.intervals.Interval(0, 1412), 'C', pyfastaq.intervals.Interval(0, 1412), True, False),
+                                     (pyfastaq.intervals.Interval(1413, 1612), 'E', pyfastaq.intervals.Interval(0, 199), True, False)],
+            'D:1-1000:+': [(pyfastaq.intervals.Interval(0, 999), 'D', pyfastaq.intervals.Interval(0, 999), True, False)],
+            'E:400-700:-': [(pyfastaq.intervals.Interval(0, 300), 'E', pyfastaq.intervals.Interval(399, 699), False, False)],
+            'F:1-2341:+': [(pyfastaq.intervals.Interval(0, 2340), 'F', pyfastaq.intervals.Interval(0, 2340), True, False)],
+            'F:1-2341:-': [(pyfastaq.intervals.Interval(0, 2340), 'F', pyfastaq.intervals.Interval(0, 2340), False, False)],
         }
         self.assertEqual(expected_placement, self.qc.contig_placement)
 
@@ -594,9 +594,9 @@ class TestQc(unittest.TestCase):
         '''test _coverage_list_to_low_cov_intervals'''
         l = [0, 1, 4, 5, 6, 6, 5, 0, 5, 6, 2, 1]
         expected = [
-            fastaq.intervals.Interval(0,2),
-            fastaq.intervals.Interval(7,7),
-            fastaq.intervals.Interval(10,11),
+            pyfastaq.intervals.Interval(0,2),
+            pyfastaq.intervals.Interval(7,7),
+            pyfastaq.intervals.Interval(10,11),
         ]
         got = self.qc._coverage_list_to_low_cov_intervals(l)
         self.assertEqual(expected, got)
@@ -621,30 +621,30 @@ class TestQc(unittest.TestCase):
         self.qc._calculate_ref_read_region_coverage()
 
         expected_low_cov_ref_regions_fwd = {
-            'ref1': [fastaq.intervals.Interval(0, 0), fastaq.intervals.Interval(6, 6)],
-            'ref2': [fastaq.intervals.Interval(0, 9)],
-            'ref3': [fastaq.intervals.Interval(0, 9)],
+            'ref1': [pyfastaq.intervals.Interval(0, 0), pyfastaq.intervals.Interval(6, 6)],
+            'ref2': [pyfastaq.intervals.Interval(0, 9)],
+            'ref3': [pyfastaq.intervals.Interval(0, 9)],
             'ref4': [],
         }
         self.assertEqual(expected_low_cov_ref_regions_fwd, self.qc.low_cov_ref_regions_fwd)
 
         expected_low_cov_ref_regions_rev = {
-            'ref1': [fastaq.intervals.Interval(0, 0), fastaq.intervals.Interval(3, 3)],
-            'ref2': [fastaq.intervals.Interval(0, 9)],
+            'ref1': [pyfastaq.intervals.Interval(0, 0), pyfastaq.intervals.Interval(3, 3)],
+            'ref2': [pyfastaq.intervals.Interval(0, 9)],
             'ref3': [],
-            'ref4': [fastaq.intervals.Interval(0, 9)],
+            'ref4': [pyfastaq.intervals.Interval(0, 9)],
         }
         self.assertEqual(expected_low_cov_ref_regions_rev, self.qc.low_cov_ref_regions_rev)
 
         expected_low_cov_ref_regions = {
-            'ref1': [fastaq.intervals.Interval(0, 0), fastaq.intervals.Interval(3, 3), fastaq.intervals.Interval(6, 6)],
-            'ref2': [fastaq.intervals.Interval(0, 9)],
-            'ref3': [fastaq.intervals.Interval(0, 9)],
-            'ref4': [fastaq.intervals.Interval(0, 9)],
+            'ref1': [pyfastaq.intervals.Interval(0, 0), pyfastaq.intervals.Interval(3, 3), pyfastaq.intervals.Interval(6, 6)],
+            'ref2': [pyfastaq.intervals.Interval(0, 9)],
+            'ref3': [pyfastaq.intervals.Interval(0, 9)],
+            'ref4': [pyfastaq.intervals.Interval(0, 9)],
         }
 
         expected_ok_cov_ref_regions = {
-            'ref1': [fastaq.intervals.Interval(1, 2), fastaq.intervals.Interval(4, 5), fastaq.intervals.Interval(7, 9)],
+            'ref1': [pyfastaq.intervals.Interval(1, 2), pyfastaq.intervals.Interval(4, 5), pyfastaq.intervals.Interval(7, 9)],
             'ref2': [],
             'ref3': [],
             'ref4': [],
@@ -672,7 +672,7 @@ class TestQc(unittest.TestCase):
 
     def test_cov_to_R_string(self):
         '''test _cov_to_R_string'''
-        intervals = [fastaq.intervals.Interval(0, 42), fastaq.intervals.Interval(50, 51)]
+        intervals = [pyfastaq.intervals.Interval(0, 42), pyfastaq.intervals.Interval(50, 51)]
         expected = 'rect(2, 0.5, 44, 1.5, col="blue", border=NA)\n' + \
                    'rect(52, 0.5, 53, 1.5, col="blue", border=NA)\n'
         self.assertEqual(expected, self.qc._cov_to_R_string(intervals, 'blue', 2, 1, 1))
@@ -682,16 +682,16 @@ class TestQc(unittest.TestCase):
         '''test _calculate_should_have_assembled'''
         self.qc.ref_ids = ['ref1', 'ref2', 'ref3']
         self.qc.ref_lengths = {x:10 for x in self.qc.ref_ids}
-        self.qc.ref_pos_covered_by_contigs = {'ref1': [fastaq.intervals.Interval(3, 7)]}
+        self.qc.ref_pos_covered_by_contigs = {'ref1': [pyfastaq.intervals.Interval(3, 7)]}
         self.qc.ok_cov_ref_regions = {
-            'ref1': [fastaq.intervals.Interval(0, 7)],
-            'ref2': [fastaq.intervals.Interval(0, 9)],
+            'ref1': [pyfastaq.intervals.Interval(0, 7)],
+            'ref2': [pyfastaq.intervals.Interval(0, 9)],
             'ref3': []
         }
         self.qc._calculate_should_have_assembled()
         expected = {
-            'ref1': [fastaq.intervals.Interval(0, 2)],
-            'ref2': [fastaq.intervals.Interval(0, 9)],
+            'ref1': [pyfastaq.intervals.Interval(0, 2)],
+            'ref2': [pyfastaq.intervals.Interval(0, 9)],
             'ref3': []
         }
         self.assertEqual(expected, self.qc.should_have_assembled)

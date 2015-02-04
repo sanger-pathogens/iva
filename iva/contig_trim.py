@@ -2,7 +2,7 @@ import os
 import sys
 import shutil
 import tempfile
-import fastaq
+import pyfastaq
 import pysam
 from iva import mapping, common
 
@@ -64,8 +64,8 @@ def _trim_ends(fasta_in, fasta_out, to_trim, min_length=100, min_dist_to_end=25,
     sorted_bam = tmp_prefix + '.bam'
     mapping.map_reads(to_trim, None, fasta_in, tmp_prefix, index_k=9, index_s=1, threads=1, minid=0.75, sort=True, extra_smalt_map_ops='-d -1 -m 10')
 
-    f_out = fastaq.utils.open_file_write(fasta_out)
-    seq_reader = fastaq.sequences.file_reader(fasta_in)
+    f_out = pyfastaq.utils.open_file_write(fasta_out)
+    seq_reader = pyfastaq.sequences.file_reader(fasta_in)
     for seq in seq_reader:
         coverage = mapping.get_bam_region_coverage(sorted_bam, seq.id, len(seq), both_strands=True)
         good_coords = _coverage_to_trimmed_coords(coverage, min_dist_to_end=min_dist_to_end, window_length=window_length, min_pc=min_pc)
@@ -76,7 +76,7 @@ def _trim_ends(fasta_in, fasta_out, to_trim, min_length=100, min_dist_to_end=25,
         if len(seq) > 0:
             print(seq, file=f_out)
 
-    fastaq.utils.close(f_out)
+    pyfastaq.utils.close(f_out)
     shutil.rmtree(tmpdir)
 
 

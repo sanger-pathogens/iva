@@ -2,7 +2,7 @@ import os
 import re
 import subprocess
 import collections
-import fastaq
+import pyfastaq
 import pysam
 from iva import common
 
@@ -172,7 +172,7 @@ def find_incorrect_ref_bases(bam, ref_fasta):
     reverse_keys = set(['a', 'c', 'g', 't', 'n'])
     ref_seqs = {}
     bad_bases = {}
-    fastaq.tasks.file_to_dict(ref_fasta, ref_seqs)
+    pyfastaq.tasks.file_to_dict(ref_fasta, ref_seqs)
     mpileup_cmd = 'samtools mpileup ' + bam + ' | cut -f 1,2,5'
     mpileup_out = common.decode(subprocess.Popen(mpileup_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).communicate()[0]).split('\n')[:-1]
 
@@ -214,7 +214,7 @@ def sam_to_fasta(s):
     else:
         raise Error('Read', name, 'must be first of second of pair according to flag. Cannot continue')
 
-    seq = fastaq.sequences.Fasta(name, common.decode(s.seq))
+    seq = pyfastaq.sequences.Fasta(name, common.decode(s.seq))
     if s.is_reverse:
         seq.revcomp()
 
@@ -281,10 +281,10 @@ def get_ref_name(sam, samfile):
 def bam_file_to_fasta_pair_files(bam, out1, out2, remove_proper_pairs=False, chromosome=None, start=None, end=None):
     '''Makes fwd and rev FASTA files from a BAM file. Order same in input and output'''
     sam_reader = pysam.Samfile(bam, "rb")
-    f1 = fastaq.utils.open_file_write(out1)
-    f2 = fastaq.utils.open_file_write(out2)
-    original_line_length = fastaq.sequences.Fasta.line_length
-    fastaq.sequences.Fasta.line_length = 0
+    f1 = pyfastaq.utils.open_file_write(out1)
+    f2 = pyfastaq.utils.open_file_write(out2)
+    original_line_length = pyfastaq.sequences.Fasta.line_length
+    pyfastaq.sequences.Fasta.line_length = 0
     found_reads = {}
     assert (chromosome is None) or (None not in [chromosome, start, end])
 
@@ -309,35 +309,35 @@ def bam_file_to_fasta_pair_files(bam, out1, out2, remove_proper_pairs=False, chr
             else:
                 print(sam_to_fasta(s), file=f2)
     sam_reader.close()
-    fastaq.utils.close(f1)
-    fastaq.utils.close(f2)
-    fastaq.sequences.Fasta.line_length = original_line_length
+    pyfastaq.utils.close(f1)
+    pyfastaq.utils.close(f2)
+    pyfastaq.sequences.Fasta.line_length = original_line_length
 
 
 def bam_to_fasta(bam, out):
     sam_reader = pysam.Samfile(bam, "rb")
-    original_line_length = fastaq.sequences.Fasta.line_length
-    fastaq.sequences.Fasta.line_length = 0
-    f = fastaq.utils.open_file_write(out)
+    original_line_length = pyfastaq.sequences.Fasta.line_length
+    pyfastaq.sequences.Fasta.line_length = 0
+    f = pyfastaq.utils.open_file_write(out)
     for s in sam_reader.fetch(until_eof=True):
         print(sam_to_fasta(s), file=f)
     sam_reader.close()
-    fastaq.utils.close(f)
-    fastaq.sequences.Fasta.line_length = original_line_length
+    pyfastaq.utils.close(f)
+    pyfastaq.sequences.Fasta.line_length = original_line_length
 
 
 def bam_file_to_region_fasta(bam, out, chromosome, start=None, end=None):
     '''Extracts all reads from a region of a BAM file. Writes a fasta file. Treats reads as unpaired'''
     sam_reader = pysam.Samfile(bam, "rb")
-    original_line_length = fastaq.sequences.Fasta.line_length
-    fastaq.sequences.Fasta.line_length = 0
-    f = fastaq.utils.open_file_write(out)
+    original_line_length = pyfastaq.sequences.Fasta.line_length
+    pyfastaq.sequences.Fasta.line_length = 0
+    f = pyfastaq.utils.open_file_write(out)
 
     for s in sam_reader.fetch(reference=chromosome, start=start, end=end):
         print(sam_to_fasta(s), file=f)
     sam_reader.close()
-    fastaq.utils.close(f)
-    fastaq.sequences.Fasta.line_length = original_line_length
+    pyfastaq.utils.close(f)
+    pyfastaq.sequences.Fasta.line_length = original_line_length
 
 
 def _total_ref_length_from_bam(bam):
@@ -365,9 +365,9 @@ def subsample_bam(bam, outfile, coverage=10):
     step = max(1, ref_length / reads_wanted)
     position = step
     ref_id = None
-    f = fastaq.utils.open_file_write(outfile)
-    original_line_length = fastaq.sequences.Fasta.line_length
-    fastaq.sequences.Fasta.line_length = 0
+    f = pyfastaq.utils.open_file_write(outfile)
+    original_line_length = pyfastaq.sequences.Fasta.line_length
+    pyfastaq.sequences.Fasta.line_length = 0
     sam_reader = pysam.Samfile(bam, "rb")
     for s in sam_reader.fetch():
         if s.tid != ref_id:
@@ -376,5 +376,5 @@ def subsample_bam(bam, outfile, coverage=10):
         if s.pos >= position:
             print(sam_to_fasta(s), file=f)
             position += step
-    fastaq.utils.close(f)
-    fastaq.sequences.Fasta.line_length = original_line_length
+    pyfastaq.utils.close(f)
+    pyfastaq.sequences.Fasta.line_length = original_line_length

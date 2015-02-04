@@ -2,7 +2,7 @@ import shutil
 import subprocess
 import re
 import sys
-import fastaq
+import pyfastaq
 from iva import common
 
 class Error (Exception): pass
@@ -97,11 +97,11 @@ def write_prog_info(script, filename):
     else:
         raise Error('Script ' + script + ' not recognised')
 
-    f = fastaq.utils.open_file_write(filename)
+    f = pyfastaq.utils.open_file_write(filename)
     print(' '.join(sys.argv), file=f)
     print('IVA version', common.version, file=f)
     print('\n'.join(get_all_versions(required)), file=f)
     if optional is not None:
         print('\n'.join(get_all_versions(optional, must_be_in_path=False)), file=f)
-    fastaq.utils.close(f)
+    pyfastaq.utils.close(f)
 

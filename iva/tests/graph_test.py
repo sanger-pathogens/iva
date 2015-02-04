@@ -3,7 +3,7 @@ import os
 import filecmp
 import pysam
 from iva import graph, assembly, edge
-from fastaq import intervals
+from pyfastaq import intervals
 
 modules_dir = os.path.dirname(os.path.abspath(graph.__file__))
 data_dir = os.path.join(modules_dir, 'tests', 'data')
