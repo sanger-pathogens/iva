@@ -4,7 +4,7 @@ import argparse
 import os
 import sys
 import multiprocessing
-import fastaq
+import pyfastaq
 import iva
 
 
@@ -110,18 +110,18 @@ iva.external_progs.write_prog_info('iva', log_file)
 reads_prefix = 'reads'
 reads_1 = reads_prefix + '_1.fa'
 reads_2 = reads_prefix + '_2.fa'
-original_line_length = fastaq.sequences.Fasta.line_length
-fastaq.sequences.Fasta.line_length = 0
+original_line_length = pyfastaq.sequences.Fasta.line_length
+pyfastaq.sequences.Fasta.line_length = 0
 
 if options.reads and not options.trimmomatic:
-    fastaq.tasks.deinterleave(options.reads, reads_1, reads_2, fasta_out=True)
+    pyfastaq.tasks.deinterleave(options.reads, reads_1, reads_2, fasta_out=True)
 else:
     to_delete = []
 
     if options.reads:
         reads_for_trimming_1 = 'reads.untrimmed_1.fq'
         reads_for_trimming_2 = 'reads.untrimmed_2.fq'
-        fastaq.tasks.deinterleave(options.reads, reads_for_trimming_1, reads_for_trimming_2)
+        pyfastaq.tasks.deinterleave(options.reads, reads_for_trimming_1, reads_for_trimming_2)
         to_delete.append(reads_for_trimming_1)
         to_delete.append(reads_for_trimming_2)
     else:
@@ -141,8 +141,8 @@ else:
         fq_to_convert_to_fa_1 = reads_for_trimming_1
         fq_to_convert_to_fa_2 = reads_for_trimming_2
 
-    p1 = multiprocessing.Process(target=fastaq.tasks.to_fasta, args=(fq_to_convert_to_fa_1, reads_1), kwargs={'line_length':0})
-    p2 = multiprocessing.Process(target=fastaq.tasks.to_fasta, args=(fq_to_convert_to_fa_2, reads_2), kwargs={'line_length':0})
+    p1 = multiprocessing.Process(target=pyfastaq.tasks.to_fasta, args=(fq_to_convert_to_fa_1, reads_1), kwargs={'line_length':0})
+    p2 = multiprocessing.Process(target=pyfastaq.tasks.to_fasta, args=(fq_to_convert_to_fa_2, reads_2), kwargs={'line_length':0})
     p1.start()
 
     if options.threads == 1:
@@ -160,18 +160,18 @@ else:
 if options.pcr_primers:
     tmp_reads_1 = 'reads_1.pcr_trim.fa'
     tmp_reads_2 = 'reads_2.pcr_trim.fa'
-    fastaq.tasks.sequence_trim(reads_1, reads_2, tmp_reads_1, tmp_reads_2, options.pcr_primers, min_length=options.min_trimmed_length, check_revcomp=True)
+    pyfastaq.tasks.sequence_trim(reads_1, reads_2, tmp_reads_1, tmp_reads_2, options.pcr_primers, min_length=options.min_trimmed_length, check_revcomp=True)
     os.rename(tmp_reads_1, reads_1)
     os.rename(tmp_reads_2, reads_2)
 
-fastaq.sequences.Fasta.line_length = original_line_length
+pyfastaq.sequences.Fasta.line_length = original_line_length
 
 if options.contigs:
     contigs = 'contigs_to_extend.fasta'
-    fastaq.tasks.to_fasta(options.contigs, contigs, line_length=60, strip_after_first_whitespace=True)
+    pyfastaq.tasks.to_fasta(options.contigs, contigs, line_length=60, strip_after_first_whitespace=True)
 elif options.reference:
     reference = 'reference_in.fasta'
-    fastaq.tasks.to_fasta(options.reference, reference, line_length=60, strip_after_first_whitespace=True)
+    pyfastaq.tasks.to_fasta(options.reference, reference, line_length=60, strip_after_first_whitespace=True)
     p = iva.seed_processor.SeedProcessor(
         reference,
         reads_1,
