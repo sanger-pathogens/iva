@@ -26,7 +26,7 @@ You may also find it useful to read some
 The following are required to run an assembly with IVA.
 
  * [Python 3] [python] (IVA is written in Python 3) and the following packages:
-     * [Fastaq] [fastaq]
+     * [Fastaq] [fastaq] version 2.0.0
      * [networkx] [networkx]
      * [Pysam] [pysam]
  * [KMC] [kmc code] installed, so that `kmc` and `kmc_dump` are in your path.
