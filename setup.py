@@ -37,10 +37,21 @@ setup(
     packages = find_packages(),
     package_data={'iva': ['gage/*', 'ratt/*', 'read_trim/*']},
     author='Martin Hunt',
-    author_email='mh12@sanger.ac.uk',
+    author_email='path-help@sanger.ac.uk',
     url='https://github.com/sanger-pathogens/iva',
     scripts=glob.glob('scripts/*'),
     test_suite='nose.collector',
-    install_requires=['nose >= 1.3', 'pyfastaq >= 3.0.1', 'networkx', 'pysam'],
+    install_requires=[
+        'nose >= 1.3',
+        'pyfastaq >= 3.0.1',
+        'networkx >= 1.7',
+        'pysam >= 0.8.1'
+    ],
     license='GPLv3',
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Topic :: Scientific/Engineering :: Bio-Informatics',
+        'Programming Language :: Python :: 3 :: Only',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+    ],
 )
