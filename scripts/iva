@@ -55,9 +55,7 @@ seed_group.add_argument('--seed_ext_min_ratio', type=float, help='Sets N, where 
 trimming_group = parser.add_argument_group('Read trimming options')
 trimming_group.add_argument('--trimmomatic', action=iva.common.abspathAction, help='Provide location of trimmomatic.jar file to enable read trimming. Required if --adapters used', metavar='FILENAME')
 trimming_group.add_argument('--trimmo_qual', help='Trimmomatic options used to quality trim reads [%(default)s]', default='LEADING:10 TRAILING:10 SLIDINGWINDOW:4:20', metavar='STRING')
-iva_module_dir = os.path.dirname(iva.read_trim.__file__)
-adapters = os.path.abspath(os.path.join(iva_module_dir, 'read_trim', 'adapters.fasta'))
-trimming_group.add_argument('--adapters', action=iva.common.abspathAction, help='Fasta file of adapter sequences to be trimmed off reads. If used, must also use --trimmomatic. [' + adapters + ']', metavar='FILENAME')
+trimming_group.add_argument('--adapters', action=iva.common.abspathAction, help='Fasta file of adapter sequences to be trimmed off reads. If used, must also use --trimmomatic. Default is file of adapters supplied with IVA', metavar='FILENAME')
 trimming_group.add_argument('--min_trimmed_length', type=int, help='Minimum length of read after trimming [%(default)s]', default=50, metavar='INT')
 trimming_group.add_argument('--pcr_primers', action=iva.common.abspathAction, help='FASTA file of primers. The first perfect match found to a sequence in the primers file will be trimmed off the start of each read. This is run after trimmomatic (if --trimmomatic used)', metavar='FILENAME') 
 
@@ -131,7 +129,13 @@ else:
     if options.trimmomatic:
         trimmed_reads_prefix = 'reads.trimmed'
         if options.adapters is None:
-            options.adapters = adapters
+            extractor = iva.egg_extract.Extractor(os.path.abspath(os.path.join(os.path.dirname(iva.__file__), os.pardir)))
+            egg_adapters = os.path.join('iva', 'read_trim', 'adapters.fasta')
+            options.adapters = 'adapters.fasta'
+            extractor.copy_file(egg_adapters, options.adapters)
+
+        assert os.path.exists(options.adapters)
+
         iva.read_trim.run_trimmomatic(reads_for_trimming_1, reads_for_trimming_2, trimmed_reads_prefix, options.trimmomatic, options.adapters, minlen=options.min_trimmed_length, verbose=options.verbose, threads=options.threads, qual_trim=options.trimmo_qual)
         fq_to_convert_to_fa_1 = trimmed_reads_prefix + '_1.fq'
         fq_to_convert_to_fa_2 = trimmed_reads_prefix + '_2.fq'
