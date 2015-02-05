@@ -36,7 +36,6 @@ assembly_progs = [
 
 
 qc_progs = [
-    'kraken',
     'nucmer',
     'R',
     'smalt',
@@ -62,7 +61,7 @@ def get_version(prog, must_be_in_path=True):
     assert prog in prog_to_version_cmd
     if not is_in_path(prog):
         if must_be_in_path:
-            raise Error('Error getting version of', prog, '- not found in path.')
+            raise Error('Error getting version of ' + prog + ' - not found in path.')
         else:
             return 'UNKNOWN - not in path'
 
