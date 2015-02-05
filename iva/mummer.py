@@ -1,7 +1,7 @@
 import os
 import tempfile
 import shutil
-import fastaq
+import pyfastaq
 from iva import edge, common
 
 class Error (Exception): pass
@@ -19,18 +19,18 @@ def run_nucmer(query, ref, outfile, min_id=95, min_length=100, breaklen=200):
     original_dir = os.getcwd()
     os.chdir(tmpdir)
     script = 'run_nucmer.sh'
-    f = fastaq.utils.open_file_write(script)
+    f = pyfastaq.utils.open_file_write(script)
     print('nucmer --maxmatch -p p -b', breaklen, ref, query, file=f)
     print('delta-filter -i', min_id, '-l', min_length, 'p.delta > p.delta.filter', file=f)
     print('show-coords -dTlro p.delta.filter >', outfile, file=f)
-    fastaq.utils.close(f)
+    pyfastaq.utils.close(f)
     common.syscall('bash ' + script)
     os.chdir(original_dir)
     shutil.rmtree(tmpdir)
 
 
 def file_reader(fname):
-    f = fastaq.utils.open_file_read(fname)
+    f = pyfastaq.utils.open_file_read(fname)
     in_header = True
 
     for line in f:
@@ -40,7 +40,7 @@ def file_reader(fname):
             continue
         yield NucmerHit(line)
 
-    fastaq.utils.close(f)
+    pyfastaq.utils.close(f)
 
 
 class NucmerHit:
@@ -84,11 +84,11 @@ class NucmerHit:
 
 
     def qry_coords(self):
-        return fastaq.intervals.Interval(min(self.qry_start, self.qry_end), max(self.qry_start, self.qry_end))
+        return pyfastaq.intervals.Interval(min(self.qry_start, self.qry_end), max(self.qry_start, self.qry_end))
 
 
     def ref_coords(self):
-        return fastaq.intervals.Interval(min(self.ref_start, self.ref_end), max(self.ref_start, self.ref_end))
+        return pyfastaq.intervals.Interval(min(self.ref_start, self.ref_end), max(self.ref_start, self.ref_end))
 
 
     def on_same_strand(self):

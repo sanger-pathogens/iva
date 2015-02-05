@@ -2,7 +2,7 @@ import os
 import inspect
 import tempfile
 import copy
-import fastaq
+import pyfastaq
 import shutil
 import multiprocessing
 import collections
@@ -77,7 +77,7 @@ class Qc:
             self.reads_rev = self.outprefix + '.reads_2'
             self.files_to_clean.append(self.reads_fwd)
             self.files_to_clean.append(self.reads_rev)
-            fastaq.tasks.deinterleave(reads_fr, self.reads_fwd, self.reads_rev)
+            pyfastaq.tasks.deinterleave(reads_fr, self.reads_fwd, self.reads_rev)
 
         if not (None not in [self.reads_fwd, self.reads_rev] or reads_fr is not None):
             raise Error('IVA QC needs reads_fr or both reads_fwd and reads_rev')
@@ -172,7 +172,7 @@ class Qc:
         self.assembly_fasta_fai = self.assembly_fasta + '.fai'
         if not os.path.exists(self.assembly_fasta_fai):
             common.syscall('samtools faidx ' + self.assembly_fasta)
-        fastaq.tasks.lengths_from_fai(self.assembly_fasta_fai, self.assembly_lengths)
+        pyfastaq.tasks.lengths_from_fai(self.assembly_fasta_fai, self.assembly_lengths)
 
 
     def _set_ref_seq_data(self):
@@ -188,7 +188,7 @@ class Qc:
             fa = os.path.join(tmpdir, embl_file + '.fa')
             gff = os.path.join(tmpdir, embl_file + '.gff')
             embl_full = os.path.join(self.embl_dir, embl_file)
-            fastaq.tasks.to_fasta(embl_full, fa)
+            pyfastaq.tasks.to_fasta(embl_full, fa)
             common.syscall(' '.join([embl2gff, embl_full, '>', gff]))
 
         common.syscall('cat ' + tmpdir + '/*.gff > ' + self.ref_gff)
@@ -202,7 +202,7 @@ class Qc:
         common.syscall('samtools faidx ' + self.ref_fasta)
         self.ref_ids = self._ids_in_order_from_fai(self.ref_fasta_fai)
         self.ref_lengths = {}
-        fastaq.tasks.lengths_from_fai(self.ref_fasta_fai, self.ref_lengths)
+        pyfastaq.tasks.lengths_from_fai(self.ref_fasta_fai, self.ref_lengths)
 
         self.ref_length_offsets = {}
         offset = 0
@@ -213,15 +213,15 @@ class Qc:
 
     def _ids_in_order_from_fai(self, filename):
         ids = []
-        f = fastaq.utils.open_file_read(filename)
+        f = pyfastaq.utils.open_file_read(filename)
         for line in f:
             ids.append(line.rstrip().split('\t')[0])
-        fastaq.utils.close(f)
+        pyfastaq.utils.close(f)
         return ids
 
 
     def _get_ref_cds_from_gff(self):
-        f = fastaq.utils.open_file_read(self.ref_gff)
+        f = pyfastaq.utils.open_file_read(self.ref_gff)
         coords = {}
         for line in f:
             # no annotation allowed after any fasta sequence. See
@@ -239,9 +239,9 @@ class Qc:
                 strand = data[6]
                 if seqname not in coords:
                     coords[seqname] = []
-                coords[seqname].append((fastaq.intervals.Interval(start, end), strand))
+                coords[seqname].append((pyfastaq.intervals.Interval(start, end), strand))
 
-        fastaq.utils.close(f)
+        pyfastaq.utils.close(f)
         for seqname in coords:
             coords[seqname].sort()
 
@@ -251,7 +251,7 @@ class Qc:
     def _write_cds_seqs(self, cds_list, fa, f_out):
         for coords, strand in cds_list:
             seqname = fa.id + ':' + str(coords.start + 1) + '-' + str(coords.end + 1) + ':' + strand
-            seq = fastaq.sequences.Fasta(seqname, fa.seq[coords.start:coords.end+1])
+            seq = pyfastaq.sequences.Fasta(seqname, fa.seq[coords.start:coords.end+1])
             if strand == '-':
                 seq.revcomp()
             print(seq, file=f_out)
@@ -268,12 +268,12 @@ class Qc:
 
     def _gff_and_fasta_to_cds(self):
         cds_coords = self._get_ref_cds_from_gff()
-        f = fastaq.utils.open_file_write(self.ref_cds_fasta)
-        seq_reader = fastaq.sequences.file_reader(self.ref_fasta)
+        f = pyfastaq.utils.open_file_write(self.ref_cds_fasta)
+        seq_reader = pyfastaq.sequences.file_reader(self.ref_fasta)
         for seq in seq_reader:
             if seq.id in cds_coords:
                 self._write_cds_seqs(cds_coords[seq.id], seq, f)
-        fastaq.utils.close(f)
+        pyfastaq.utils.close(f)
 
 
     def _map_cds_to_assembly(self):
@@ -293,7 +293,7 @@ class Qc:
 
 
     def _has_orf(self, fa, start, end, min_length):
-        subseq = fastaq.sequences.Fasta('seq', fa[start:end+1])
+        subseq = pyfastaq.sequences.Fasta('seq', fa[start:end+1])
         orfs = subseq.all_orfs(min_length=min_length)
         return len(orfs) > 0
 
@@ -304,12 +304,12 @@ class Qc:
         self._map_cds_to_assembly()
         hits = self._mummer_coords_file_to_dict(self.cds_nucmer_coords_in_assembly)
         contigs = {}
-        fastaq.tasks.file_to_dict(self.assembly_fasta, contigs)
+        pyfastaq.tasks.file_to_dict(self.assembly_fasta, contigs)
         for cds_name, hit_list in hits.items():
             self.cds_assembly_stats[cds_name]['number_of_contig_hits'] = len(hit_list)
             hit_coords = [x.qry_coords() for x in hit_list]
-            fastaq.intervals.merge_overlapping_in_list(hit_coords)
-            bases_assembled = fastaq.intervals.length_sum_from_list(hit_coords)
+            pyfastaq.intervals.merge_overlapping_in_list(hit_coords)
+            bases_assembled = pyfastaq.intervals.length_sum_from_list(hit_coords)
             self.cds_assembly_stats[cds_name]['bases_assembled'] = bases_assembled
             self.cds_assembly_stats[cds_name]['assembled'] = 0.9 <= bases_assembled / self.cds_assembly_stats[cds_name]['length_in_ref'] <= 1.1
 
@@ -329,20 +329,20 @@ class Qc:
 
     def _write_fasta_contigs_hit_ref(self):
         contigs = {}
-        fastaq.tasks.file_to_dict(self.assembly_fasta, contigs)
-        f = fastaq.utils.open_file_write(self.fasta_assembly_contigs_hit_ref)
+        pyfastaq.tasks.file_to_dict(self.assembly_fasta, contigs)
+        f = pyfastaq.utils.open_file_write(self.fasta_assembly_contigs_hit_ref)
         for qry_name in sorted(self.assembly_vs_ref_mummer_hits):
             print(contigs[qry_name], file=f)
-        fastaq.utils.close(f)
+        pyfastaq.utils.close(f)
 
 
     def _write_fasta_contigs_not_hit_ref(self):
-        seq_reader = fastaq.sequences.file_reader(self.assembly_fasta)
-        f = fastaq.utils.open_file_write(self.fasta_assembly_contigs_not_hit_ref)
+        seq_reader = pyfastaq.sequences.file_reader(self.assembly_fasta)
+        f = pyfastaq.utils.open_file_write(self.fasta_assembly_contigs_not_hit_ref)
         for seq in seq_reader:
             if seq.id not in self.assembly_vs_ref_mummer_hits:
                 print(seq, file=f)
-        fastaq.utils.close(f)
+        pyfastaq.utils.close(f)
 
 
     def _hash_nucmer_hits_by_ref(self, hits):
@@ -366,11 +366,11 @@ class Qc:
             if name in refhits:
                 hits = refhits[name]
                 coords = [hit.ref_coords() for hit in hits]
-                fastaq.intervals.merge_overlapping_in_list(coords)
+                pyfastaq.intervals.merge_overlapping_in_list(coords)
                 self.refseq_assembly_stats[name] = {
                     'hits': len(hits),
-                    'bases_assembled': fastaq.intervals.length_sum_from_list(coords),
-                    'assembled': 0.9 <= fastaq.intervals.length_sum_from_list(coords) / self.ref_lengths[name],
+                    'bases_assembled': pyfastaq.intervals.length_sum_from_list(coords),
+                    'assembled': 0.9 <= pyfastaq.intervals.length_sum_from_list(coords) / self.ref_lengths[name],
                     'assembled_ok': len(hits) == 1 and 0.9 <= hits[0].hit_length_ref / self.ref_lengths[name] <= 1.1 and 0.9 <= hits[0].qry_length / hits[0].hit_length_qry,
                     'longest_matching_contig': self._longest_matching_contig(refhits, name),
                 }
@@ -387,18 +387,18 @@ class Qc:
 
     def _invert_list(self, coords, seq_length):
         if len(coords) == 0:
-            return[fastaq.intervals.Interval(0, seq_length - 1)]
+            return[pyfastaq.intervals.Interval(0, seq_length - 1)]
 
         not_covered = []
 
         if coords[0].start != 0:
-            not_covered.append(fastaq.intervals.Interval(0, coords[0].start - 1))
+            not_covered.append(pyfastaq.intervals.Interval(0, coords[0].start - 1))
 
         for i in range(len(coords) - 1):
-            not_covered.append(fastaq.intervals.Interval(coords[i].end + 1, coords[i+1].start - 1))
+            not_covered.append(pyfastaq.intervals.Interval(coords[i].end + 1, coords[i+1].start - 1))
 
         if coords[-1].end < seq_length - 1:
-            not_covered.append(fastaq.intervals.Interval(coords[-1].end + 1, seq_length - 1))
+            not_covered.append(pyfastaq.intervals.Interval(coords[-1].end + 1, seq_length - 1))
 
         return not_covered
 
@@ -407,7 +407,7 @@ class Qc:
         if self.assembly_is_empty:
             self.ref_pos_not_covered_by_contigs = {}
             for seq, lngth in self.ref_lengths.items():
-                self.ref_pos_not_covered_by_contigs[seq] = [fastaq.intervals.Interval(0, lngth - 1)]
+                self.ref_pos_not_covered_by_contigs[seq] = [pyfastaq.intervals.Interval(0, lngth - 1)]
             return
 
         for seq in self.assembly_vs_ref_mummer_hits:
@@ -417,7 +417,7 @@ class Qc:
                 self.ref_pos_covered_by_contigs[hit.ref_name].append(hit.ref_coords())
 
         for coords_list in self.ref_pos_covered_by_contigs.values():
-            fastaq.intervals.merge_overlapping_in_list(coords_list)
+            pyfastaq.intervals.merge_overlapping_in_list(coords_list)
 
         for seq in self.ref_ids:
             if seq in self.ref_pos_covered_by_contigs:
@@ -492,7 +492,7 @@ class Qc:
         for qryname, coords_list in  self.contig_placement.items():
             for qry_coords, refname, ref_coords, same_strand, repetitive in coords_list:
                 offset = self.ref_length_offsets[refname]
-                ref_coords = fastaq.intervals.Interval(ref_coords.start + offset, ref_coords.end + offset)
+                ref_coords = pyfastaq.intervals.Interval(ref_coords.start + offset, ref_coords.end + offset)
                 contig_positions.append((ref_coords, qry_coords, same_strand, repetitive, qryname))
 
         contig_positions.sort()
@@ -514,10 +514,10 @@ class Qc:
     def _write_ref_info(self, filename):
         assert self.embl_dir is not None
         files = sorted(os.listdir(self.embl_dir))
-        f = fastaq.utils.open_file_write(filename)
+        f = pyfastaq.utils.open_file_write(filename)
         print('EMBL_directory', self.embl_dir, sep='\t', file=f)
         print('Files', '\t'.join(files), sep='\t', file=f)
-        fastaq.utils.close(f)
+        pyfastaq.utils.close(f)
 
 
     def _choose_reference_genome(self):
@@ -572,11 +572,11 @@ class Qc:
                     start = i
             else:
                 if start is not None:
-                    bad_intervals.append(fastaq.intervals.Interval(start, i-1))
+                    bad_intervals.append(pyfastaq.intervals.Interval(start, i-1))
                 start = None
 
         if cov_bad and start is not None:
-            bad_intervals.append(fastaq.intervals.Interval(start, i))
+            bad_intervals.append(pyfastaq.intervals.Interval(start, i))
         return bad_intervals
 
 
@@ -588,19 +588,19 @@ class Qc:
             self.low_cov_ref_regions_rev[seq] = self._coverage_list_to_low_cov_intervals(self.ref_coverage_rev[seq])
             fwd_ok = self._invert_list(self.low_cov_ref_regions_fwd[seq], self.ref_lengths[seq])
             rev_ok = self._invert_list(self.low_cov_ref_regions_rev[seq], self.ref_lengths[seq])
-            self.ok_cov_ref_regions[seq] = fastaq.intervals.intersection(fwd_ok, rev_ok)
-            self.low_cov_ref_regions[seq] = fastaq.intervals.intersection(self.low_cov_ref_regions_fwd[seq], self.low_cov_ref_regions_rev[seq])
+            self.ok_cov_ref_regions[seq] = pyfastaq.intervals.intersection(fwd_ok, rev_ok)
+            self.low_cov_ref_regions[seq] = pyfastaq.intervals.intersection(self.low_cov_ref_regions_fwd[seq], self.low_cov_ref_regions_rev[seq])
 
 
     def _write_ref_coverage_to_files_for_R(self, outprefix):
         assert len(self.ref_coverage_fwd)
         assert len(self.ref_coverage_rev)
         def list_to_file(d, fname):
-            f = fastaq.utils.open_file_write(fname)
+            f = pyfastaq.utils.open_file_write(fname)
             for refname in self.ref_ids:
                 for x in d[refname]:
                     print(x, file=f)
-            fastaq.utils.close(f)
+            pyfastaq.utils.close(f)
         list_to_file(self.ref_coverage_fwd, outprefix + '.fwd')
         list_to_file(self.ref_coverage_rev, outprefix + '.rev')
 
@@ -624,7 +624,7 @@ class Qc:
                 l = self.ref_pos_covered_by_contigs[name]
             else:
                 l = []
-            self.should_have_assembled[name] = fastaq.intervals.intersection(self._invert_list(l, self.ref_lengths[name]), self.ok_cov_ref_regions[name])
+            self.should_have_assembled[name] = pyfastaq.intervals.intersection(self._invert_list(l, self.ref_lengths[name]), self.ok_cov_ref_regions[name])
 
 
     def _calculate_gage_stats(self):
@@ -667,8 +667,8 @@ class Qc:
         total_bases = 0
         for name in self.assembly_vs_ref_mummer_hits:
             coords = [x.qry_coords() for x in self.assembly_vs_ref_mummer_hits[name]]
-            fastaq.intervals.merge_overlapping_in_list(coords)
-            total_bases += fastaq.intervals.length_sum_from_list(coords)
+            pyfastaq.intervals.merge_overlapping_in_list(coords)
+            total_bases += pyfastaq.intervals.length_sum_from_list(coords)
         return total_bases, len(self.assembly_vs_ref_mummer_hits)
 
 
@@ -677,10 +677,10 @@ class Qc:
         self.stats['ref_EMBL_files'] = ' '.join(self.embl_files)
         self.stats['ref_bases'] = sum(self.ref_lengths.values())
         self.stats['ref_sequences'] = len(self.ref_lengths)
-        self.stats['ref_bases_assembled'] = sum([fastaq.intervals.length_sum_from_list(l) for l in list(self.ref_pos_covered_by_contigs.values())])
+        self.stats['ref_bases_assembled'] = sum([pyfastaq.intervals.length_sum_from_list(l) for l in list(self.ref_pos_covered_by_contigs.values())])
         self.stats['ref_sequences_assembled'] = len([1 for x in self.refseq_assembly_stats.values() if x['assembled']])
         self.stats['ref_sequences_assembled_ok'] = len([1 for x in self.refseq_assembly_stats.values() if x['assembled_ok']])
-        self.stats['ref_bases_assembler_missed'] = sum([fastaq.intervals.length_sum_from_list(l) for l in list(self.should_have_assembled.values())])
+        self.stats['ref_bases_assembler_missed'] = sum([pyfastaq.intervals.length_sum_from_list(l) for l in list(self.should_have_assembled.values())])
         self.stats['assembly_bases'] = sum(self.assembly_lengths.values())
         self.stats['assembly_contigs'] = len(self.assembly_lengths)
         self.stats['assembly_bases_in_ref'], self.stats['assembly_contigs_hit_ref'] = self._contigs_and_bases_that_hit_ref()
@@ -692,7 +692,7 @@ class Qc:
 
 
     def _write_stats_txt(self):
-        f = fastaq.utils.open_file_write(self.stats_file_txt)
+        f = pyfastaq.utils.open_file_write(self.stats_file_txt)
         for stat in self.stats_keys:
             print(stat, self.stats[stat], sep='\t', file=f)
         for stat in qc_external.gage_stats:
@@ -700,11 +700,11 @@ class Qc:
         for stat in qc_external.ratt_stats:
             print('ratt_' + stat.replace(' ', '_'), self.ratt_stats[stat], sep='\t', file=f)
 
-        fastaq.utils.close(f)
+        pyfastaq.utils.close(f)
 
 
     def _write_stats_tsv(self):
-        f = fastaq.utils.open_file_write(self.stats_file_tsv)
+        f = pyfastaq.utils.open_file_write(self.stats_file_tsv)
         print('\t'.join([x.replace(' ', '_') for x in self.stats_keys]), end='\t', file=f)
         print('\t'.join(['gage_' + x.replace(' ', '_') for x in qc_external.gage_stats]), end='\t', file=f)
         print('\t'.join(['ratt_' + x.replace(' ', '_') for x in qc_external.ratt_stats]), file=f)
@@ -712,7 +712,7 @@ class Qc:
               '\t'.join([str(self.gage_stats[x]) for x in qc_external.gage_stats]),
               '\t'.join([str(self.ratt_stats[x]) for x in qc_external.ratt_stats]),
               sep='\t', file=f)
-        fastaq.utils.close(f)
+        pyfastaq.utils.close(f)
 
 
     def _write_stats_files(self):
@@ -726,7 +726,7 @@ class Qc:
         number_of_contigs = len(contig_names)
         ref_length = sum(self.ref_lengths.values())
         r_script = outprefix + '.R'
-        f = fastaq.utils.open_file_write(r_script)
+        f = pyfastaq.utils.open_file_write(r_script)
         contig_height = 0.8
         vertical_lines = ''
         if len(self.ref_ids) > 0:
@@ -800,7 +800,7 @@ class Qc:
         print(vertical_lines, file=f)
 
         print('dev.off()', file=f)
-        fastaq.utils.close(f)
+        pyfastaq.utils.close(f)
         common.syscall('R CMD BATCH ' + r_script)
 
 

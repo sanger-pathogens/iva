@@ -4,8 +4,8 @@ import shutil
 import os
 import sys
 import inspect
-import fastaq
-from iva import common
+import pyfastaq
+import iva
 
 class Error (Exception): pass
 
@@ -40,8 +40,6 @@ ratt_stats = [
      'gene_models_not_transferred',
 ]
 
-default_ratt_config = os.path.join(os.path.dirname(inspect.getfile(inspect.currentframe())), 'ratt', 'ratt.config')
-
 
 def dummy_gage_stats():
     return {x:'NA' for x in gage_stats}
@@ -52,8 +50,6 @@ def dummy_ratt_stats():
 
 
 def run_gage(reference, scaffolds, outdir, nucmer_minid=80, clean=True):
-    this_module_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
-    gage_dir = os.path.join(this_module_dir, 'gage')
     reference = os.path.abspath(reference)
     scaffolds = os.path.abspath(scaffolds)
     ref = 'ref.fa'
@@ -64,26 +60,30 @@ def run_gage(reference, scaffolds, outdir, nucmer_minid=80, clean=True):
     cwd = os.getcwd()
     os.mkdir(outdir)
     os.chdir(outdir)
+    extractor = iva.egg_extract.Extractor(os.path.abspath(os.path.join(os.path.dirname(iva.__file__), os.pardir)))
+    gage_code_indir = os.path.join('iva', 'gage')
+    gage_code_outdir = 'gage_code'
+    extractor.copy_dir(gage_code_indir, gage_code_outdir)
     os.symlink(reference, ref)
     os.symlink(scaffolds, scaffs)
-    fastaq.tasks.scaffolds_to_contigs(scaffs, contigs, number_contigs=True)
-    f = fastaq.utils.open_file_write(gage_script)
+    pyfastaq.tasks.scaffolds_to_contigs(scaffs, contigs, number_contigs=True)
+    f = pyfastaq.utils.open_file_write(gage_script)
     print(' '.join([
         'sh',
-        os.path.join(gage_dir, 'getCorrectnessStats.sh'),
+        os.path.join(gage_code_outdir, 'getCorrectnessStats.sh'),
         ref,
         contigs,
         scaffs,
         str(nucmer_minid),
         '>', gage_out
         ]), file=f)
-    fastaq.utils.close(f)
-    common.syscall('bash ' + gage_script, allow_fail=True)
+    pyfastaq.utils.close(f)
+    iva.common.syscall('bash ' + gage_script, allow_fail=True)
     if not os.path.exists(gage_out):
         raise Error('Error running GAGE\nbash ' + gage_script)
     stats = dummy_gage_stats()
     wanted_stats = set(gage_stats)
-    f = fastaq.utils.open_file_read(gage_out)
+    f = pyfastaq.utils.open_file_read(gage_out)
     got_all_stats = False
 
     for line in f:
@@ -100,7 +100,7 @@ def run_gage(reference, scaffolds, outdir, nucmer_minid=80, clean=True):
                     stats[a[0]] = int(stat)
                 else:
                     stats[a[0]] = float(stat)
-    fastaq.utils.close(f)
+    pyfastaq.utils.close(f)
 
     if not got_all_stats:
         raise Error('Error running GAGE\nbash ' + gage_script)
@@ -138,12 +138,6 @@ def run_gage(reference, scaffolds, outdir, nucmer_minid=80, clean=True):
 def run_ratt(embl_dir, assembly, outdir, config_file=None, transfer='Species', clean=True):
     embl_dir = os.path.abspath(embl_dir)
     assembly = os.path.abspath(assembly)
-    this_module_dir =os.path.dirname(inspect.getfile(inspect.currentframe()))
-    ratt_dir = os.path.join(this_module_dir, 'ratt')
-    if config_file is None:
-        ratt_config = default_ratt_config
-    else:
-        ratt_config = os.path.abspath(config_file)
 
     cwd = os.getcwd()
     try:
@@ -152,17 +146,27 @@ def run_ratt(embl_dir, assembly, outdir, config_file=None, transfer='Species', c
     except:
         raise Error('Error mkdir ' + outdir)
 
+    extractor = iva.egg_extract.Extractor(os.path.abspath(os.path.join(os.path.dirname(iva.__file__), os.pardir)))
+    ratt_code_indir = os.path.join('iva', 'ratt')
+    ratt_code_outdir = 'ratt_code'
+    extractor.copy_dir(ratt_code_indir, ratt_code_outdir)
+
+    if config_file is None:
+        ratt_config = os.path.join(ratt_code_outdir, 'ratt.config')
+    else:
+        ratt_config = os.path.abspath(config_file)
+
     script = 'run.sh'
     script_out = 'run.sh.out'
     ratt_outprefix = 'out'
-    f = fastaq.utils.open_file_write(script)
-    print('export RATT_HOME=', ratt_dir, sep='', file=f)
+    f = pyfastaq.utils.open_file_write(script)
+    print('export RATT_HOME=', ratt_code_outdir, sep='', file=f)
     print('export RATT_CONFIG=', ratt_config, sep='', file=f)
     print('$RATT_HOME/start.ratt.sh', embl_dir, assembly, ratt_outprefix, transfer, file=f)
-    fastaq.utils.close(f)
+    pyfastaq.utils.close(f)
     cmd = 'bash ' + script + ' > ' + script_out
     # sometimes ratt returns nonzero code, but is OK, so ignore it
-    common.syscall(cmd, allow_fail=True)
+    iva.common.syscall(cmd, allow_fail=True)
 
     stats = {}
 
@@ -180,13 +184,13 @@ def run_ratt(embl_dir, assembly, outdir, config_file=None, transfer='Species', c
         'Gene models not transferred.': 'gene_models_not_transferred',
     }
 
-    f = fastaq.utils.open_file_read(script_out)
+    f = pyfastaq.utils.open_file_read(script_out)
     for line in f:
         if '\t' in line:
             a = line.rstrip().split('\t')
             if len(a) == 2 and a[0].isdigit() and a[1] in matches:
                 stats[matches[a[1]]] = int(a[0])
-    fastaq.utils.close(f)
+    pyfastaq.utils.close(f)
 
     if clean:
         for d in ['Query', 'Reference', 'Sequences']:
@@ -195,7 +199,7 @@ def run_ratt(embl_dir, assembly, outdir, config_file=None, transfer='Species', c
             except:
                 pass
 
-        common.syscall('rm query.* Reference.* nucmer.* out.*')
+        iva.common.syscall('rm query.* Reference.* nucmer.* out.*')
 
     os.chdir(cwd)
     return stats
@@ -205,9 +209,9 @@ def run_blastn_and_write_act_script(assembly, reference, blast_out, script_out):
     tmpdir = tempfile.mkdtemp(prefix='tmp.blastn.', dir=os.getcwd())
     assembly_union = os.path.join(tmpdir, 'assembly.union.fa')
     reference_union = os.path.join(tmpdir, 'reference.union.fa')
-    fastaq.tasks.to_fasta_union(assembly, assembly_union, seqname='assembly_union')
-    fastaq.tasks.to_fasta_union(reference, reference_union, seqname='reference_union')
-    common.syscall('makeblastdb -dbtype nucl -in ' + reference_union)
+    pyfastaq.tasks.to_fasta_union(assembly, assembly_union, seqname='assembly_union')
+    pyfastaq.tasks.to_fasta_union(reference, reference_union, seqname='reference_union')
+    iva.common.syscall('makeblastdb -dbtype nucl -in ' + reference_union)
     cmd = ' '.join([
         'blastn',
         '-task blastn',
@@ -218,11 +222,11 @@ def run_blastn_and_write_act_script(assembly, reference, blast_out, script_out):
         '-evalue 0.01',
         '-dust no',
     ])
-    common.syscall(cmd)
+    iva.common.syscall(cmd)
 
-    f = fastaq.utils.open_file_write(script_out)
+    f = pyfastaq.utils.open_file_write(script_out)
     print('#!/usr/bin/env bash', file=f)
     print('act', reference, blast_out, assembly, file=f)
-    fastaq.utils.close(f)
-    common.syscall('chmod 755 ' + script_out)
+    pyfastaq.utils.close(f)
+    iva.common.syscall('chmod 755 ' + script_out)
     shutil.rmtree(tmpdir)

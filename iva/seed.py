@@ -2,7 +2,7 @@ import copy
 import os
 import shutil
 import tempfile
-import fastaq
+import pyfastaq
 from iva import kcount, kmers, mapping
 
 class Error (Exception): pass
@@ -77,7 +77,7 @@ class Seed:
 
 
     def _extensions_from_reads_file(self, reads_file):
-        seq_reader = fastaq.sequences.file_reader(reads_file)
+        seq_reader = pyfastaq.sequences.file_reader(reads_file)
         left_seqs = []
         right_seqs = []
         for seq in seq_reader:
@@ -124,9 +124,9 @@ class Seed:
 
 
     def write_fasta(self, filename, name):
-        f = fastaq.utils.open_file_write(filename)
+        f = pyfastaq.utils.open_file_write(filename)
         print('>' + name, file=f)
         print(self.seq, file=f)
-        fastaq.utils.close(f)
+        pyfastaq.utils.close(f)
 
 

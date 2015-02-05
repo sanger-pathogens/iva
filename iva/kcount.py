@@ -2,7 +2,7 @@ import os
 import sys
 import tempfile
 import shutil
-import fastaq
+import pyfastaq
 import pysam
 from iva import common, mapping
 
@@ -10,13 +10,13 @@ class Error (Exception): pass
 
 def _head_fastaq(reads1, reads2, outfile, count):
     '''Takes first N sequences from a pair of interleaved fasta/q files. Output is in FASTA format. Returns hash of read length distribution (key=read length, value=count)'''
-    seq_reader1 = fastaq.sequences.file_reader(reads1)
+    seq_reader1 = pyfastaq.sequences.file_reader(reads1)
     if reads2 is not None:
-        seq_reader2 = fastaq.sequences.file_reader(reads2)
-    f = fastaq.utils.open_file_write(outfile)
+        seq_reader2 = pyfastaq.sequences.file_reader(reads2)
+    f = pyfastaq.utils.open_file_write(outfile)
     lengths = {}
-    original_line_length = fastaq.sequences.Fasta.line_length
-    fastaq.sequences.Fasta.line_length = 0
+    original_line_length = pyfastaq.sequences.Fasta.line_length
+    pyfastaq.sequences.Fasta.line_length = 0
     i = 0
 
     for seq1 in seq_reader1:
@@ -28,16 +28,16 @@ def _head_fastaq(reads1, reads2, outfile, count):
             if seq is None:
                 continue
             lengths[len(seq)] = lengths.get(len(seq), 0) + 1
-            if type(seq) == fastaq.sequences.Fastq:
-                print(fastaq.sequences.Fasta(seq.id, seq.seq), file=f)
+            if type(seq) == pyfastaq.sequences.Fastq:
+                print(pyfastaq.sequences.Fasta(seq.id, seq.seq), file=f)
             else:
                 print(seq, file=f)
             i += 1
         if i >= count:
             break
 
-    fastaq.utils.close(f)
-    fastaq.sequences.Fasta.line_length = original_line_length
+    pyfastaq.utils.close(f)
+    pyfastaq.sequences.Fasta.line_length = original_line_length
     return lengths
 
 
@@ -53,7 +53,7 @@ def _median(d):
 
 
 def _run_kmc_with_script(script, reads, outfile, kmer, min_count, max_count, m_option, verbose, allow_fail):
-    f = fastaq.utils.open_file_write(script)
+    f = pyfastaq.utils.open_file_write(script)
     print('set -e', file=f)
     kmc_command = ''.join([
         'kmc -fa',
@@ -76,7 +76,7 @@ def _run_kmc_with_script(script, reads, outfile, kmer, min_count, max_count, m_o
 
     print('kmc_dump', 'kmc_out', 'kmc_out.dump', file=f)
     print('sort -k2nr', 'kmc_out.dump >', outfile, file=f)
-    fastaq.utils.close(f)
+    pyfastaq.utils.close(f)
     return common.syscall('bash ' + script, allow_fail=allow_fail)
 
 
@@ -120,7 +120,7 @@ def _kmc_to_kmer_counts(infile, number, kmers_to_ignore=None, contigs_to_check=N
     if not using_refs:
         if verbose > 2:
             print('No existing kmers or contigs to check against. Using most common kmer for seed', flush=True)
-        f = fastaq.utils.open_file_read(infile)
+        f = pyfastaq.utils.open_file_read(infile)
         for line in f:
             if len(counts) >= number:
                 break
@@ -131,7 +131,7 @@ def _kmc_to_kmer_counts(infile, number, kmers_to_ignore=None, contigs_to_check=N
                 raise Error('Error getting kmer info from this line:\n' + line)
 
             counts[kmer] = count
-        fastaq.utils.close(f)
+        pyfastaq.utils.close(f)
     else:
         if verbose > 2:
             print('Existing kmers or contigs to check against. Running mapping', flush=True)
@@ -160,7 +160,7 @@ def _write_ref_seqs_to_be_checked(outfile, kmers_to_ignore=None, contigs_to_chec
     if (kmers_to_ignore is None or len(kmers_to_ignore) == 0) and (contigs_to_check is None or len(contigs_to_check) == 0):
         return False
 
-    f = fastaq.utils.open_file_write(outfile)
+    f = pyfastaq.utils.open_file_write(outfile)
     i = 1
 
     if kmers_to_ignore is not None:
@@ -170,20 +170,20 @@ def _write_ref_seqs_to_be_checked(outfile, kmers_to_ignore=None, contigs_to_chec
             i += 1
 
     if contigs_to_check is not None and len(contigs_to_check) > 0:
-        original_line_length = fastaq.sequences.Fasta.line_length
-        fastaq.sequences.Fasta.line_length = 0
+        original_line_length = pyfastaq.sequences.Fasta.line_length
+        pyfastaq.sequences.Fasta.line_length = 0
         for name in contigs_to_check:
             if len(contigs_to_check[name].fa) > 20:
                 print(contigs_to_check[name].fa, file=f)
-        fastaq.sequences.Fasta.line_length = original_line_length
+        pyfastaq.sequences.Fasta.line_length = original_line_length
 
-    fastaq.utils.close(f)
+    pyfastaq.utils.close(f)
     return True
 
 
 def _counts_file_to_fasta(infile, outfile):
-    fin = fastaq.utils.open_file_read(infile)
-    fout = fastaq.utils.open_file_write(outfile)
+    fin = pyfastaq.utils.open_file_read(infile)
+    fout = pyfastaq.utils.open_file_write(outfile)
     i = 1
     for line in fin:
         try:
@@ -196,8 +196,8 @@ def _counts_file_to_fasta(infile, outfile):
         print(kmer, file=fout)
         i += 1
 
-    fastaq.utils.close(fin)
-    fastaq.utils.close(fout)
+    pyfastaq.utils.close(fin)
+    pyfastaq.utils.close(fout)
 
 
 def get_most_common_kmers(reads1, reads2, kmer_length=None, head=100000, min_count=10, max_count=100000000, most_common=100, method='kmc', verbose=0, ignore_seqs=None, contigs_to_check=None, threads=1):

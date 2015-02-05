@@ -3,6 +3,7 @@ __all__ = [
     'common',
     'contig',
     'contig_trim',
+    'egg_extract',
     'edge',
     'external_progs',
     'graph',

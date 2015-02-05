@@ -3,7 +3,7 @@ import pysam
 import tempfile
 import shutil
 from iva import contig, mapping, seed, mummer, graph, edge, common
-import fastaq
+import pyfastaq
 
 class Assembly:
     def __init__(self, contigs_file=None, map_index_k=15, map_index_s=3, threads=1, max_insert=1000, map_minid=0.5, min_clip=3, ext_min_cov=5, ext_min_ratio=2, ext_bases=100, verbose=0, seed_min_cov=5, seed_min_ratio=10, seed_min_kmer_count=200, seed_max_kmer_count=1000000000, seed_start_length=None, seed_stop_length=500, seed_overlap_length=None, make_new_seeds=False, contig_iter_trim=10, seed_ext_max_bases=50, max_contigs=50, clean=True, strand_bias=0.2):
@@ -39,7 +39,7 @@ class Assembly:
             self.make_new_seeds = True
         else:
             contigs = {}
-            fastaq.tasks.file_to_dict(contigs_file, contigs)
+            pyfastaq.tasks.file_to_dict(contigs_file, contigs)
             for ctg in contigs:
                 self._add_contig(contigs[ctg])
 
@@ -62,7 +62,7 @@ class Assembly:
         printed = 0
         if min_length is None:
             min_length = self.map_index_k + 1
-        f = fastaq.utils.open_file_write(filename)
+        f = pyfastaq.utils.open_file_write(filename)
         if biggest_first:
             contig_names = self._contig_names_size_order(biggest_first=True)
         elif order_by_orfs:
@@ -90,7 +90,7 @@ class Assembly:
                 if order_by_orfs and contig_revcomp[i]:
                     self.contigs[name].fa.revcomp()
 
-        fastaq.utils.close(f)
+        pyfastaq.utils.close(f)
 
 
     def _get_contig_order_by_orfs(self, min_length=300):
@@ -137,8 +137,8 @@ class Assembly:
 
     def _extend_contigs_with_bam(self, bam_in, out_prefix=None, output_all_useful_reads=False):
         if out_prefix is not None:
-            fa_out1 = fastaq.utils.open_file_write(out_prefix + '_1.fa')
-            fa_out2 = fastaq.utils.open_file_write(out_prefix + '_2.fa')
+            fa_out1 = pyfastaq.utils.open_file_write(out_prefix + '_1.fa')
+            fa_out2 = pyfastaq.utils.open_file_write(out_prefix + '_2.fa')
         keep_read_types = set([mapping.CAN_EXTEND_LEFT, mapping.CAN_EXTEND_RIGHT, mapping.KEEP])
         if output_all_useful_reads:
             keep_read_types.add(mapping.BOTH_UNMAPPED)
@@ -172,8 +172,8 @@ class Assembly:
             previous_sam = None
 
         if out_prefix is not None:
-            fastaq.utils.close(fa_out1)
-            fastaq.utils.close(fa_out2)
+            pyfastaq.utils.close(fa_out1)
+            pyfastaq.utils.close(fa_out2)
         total_bases_added = 0
 
         for ctg in self.contigs:
@@ -187,6 +187,7 @@ class Assembly:
 
 
     def _trim_contig_for_strand_bias(self, bam, ctg_name):
+        assert os.path.exists(bam)
         if ctg_name in self.contigs_trimmed_for_strand_bias:
             return
         ctg_length = len(self.contigs[ctg_name])
@@ -246,7 +247,7 @@ class Assembly:
                 start = good_intervals[i][0]
                 end = good_intervals[i][1]
                 if end - start + 1 >= 100:
-                    new_contigs.append(fastaq.sequences.Fasta(ctg_name + '.' + str(i+1), self.contigs[ctg_name].fa[start:end+1]))
+                    new_contigs.append(pyfastaq.sequences.Fasta(ctg_name + '.' + str(i+1), self.contigs[ctg_name].fa[start:end+1]))
 
         return new_contigs
 
@@ -259,6 +260,7 @@ class Assembly:
         original_map_minid = self.map_minid
         self.map_minid = 0.9
         self._map_reads(reads_prefix + '_1.fa', reads_prefix + '_2.fa', tmp_prefix, sort_reads=True)
+        assert os.path.exists(sorted_bam)
         self.map_minid = original_map_minid
         new_contigs = []
         contigs_to_remove = set()
@@ -452,11 +454,11 @@ class Assembly:
 
 
     def _coords_to_new_contig(self, coords_list):
-        new_contig = fastaq.sequences.Fasta(coords_list[0][0], '')
+        new_contig = pyfastaq.sequences.Fasta(coords_list[0][0], '')
         for name, coords, reverse in coords_list:
             assert name in self.contigs
             if reverse:
-                seq = fastaq.sequences.Fasta('ni', self.contigs[name].fa.seq[coords.start:coords.end+1])
+                seq = pyfastaq.sequences.Fasta('ni', self.contigs[name].fa.seq[coords.start:coords.end+1])
                 seq.revcomp()
                 new_contig.seq += seq.seq
             else:
@@ -500,13 +502,13 @@ class Assembly:
         for hit in [hit for hit in hits if contig in [hit.qry_name, hit.ref_name] and hit.qry_name != hit.ref_name]:
             start = min(hit.qry_start, hit.qry_end)
             end = max(hit.qry_start, hit.qry_end)
-            coords.append(fastaq.intervals.Interval(start, end))
+            coords.append(pyfastaq.intervals.Interval(start, end))
 
         if len(coords) == 0:
             return False
 
-        fastaq.intervals.merge_overlapping_in_list(coords)
-        total_bases_matched = fastaq.intervals.length_sum_from_list(coords)
+        pyfastaq.intervals.merge_overlapping_in_list(coords)
+        total_bases_matched = pyfastaq.intervals.length_sum_from_list(coords)
         return min_percent <= 100.0 * total_bases_matched / len(self.contigs[contig])
 
 
@@ -596,6 +598,6 @@ class Assembly:
             i += 1
             new_name = 'seeded.' + str(i).zfill(5)
 
-        self._add_contig(fastaq.sequences.Fasta(new_name, s.seq))
+        self._add_contig(pyfastaq.sequences.Fasta(new_name, s.seq))
         return new_name
 

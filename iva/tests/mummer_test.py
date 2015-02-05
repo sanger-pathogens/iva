@@ -2,7 +2,7 @@ import unittest
 import os
 import filecmp
 import pysam
-import fastaq
+import pyfastaq
 from iva import mummer, edge
 
 modules_dir = os.path.dirname(os.path.abspath(mummer.__file__))
@@ -40,7 +40,7 @@ class TestMummer(unittest.TestCase):
         ]
         for h in hits:
             m = mummer.NucmerHit(h)
-            self.assertEqual(fastaq.intervals.Interval(0,99), m.qry_coords())
+            self.assertEqual(pyfastaq.intervals.Interval(0,99), m.qry_coords())
 
 
     def test_ref_coords(self):
@@ -50,7 +50,7 @@ class TestMummer(unittest.TestCase):
         ]
         for h in hits:
             m = mummer.NucmerHit(h)
-            self.assertEqual(fastaq.intervals.Interval(0,99), m.ref_coords())
+            self.assertEqual(pyfastaq.intervals.Interval(0,99), m.ref_coords())
 
 
     def test_on_same_strand(self):

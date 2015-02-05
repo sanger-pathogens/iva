@@ -7,7 +7,7 @@ import time
 import re
 import urllib.request
 import iva
-import fastaq
+import pyfastaq
 
 
 class Error (Exception): pass
@@ -66,19 +66,19 @@ class Database:
 
 
     def _get_parent_taxons(self, taxons):
-        f = fastaq.utils.open_file_read(self.kraken_nodes_dmp)
+        f = pyfastaq.utils.open_file_read(self.kraken_nodes_dmp)
         for line in f:
             a = line.split()
             if a[0] in taxons:
                 self.taxon_to_parent[a[0]] = a[2]
-        fastaq.utils.close(f)
+        pyfastaq.utils.close(f)
 
 
     def _load_extra_ref_info(self):
         if self.extra_refs_file is None:
              return
 
-        f = fastaq.utils.open_file_read(self.extra_refs_file)
+        f = pyfastaq.utils.open_file_read(self.extra_refs_file)
         for line in f:
             genbank_ids = line.rstrip().split()
             new_gis = list(range(self.current_gi, self.current_gi + len(genbank_ids)))
@@ -90,7 +90,7 @@ class Database:
             }
             
             self.current_taxon_id += 1
-        fastaq.utils.close(f)
+        pyfastaq.utils.close(f)
 
         
     def _download_from_genbank(self, outfile, filetype, gi, max_tries=5, delay=3):
@@ -115,9 +115,9 @@ class Database:
         if not file_ok:
             raise Error('Error downloading gi ' + gi + ' using:\n' + url + '\nI got this:\n' + file_contents)
 
-        f = fastaq.utils.open_file_write(outfile)
+        f = pyfastaq.utils.open_file_write(outfile)
         print(file_contents, file=f)
-        fastaq.utils.close(f)
+        pyfastaq.utils.close(f)
 
 
     def _download_extra_refs(self):
@@ -132,7 +132,7 @@ class Database:
 
 
     def _genbank_to_taxon_and_gi(self, filename):
-        f = fastaq.utils.open_file_read(filename)
+        f = pyfastaq.utils.open_file_read(filename)
         taxon_id = None
         gi = None
         for line in f:
@@ -142,7 +142,7 @@ class Database:
                 gi = line.rstrip().split()[-1].split(':')[-1]
             if None not in [taxon_id, gi]:
                 break
-        fastaq.utils.close(f)
+        pyfastaq.utils.close(f)
         if None in [taxon_id, gi]:
             raise Error('Error getting taxon or GI from ' + filename)
         return taxon_id, gi
@@ -198,9 +198,9 @@ class Database:
 
 
     def _replace_fasta_header(self, filename, header):
-        fin = fastaq.utils.open_file_read(filename)
+        fin = pyfastaq.utils.open_file_read(filename)
         tmp_out = filename + '.tmp.fa'
-        fout = fastaq.utils.open_file_write(tmp_out)
+        fout = pyfastaq.utils.open_file_write(tmp_out)
 
         for line in fin:
             if line.startswith('>'):
@@ -208,8 +208,8 @@ class Database:
             else:
                 print(line.rstrip(), file=fout)
 
-        fastaq.utils.close(fin)
-        fastaq.utils.close(fout)
+        pyfastaq.utils.close(fin)
+        pyfastaq.utils.close(fout)
         os.rename(tmp_out, filename)
 
 
@@ -380,7 +380,7 @@ class Database:
 
     def _get_most_common_species_dir(self, kraken_report):
         embl_dirs = set([os.path.basename(x[0]) for x in os.walk(self.embl_root) if x[0] != self.embl_root])
-        f = fastaq.utils.open_file_read(kraken_report)
+        f = pyfastaq.utils.open_file_read(kraken_report)
         max_count = -1
         most_common_dir = None
         for line in f:
@@ -391,7 +391,7 @@ class Database:
                 most_common_dir = this_dir
                 max_count = int(a[2])
 
-        fastaq.utils.close(f)
+        pyfastaq.utils.close(f)
         if most_common_dir is None:
             return None
         else:

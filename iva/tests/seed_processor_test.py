@@ -1,7 +1,7 @@
 import unittest
 import os
 import filecmp
-import fastaq
+import pyfastaq
 from iva import seed_processor
 
 modules_dir = os.path.dirname(os.path.abspath(seed_processor.__file__))
@@ -16,7 +16,7 @@ class TestSeedProcessor(unittest.TestCase):
         tmp_out = 'tmp.process_seeds.out'
         s = seed_processor.SeedProcessor(in_fasta, reads1, reads2, tmp_out, verbose=4, threads=1)
         s.process()
-        reader = fastaq.sequences.file_reader(tmp_out)
+        reader = pyfastaq.sequences.file_reader(tmp_out)
         counter = 0
         for seq in reader:
             self.assertTrue(len(seq) > 470)

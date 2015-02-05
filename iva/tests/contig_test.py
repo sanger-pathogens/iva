@@ -3,7 +3,7 @@
 import unittest
 import os
 from iva import contig
-from fastaq import sequences
+from pyfastaq import sequences
 
 class TestContig(unittest.TestCase):
     def test_init(self):

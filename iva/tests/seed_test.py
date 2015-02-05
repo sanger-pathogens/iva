@@ -2,7 +2,7 @@ import unittest
 import os
 import filecmp
 import shutil
-import fastaq
+import pyfastaq
 from iva import seed
 
 modules_dir = os.path.dirname(os.path.abspath(seed.__file__))
@@ -23,18 +23,18 @@ class TestSeed(unittest.TestCase):
     def test_extension_from_read(self):
         '''Test _test_extension_from_read'''
         s = seed.Seed(seq='AGGCT')
-        self.assertEqual(None, s._extension_from_read(fastaq.sequences.Fasta('x', 'AAAAA')))
-        self.assertEqual(None, s._extension_from_read(fastaq.sequences.Fasta('x', 'AGGC')))
-        self.assertEqual('A', s._extension_from_read(fastaq.sequences.Fasta('x', 'AGGCTA')))
-        self.assertEqual('AT', s._extension_from_read(fastaq.sequences.Fasta('x', 'AGGCTAT')))
-        self.assertEqual('AT', s._extension_from_read(fastaq.sequences.Fasta('x', 'GGGAGGCTAT')))
-        self.assertEqual('AA', s._extension_from_read(fastaq.sequences.Fasta('x', 'TTAGCCT')))
+        self.assertEqual(None, s._extension_from_read(pyfastaq.sequences.Fasta('x', 'AAAAA')))
+        self.assertEqual(None, s._extension_from_read(pyfastaq.sequences.Fasta('x', 'AGGC')))
+        self.assertEqual('A', s._extension_from_read(pyfastaq.sequences.Fasta('x', 'AGGCTA')))
+        self.assertEqual('AT', s._extension_from_read(pyfastaq.sequences.Fasta('x', 'AGGCTAT')))
+        self.assertEqual('AT', s._extension_from_read(pyfastaq.sequences.Fasta('x', 'GGGAGGCTAT')))
+        self.assertEqual('AA', s._extension_from_read(pyfastaq.sequences.Fasta('x', 'TTAGCCT')))
 
-        self.assertEqual(None, s._extension_from_read(fastaq.sequences.Fasta('x', 'AAAAA'), left=True))
-        self.assertEqual(None, s._extension_from_read(fastaq.sequences.Fasta('x', 'AGGCTA'), left=True))
-        self.assertEqual('GT', s._extension_from_read(fastaq.sequences.Fasta('x', 'GTAGGCTA'), left=True))
-        self.assertEqual('GT', s._extension_from_read(fastaq.sequences.Fasta('x', 'GTAGGCTATTC'), left=True))
-        self.assertEqual('GT', s._extension_from_read(fastaq.sequences.Fasta('x', 'AGCCTAC'), left=True))
+        self.assertEqual(None, s._extension_from_read(pyfastaq.sequences.Fasta('x', 'AAAAA'), left=True))
+        self.assertEqual(None, s._extension_from_read(pyfastaq.sequences.Fasta('x', 'AGGCTA'), left=True))
+        self.assertEqual('GT', s._extension_from_read(pyfastaq.sequences.Fasta('x', 'GTAGGCTA'), left=True))
+        self.assertEqual('GT', s._extension_from_read(pyfastaq.sequences.Fasta('x', 'GTAGGCTATTC'), left=True))
+        self.assertEqual('GT', s._extension_from_read(pyfastaq.sequences.Fasta('x', 'AGCCTAC'), left=True))
 
 
     def test_len(self):

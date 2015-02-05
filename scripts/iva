@@ -4,7 +4,7 @@ import argparse
 import os
 import sys
 import multiprocessing
-import fastaq
+import pyfastaq
 import iva
 
 
@@ -55,9 +55,7 @@ seed_group.add_argument('--seed_ext_min_ratio', type=float, help='Sets N, where 
 trimming_group = parser.add_argument_group('Read trimming options')
 trimming_group.add_argument('--trimmomatic', action=iva.common.abspathAction, help='Provide location of trimmomatic.jar file to enable read trimming. Required if --adapters used', metavar='FILENAME')
 trimming_group.add_argument('--trimmo_qual', help='Trimmomatic options used to quality trim reads [%(default)s]', default='LEADING:10 TRAILING:10 SLIDINGWINDOW:4:20', metavar='STRING')
-iva_module_dir = os.path.dirname(iva.read_trim.__file__)
-adapters = os.path.abspath(os.path.join(iva_module_dir, 'read_trim', 'adapters.fasta'))
-trimming_group.add_argument('--adapters', action=iva.common.abspathAction, help='Fasta file of adapter sequences to be trimmed off reads. If used, must also use --trimmomatic. [' + adapters + ']', metavar='FILENAME')
+trimming_group.add_argument('--adapters', action=iva.common.abspathAction, help='Fasta file of adapter sequences to be trimmed off reads. If used, must also use --trimmomatic. Default is file of adapters supplied with IVA', metavar='FILENAME')
 trimming_group.add_argument('--min_trimmed_length', type=int, help='Minimum length of read after trimming [%(default)s]', default=50, metavar='INT')
 trimming_group.add_argument('--pcr_primers', action=iva.common.abspathAction, help='FASTA file of primers. The first perfect match found to a sequence in the primers file will be trimmed off the start of each read. This is run after trimmomatic (if --trimmomatic used)', metavar='FILENAME') 
 
@@ -110,18 +108,18 @@ iva.external_progs.write_prog_info('iva', log_file)
 reads_prefix = 'reads'
 reads_1 = reads_prefix + '_1.fa'
 reads_2 = reads_prefix + '_2.fa'
-original_line_length = fastaq.sequences.Fasta.line_length
-fastaq.sequences.Fasta.line_length = 0
+original_line_length = pyfastaq.sequences.Fasta.line_length
+pyfastaq.sequences.Fasta.line_length = 0
 
 if options.reads and not options.trimmomatic:
-    fastaq.tasks.deinterleave(options.reads, reads_1, reads_2, fasta_out=True)
+    pyfastaq.tasks.deinterleave(options.reads, reads_1, reads_2, fasta_out=True)
 else:
     to_delete = []
 
     if options.reads:
         reads_for_trimming_1 = 'reads.untrimmed_1.fq'
         reads_for_trimming_2 = 'reads.untrimmed_2.fq'
-        fastaq.tasks.deinterleave(options.reads, reads_for_trimming_1, reads_for_trimming_2)
+        pyfastaq.tasks.deinterleave(options.reads, reads_for_trimming_1, reads_for_trimming_2)
         to_delete.append(reads_for_trimming_1)
         to_delete.append(reads_for_trimming_2)
     else:
@@ -131,7 +129,13 @@ else:
     if options.trimmomatic:
         trimmed_reads_prefix = 'reads.trimmed'
         if options.adapters is None:
-            options.adapters = adapters
+            extractor = iva.egg_extract.Extractor(os.path.abspath(os.path.join(os.path.dirname(iva.__file__), os.pardir)))
+            egg_adapters = os.path.join('iva', 'read_trim', 'adapters.fasta')
+            options.adapters = 'adapters.fasta'
+            extractor.copy_file(egg_adapters, options.adapters)
+
+        assert os.path.exists(options.adapters)
+
         iva.read_trim.run_trimmomatic(reads_for_trimming_1, reads_for_trimming_2, trimmed_reads_prefix, options.trimmomatic, options.adapters, minlen=options.min_trimmed_length, verbose=options.verbose, threads=options.threads, qual_trim=options.trimmo_qual)
         fq_to_convert_to_fa_1 = trimmed_reads_prefix + '_1.fq'
         fq_to_convert_to_fa_2 = trimmed_reads_prefix + '_2.fq'
@@ -141,8 +145,8 @@ else:
         fq_to_convert_to_fa_1 = reads_for_trimming_1
         fq_to_convert_to_fa_2 = reads_for_trimming_2
 
-    p1 = multiprocessing.Process(target=fastaq.tasks.to_fasta, args=(fq_to_convert_to_fa_1, reads_1), kwargs={'line_length':0})
-    p2 = multiprocessing.Process(target=fastaq.tasks.to_fasta, args=(fq_to_convert_to_fa_2, reads_2), kwargs={'line_length':0})
+    p1 = multiprocessing.Process(target=pyfastaq.tasks.to_fasta, args=(fq_to_convert_to_fa_1, reads_1), kwargs={'line_length':0})
+    p2 = multiprocessing.Process(target=pyfastaq.tasks.to_fasta, args=(fq_to_convert_to_fa_2, reads_2), kwargs={'line_length':0})
     p1.start()
 
     if options.threads == 1:
@@ -160,18 +164,18 @@ else:
 if options.pcr_primers:
     tmp_reads_1 = 'reads_1.pcr_trim.fa'
     tmp_reads_2 = 'reads_2.pcr_trim.fa'
-    fastaq.tasks.sequence_trim(reads_1, reads_2, tmp_reads_1, tmp_reads_2, options.pcr_primers, min_length=options.min_trimmed_length, check_revcomp=True)
+    pyfastaq.tasks.sequence_trim(reads_1, reads_2, tmp_reads_1, tmp_reads_2, options.pcr_primers, min_length=options.min_trimmed_length, check_revcomp=True)
     os.rename(tmp_reads_1, reads_1)
     os.rename(tmp_reads_2, reads_2)
 
-fastaq.sequences.Fasta.line_length = original_line_length
+pyfastaq.sequences.Fasta.line_length = original_line_length
 
 if options.contigs:
     contigs = 'contigs_to_extend.fasta'
-    fastaq.tasks.to_fasta(options.contigs, contigs, line_length=60, strip_after_first_whitespace=True)
+    pyfastaq.tasks.to_fasta(options.contigs, contigs, line_length=60, strip_after_first_whitespace=True)
 elif options.reference:
     reference = 'reference_in.fasta'
-    fastaq.tasks.to_fasta(options.reference, reference, line_length=60, strip_after_first_whitespace=True)
+    pyfastaq.tasks.to_fasta(options.reference, reference, line_length=60, strip_after_first_whitespace=True)
     p = iva.seed_processor.SeedProcessor(
         reference,
         reads_1,

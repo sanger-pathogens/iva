@@ -1,7 +1,7 @@
 import unittest
 import copy
 from iva import edge
-from fastaq import intervals
+from pyfastaq import intervals
 
 class TestEdge(unittest.TestCase):
     def test_open_end(self):
