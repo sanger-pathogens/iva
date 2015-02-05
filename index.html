@@ -53,27 +53,14 @@ IVA is installed on the
   <a href="https://github.com/sanger-pathogens/iva/wiki/Installation-notes-for-Ubuntu">detailed instructions for Ubuntu</a>.
 </p>
 
-<h2>
-<a name="install-the-dependencies" class="anchor" href="#install-the-dependencies"><span class="octicon octicon-link"></span></a>Install the dependencies</h2>
-
-<p>IVA has been developed for and tested on Linux and relies on
-some third-party tools that need to be installed first.
-For citations, see the References section at the end of this page.</p>
-
 <h4>
-<a name="assembly-dependencies" class="anchor" href="#assembly-dependencies"><span class="octicon octicon-link"></span></a>Assembly dependencies</h4>
+<a name="required-dependencies" class="anchor" href="#required-dependencies"><span class="octicon octicon-link"></span></a>Required dependencies</h4>
 
-<p>The following are required to run an assembly with IVA.</p>
+<p>The following are required to install IVA and use it to run an assembly.</p>
 
 <ul>
 <li>
-<a href="http://www.python.org/">Python 3</a> (IVA is written in Python 3) and the following packages:
-
-<ul>
-<li><a href="https://github.com/sanger-pathogens/Fastaq">Fastaq (version 2.0.0)</a></li>
-<li><a href="https://pypi.python.org/pypi/networkx/">networkx</a></li>
-<li><a href="https://code.google.com/p/pysam/">Pysam</a></li>
-</ul>
+<a href="http://www.python.org/">Python 3</a> (IVA is written in Python 3)
 </li>
 <li>
 <a href="http://sun.aei.polsl.pl/kmc/download.html">KMC</a> installed, so that <code>kmc</code> and <code>kmc_dump</code> are in your path.</li>
@@ -95,19 +82,37 @@ need to tell IVA where the Java jar file is to use Trimmomatic (see
 version 0.1.19 and SMALT version 0.7.5.</p>
 
 <h4>
-<a name="qc-dependencies" class="anchor" href="#qc-dependencies"><span class="octicon octicon-link"></span></a>QC dependencies</h4>
+<a name="install-iva" class="anchor" href="#install-iva"><span class="octicon octicon-link"></span></a>Install IVA</h4>
 
-<p>The QC scripts have the following dependencies, in addiition to MUMmer,
-smalt and samtools:</p>
+<p>Once you have installed the dependencies, install IVA with
+
+<pre><code>pip3 install iva
+</code></pre>
+
+
+<h4>
+<a name="optional-dependencies" class="anchor" href="#optional-dependencies"><span class="octicon octicon-link"></span></a>Optional dependencies</h4>
+
+<p>The following dependencies only apply to the QC scripts of IVA and
+are not needed to run an assembly. Only install them if you want to run the scripts
+iva_qc or iva_qc_make_db.
+</p>
 
 <ul>
 <li>
 <a href="http://www.r-project.org/">R</a> installed and in your path.</li>
+<li><a href="http://www.bioperl.org/wiki/Main_Page">BioPerl</a></li>
 <li>Optional: <a href="http://ccb.jhu.edu/software/kraken/">kraken</a> installed, so that <code>kraken</code> and
 <code>kraken-build</code> are in your path. These are needed if you want to
 make your own reference database, or if you use a database to
 automatically choose the reference genome.</li>
-</ul><p>The QC code is also bundled with the following (they do not need to be installed).</p>
+<li>Optional:<a href="http://blast.ncbi.nlm.nih.gov/Blast.cgi?PAGE_TYPE=BlastDocs&DOC_TYPE=Download">NCBI-blast+</a>.
+If this is installed then the QC script will make input files for ACT, to compare the assembly
+against a reference.
+</li>
+</ul>
+
+<p>The QC code is also bundled with the following (they do not need to be installed).</p>
 
 <ul>
 <li>Analysis code from the <a href="http://gage.cbcb.umd.edu/index.html">GAGE</a> assembly evaluation
@@ -117,27 +122,11 @@ code.</li>
 <li>
 <a href="http://ratt.sourceforge.net/">RATT</a> is used to transfer annotation from a reference
 onto the assembly.</li>
-</ul><h2>
-<a name="install-iva" class="anchor" href="#install-iva"><span class="octicon octicon-link"></span></a>Install IVA</h2>
+</ul>
 
-<p>Once you have installed the dependencies, take a copy of the
-<a href="https://github.com/sanger-pathogens/iva/releases/latest">latest IVA release</a>.
-Then run the tests:</p>
 
-<pre><code>python3 setup.py test
-</code></pre>
-
-<p>If all the tests pass, then install with:</p>
-
-<pre><code>python3 setup.py install
-</code></pre>
-
-<p>Or if you don't have root access, then run:</p>
-
-<pre><code>python3 setup.py install --prefix /install/in/here
-</code></pre>
-
-<hr><h2>
+<hr>
+<h2>
 <a name="references" class="anchor" href="#references"><span class="octicon octicon-link"></span></a>References</h2>
 
 <p><a href="http://www.nature.com/nmeth/journal/v9/n1/full/nmeth.1814.html"><strong>Adapter sequences:</strong></a> Quail, M. a et al. <em>Optimal enzymes for amplifying sequencing libraries</em>. Nat. Methods 9, 10-1 (2012).</p>
