@@ -187,6 +187,7 @@ class Assembly:
 
 
     def _trim_contig_for_strand_bias(self, bam, ctg_name):
+        assert os.path.exists(bam)
         if ctg_name in self.contigs_trimmed_for_strand_bias:
             return
         ctg_length = len(self.contigs[ctg_name])
@@ -259,6 +260,7 @@ class Assembly:
         original_map_minid = self.map_minid
         self.map_minid = 0.9
         self._map_reads(reads_prefix + '_1.fa', reads_prefix + '_2.fa', tmp_prefix, sort_reads=True)
+        assert os.path.exists(sorted_bam)
         self.map_minid = original_map_minid
         new_contigs = []
         contigs_to_remove = set()
