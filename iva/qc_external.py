@@ -162,6 +162,7 @@ def run_ratt(embl_dir, assembly, outdir, config_file=None, transfer='Species', c
     f = pyfastaq.utils.open_file_write(script)
     print('export RATT_HOME=', ratt_code_outdir, sep='', file=f)
     print('export RATT_CONFIG=', ratt_config, sep='', file=f)
+    print('for x in $RATT_HOME/*.{sh,pl}; do chmod 755 $x; done', file=f)
     print('$RATT_HOME/start.ratt.sh', embl_dir, assembly, ratt_outprefix, transfer, file=f)
     pyfastaq.utils.close(f)
     cmd = 'bash ' + script + ' > ' + script_out
