@@ -1,4 +1,5 @@
 import os
+import stat
 import inspect
 import tempfile
 import copy
@@ -6,7 +7,7 @@ import pyfastaq
 import shutil
 import multiprocessing
 import collections
-from iva import mapping, mummer, qc_external, kraken, common
+import iva
 
 class Error (Exception): pass
 
@@ -83,7 +84,7 @@ class Qc:
             raise Error('IVA QC needs reads_fr or both reads_fwd and reads_rev')
 
         def unzip_file(infile, outfile):
-            common.syscall('gunzip -c ' + infile + ' > ' + outfile)
+            iva.common.syscall('gunzip -c ' + infile + ' > ' + outfile)
 
         processes = []
 
@@ -171,7 +172,7 @@ class Qc:
             return
         self.assembly_fasta_fai = self.assembly_fasta + '.fai'
         if not os.path.exists(self.assembly_fasta_fai):
-            common.syscall('samtools faidx ' + self.assembly_fasta)
+            iva.common.syscall('samtools faidx ' + self.assembly_fasta)
         pyfastaq.tasks.lengths_from_fai(self.assembly_fasta_fai, self.assembly_lengths)
 
 
@@ -181,25 +182,28 @@ class Qc:
         self.ref_fasta_fai = self.ref_fasta + '.fai'
         self.ref_gff = self.outprefix + '.reference.gff'
         tmpdir = tempfile.mkdtemp(prefix='tmp.set_ref_seq_data.', dir=os.getcwd())
-        this_module_dir =os.path.dirname(inspect.getfile(inspect.currentframe()))
-        embl2gff = os.path.abspath(os.path.join(this_module_dir, 'ratt', 'embl2gff.pl'))
+        extractor = iva.egg_extract.Extractor(os.path.abspath(os.path.join(os.path.dirname(iva.__file__), os.pardir)))
+        embl2gff_egg = os.path.join('iva', 'ratt', 'embl2gff.pl')
+        embl2gff = os.path.join(tmpdir, 'embl2gff.pl')
+        extractor.copy_file(embl2gff_egg, embl2gff)
+        os.chmod(embl2gff, stat.S_IRWXU)
 
         for embl_file in os.listdir(self.embl_dir):
             fa = os.path.join(tmpdir, embl_file + '.fa')
             gff = os.path.join(tmpdir, embl_file + '.gff')
             embl_full = os.path.join(self.embl_dir, embl_file)
             pyfastaq.tasks.to_fasta(embl_full, fa)
-            common.syscall(' '.join([embl2gff, embl_full, '>', gff]))
+            iva.common.syscall(' '.join([embl2gff, embl_full, '>', gff]))
 
-        common.syscall('cat ' + tmpdir + '/*.gff > ' + self.ref_gff)
-        common.syscall('cat ' + tmpdir + '/*.fa > ' + self.ref_fasta)
+        iva.common.syscall('cat ' + tmpdir + '/*.gff > ' + self.ref_gff)
+        iva.common.syscall('cat ' + tmpdir + '/*.fa > ' + self.ref_fasta)
         shutil.rmtree(tmpdir)
         self._set_ref_fa_data()
 
 
     def _set_ref_fa_data(self):
         self.ref_fasta_fai = self.ref_fasta + '.fai'
-        common.syscall('samtools faidx ' + self.ref_fasta)
+        iva.common.syscall('samtools faidx ' + self.ref_fasta)
         self.ref_ids = self._ids_in_order_from_fai(self.ref_fasta_fai)
         self.ref_lengths = {}
         pyfastaq.tasks.lengths_from_fai(self.ref_fasta_fai, self.ref_lengths)
@@ -280,12 +284,12 @@ class Qc:
         if not os.path.exists(self.ref_cds_fasta):
             self._gff_and_fasta_to_cds()
         if not self.assembly_is_empty:
-            mummer.run_nucmer(self.ref_cds_fasta, self.assembly_fasta, self.cds_nucmer_coords_in_assembly, min_length=self.nucmer_min_cds_hit_length, min_id=self.nucmer_min_cds_hit_id)
+            iva.mummer.run_nucmer(self.ref_cds_fasta, self.assembly_fasta, self.cds_nucmer_coords_in_assembly, min_length=self.nucmer_min_cds_hit_length, min_id=self.nucmer_min_cds_hit_id)
 
 
     def _mummer_coords_file_to_dict(self, filename):
         hits = {}
-        for hit in mummer.file_reader(filename):
+        for hit in iva.mummer.file_reader(filename):
             if hit.qry_name not in hits:
                 hits[hit.qry_name] = []
             hits[hit.qry_name].append(copy.copy(hit))
@@ -323,7 +327,7 @@ class Qc:
 
 
     def _get_contig_hits_to_reference(self):
-        mummer.run_nucmer(self.assembly_fasta, self.ref_fasta, self.assembly_vs_ref_coords, min_id=self.nucmer_min_ctg_hit_id, min_length=self.nucmer_min_ctg_hit_length, breaklen=500)
+        iva.mummer.run_nucmer(self.assembly_fasta, self.ref_fasta, self.assembly_vs_ref_coords, min_id=self.nucmer_min_ctg_hit_id, min_length=self.nucmer_min_ctg_hit_length, breaklen=500)
         self.assembly_vs_ref_mummer_hits = self._mummer_coords_file_to_dict(self.assembly_vs_ref_coords)
 
 
@@ -469,7 +473,7 @@ class Qc:
         if self.assembly_is_empty:
             self.incorrect_assembly_bases = {}
         else:
-            self.incorrect_assembly_bases = mapping.find_incorrect_ref_bases(self.assembly_bam, self.assembly_fasta)
+            self.incorrect_assembly_bases = iva.mapping.find_incorrect_ref_bases(self.assembly_bam, self.assembly_fasta)
 
 
     def _contig_placement_in_reference(self, hits):
@@ -507,7 +511,7 @@ class Qc:
 
     def _map_reads_to_assembly(self):
         if not self.assembly_is_empty:
-            mapping.map_reads(self.reads_fwd, self.reads_rev, self.assembly_fasta, self.assembly_bam[:-4], sort=True, threads=self.threads, index_k=self.smalt_k, index_s=self.smalt_s, minid=self.smalt_id, extra_smalt_map_ops='-x')
+            iva.mapping.map_reads(self.reads_fwd, self.reads_rev, self.assembly_fasta, self.assembly_bam[:-4], sort=True, threads=self.threads, index_k=self.smalt_k, index_s=self.smalt_s, minid=self.smalt_id, extra_smalt_map_ops='-x')
             os.unlink(self.assembly_bam[:-4] + '.unsorted.bam')
 
 
@@ -525,8 +529,8 @@ class Qc:
             assert self.ref_db is not None
             assert os.path.exists(self.assembly_bam)
             tmp_reads = self.outprefix + '.tmp.subsample.reads.fastq'
-            mapping.subsample_bam(self.assembly_bam, tmp_reads, coverage=40)
-            db = kraken.Database(self.ref_db, threads=self.threads, preload=self.kraken_preload)
+            iva.mapping.subsample_bam(self.assembly_bam, tmp_reads, coverage=40)
+            db = iva.kraken.Database(self.ref_db, threads=self.threads, preload=self.kraken_preload)
             self.embl_dir = db.choose_reference(tmp_reads, self.kraken_prefix)
             os.unlink(tmp_reads)
             if self.embl_dir is None:
@@ -541,12 +545,12 @@ class Qc:
         if self.assembly_is_empty or not self.blast_for_act:
             return
 
-        qc_external.run_blastn_and_write_act_script(self.assembly_fasta, self.ref_fasta, self.blast_out, self.act_script)
+        iva.qc_external.run_blastn_and_write_act_script(self.assembly_fasta, self.ref_fasta, self.blast_out, self.act_script)
 
 
     def _map_reads_to_reference(self):
         assert os.path.exists(self.ref_fasta)
-        mapping.map_reads(self.reads_fwd, self.reads_rev, self.ref_fasta, self.ref_bam[:-4], sort=True, threads=self.threads, index_k=self.smalt_k, index_s=self.smalt_s, minid=self.smalt_id, extra_smalt_map_ops='-x')
+        iva.mapping.map_reads(self.reads_fwd, self.reads_rev, self.ref_fasta, self.ref_bam[:-4], sort=True, threads=self.threads, index_k=self.smalt_k, index_s=self.smalt_s, minid=self.smalt_id, extra_smalt_map_ops='-x')
         os.unlink(self.ref_bam[:-4] + '.unsorted.bam')
 
 
@@ -555,9 +559,9 @@ class Qc:
             self._map_reads_to_reference()
         for seq in self.ref_ids:
             assert seq not in self.ref_coverage_fwd
-            self.ref_coverage_fwd[seq] = mapping.get_bam_region_coverage(self.ref_bam, seq, self.ref_lengths[seq])
+            self.ref_coverage_fwd[seq] = iva.mapping.get_bam_region_coverage(self.ref_bam, seq, self.ref_lengths[seq])
             assert seq not in self.ref_coverage_rev
-            self.ref_coverage_rev[seq] = mapping.get_bam_region_coverage(self.ref_bam, seq, self.ref_lengths[seq], rev=True)
+            self.ref_coverage_rev[seq] = iva.mapping.get_bam_region_coverage(self.ref_bam, seq, self.ref_lengths[seq], rev=True)
 
 
     def _coverage_list_to_low_cov_intervals(self, l):
@@ -629,17 +633,17 @@ class Qc:
 
     def _calculate_gage_stats(self):
         if self.assembly_is_empty:
-            self.gage_stats = qc_external.dummy_gage_stats()
+            self.gage_stats = iva.qc_external.dummy_gage_stats()
             self.gage_stats['Missing Reference Bases'] = sum(self.ref_lengths.values())
         else:
-            self.gage_stats = qc_external.run_gage(self.ref_fasta, self.assembly_fasta, self.gage_outdir, nucmer_minid=self.gage_nucmer_minid, clean=self.clean)
+            self.gage_stats = iva.qc_external.run_gage(self.ref_fasta, self.assembly_fasta, self.gage_outdir, nucmer_minid=self.gage_nucmer_minid, clean=self.clean)
 
 
     def _calculate_ratt_stats(self):
         if self.assembly_is_empty:
-            self.ratt_stats = qc_external.dummy_ratt_stats()
+            self.ratt_stats = iva.qc_external.dummy_ratt_stats()
         else:
-            self.ratt_stats = qc_external.run_ratt(self.embl_dir, self.assembly_fasta, self.ratt_outdir, config_file=self.ratt_config, clean=self.clean)
+            self.ratt_stats = iva.qc_external.run_ratt(self.embl_dir, self.assembly_fasta, self.ratt_outdir, config_file=self.ratt_config, clean=self.clean)
 
 
     def _do_calculations(self):
@@ -695,9 +699,9 @@ class Qc:
         f = pyfastaq.utils.open_file_write(self.stats_file_txt)
         for stat in self.stats_keys:
             print(stat, self.stats[stat], sep='\t', file=f)
-        for stat in qc_external.gage_stats:
+        for stat in iva.qc_external.gage_stats:
             print('gage_' + stat.replace(' ', '_'), self.gage_stats[stat], sep='\t', file=f)
-        for stat in qc_external.ratt_stats:
+        for stat in iva.qc_external.ratt_stats:
             print('ratt_' + stat.replace(' ', '_'), self.ratt_stats[stat], sep='\t', file=f)
 
         pyfastaq.utils.close(f)
@@ -706,11 +710,11 @@ class Qc:
     def _write_stats_tsv(self):
         f = pyfastaq.utils.open_file_write(self.stats_file_tsv)
         print('\t'.join([x.replace(' ', '_') for x in self.stats_keys]), end='\t', file=f)
-        print('\t'.join(['gage_' + x.replace(' ', '_') for x in qc_external.gage_stats]), end='\t', file=f)
-        print('\t'.join(['ratt_' + x.replace(' ', '_') for x in qc_external.ratt_stats]), file=f)
+        print('\t'.join(['gage_' + x.replace(' ', '_') for x in iva.qc_external.gage_stats]), end='\t', file=f)
+        print('\t'.join(['ratt_' + x.replace(' ', '_') for x in iva.qc_external.ratt_stats]), file=f)
         print('\t'.join([str(self.stats[x]) for x in self.stats_keys]),
-              '\t'.join([str(self.gage_stats[x]) for x in qc_external.gage_stats]),
-              '\t'.join([str(self.ratt_stats[x]) for x in qc_external.ratt_stats]),
+              '\t'.join([str(self.gage_stats[x]) for x in iva.qc_external.gage_stats]),
+              '\t'.join([str(self.ratt_stats[x]) for x in iva.qc_external.ratt_stats]),
               sep='\t', file=f)
         pyfastaq.utils.close(f)
 
@@ -801,7 +805,7 @@ class Qc:
 
         print('dev.off()', file=f)
         pyfastaq.utils.close(f)
-        common.syscall('R CMD BATCH ' + r_script)
+        iva.common.syscall('R CMD BATCH ' + r_script)
 
 
     def _clean(self):

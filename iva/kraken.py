@@ -149,12 +149,18 @@ class Database:
 
 
     def _genbank2embl(self, infile, outfile):
-        this_module_dir =os.path.dirname(inspect.getfile(inspect.currentframe()))
-        genbank2embl = os.path.abspath(os.path.join(this_module_dir, 'ratt', 'genbank2embl.pl'))
+        tmpdir = tempfile.mkdtemp(prefix='tmp.genbank2embl.', dir=os.getcwd())
+        extractor = iva.egg_extract.Extractor(os.path.abspath(os.path.join(os.path.dirname(iva.__file__), os.pardir)))
+        genbank2embl_egg = os.path.join('iva', 'ratt', 'genbank2embl.pl')
+        genbank2embl = os.path.join(tmpdir, 'genbank2embl.pl')
+        extractor.copy_file(genbank2embl_egg, genbank2embl)
+        os.chmod(genbank2embl, stat.S_IRWXU)
+
         # some genbank files have a 'CONTIG' line, which breaks bioperl's
         # conversion genbank --> embl and makes genbank2embl.pl hang
         iva.common.syscall('grep -v CONTIG ' + infile + ' > tmp.gbk; mv tmp.gbk ' + infile)
         iva.common.syscall(genbank2embl + ' ' + infile + ' ' + outfile, verbose=self.verbose)
+        shutil.rmtree(tmpdir)
         
 
     def _append_to_file(self, filename, line):
