@@ -54,6 +54,7 @@ class Qc:
                 raise Error('Error in IVA QC. File not found: "' + filename + '"')
 
         self.outprefix = output_prefix
+        self.assembly_fasta = output_prefix + '.assembly.fasta'
         self.assembly_bam = output_prefix + '.reads_mapped_to_assembly.bam'
         self.ref_bam = output_prefix + '.reads_mapped_to_ref.bam'
         self.reads_fwd = reads_fwd
@@ -82,6 +83,8 @@ class Qc:
 
         if not (None not in [self.reads_fwd, self.reads_rev] or reads_fr is not None):
             raise Error('IVA QC needs reads_fr or both reads_fwd and reads_rev')
+
+        self._set_assembly_fasta_data(assembly_fasta)
 
         def unzip_file(infile, outfile):
             iva.common.syscall('gunzip -c ' + infile + ' > ' + outfile)
@@ -113,7 +116,6 @@ class Qc:
                 processes[0].join()
 
         self.min_ref_cov = min_ref_cov
-        self._set_assembly_fasta_data(assembly_fasta)
         self.threads = threads
         self.contig_layout_plot_title = contig_layout_plot_title
         self.nucmer_min_cds_hit_length = nucmer_min_cds_hit_length
@@ -165,14 +167,17 @@ class Qc:
 
 
     def _set_assembly_fasta_data(self, fasta_filename):
-        self.assembly_fasta = fasta_filename
-        self.assembly_lengths = {}
-        self.assembly_is_empty = os.path.getsize(self.assembly_fasta) == 0
+        self.assembly_is_empty = os.path.getsize(fasta_filename) == 0
         if self.assembly_is_empty:
             return
+
+        pyfastaq.tasks.to_fasta(fasta_filename, self.assembly_fasta, strip_after_first_whitespace=True)
+
         self.assembly_fasta_fai = self.assembly_fasta + '.fai'
         if not os.path.exists(self.assembly_fasta_fai):
             iva.common.syscall('samtools faidx ' + self.assembly_fasta)
+
+        self.assembly_lengths = {}
         pyfastaq.tasks.lengths_from_fai(self.assembly_fasta_fai, self.assembly_lengths)
 
 
