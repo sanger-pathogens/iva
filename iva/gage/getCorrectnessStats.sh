@@ -30,7 +30,7 @@ $MUMMER/nucmer --maxmatch -p $CONTIG_FILE -l 30 -banded -D 5 $REF $CONTIGS
 $MUMMER/delta-filter -o 95 -i $NUCMER_MINID $CONTIG_FILE.delta > $CONTIG_FILE.fdelta
 $MUMMER/dnadiff -d $CONTIG_FILE.fdelta
 
-$SCRIPT_PATH/getMummerStats.sh $CONTIGS $SCRIPT_PATH
+bash $SCRIPT_PATH/getMummerStats.sh $CONTIGS $SCRIPT_PATH
 cat out.1coords |awk '{print NR" "$5}' > $CONTIG_FILE.matches.lens
 
 echo ""

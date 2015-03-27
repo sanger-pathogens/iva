@@ -6,6 +6,7 @@ from iva import qc_external
 modules_dir = os.path.dirname(os.path.abspath(qc_external.__file__))
 data_dir = os.path.join(modules_dir, 'tests', 'data')
 
+
 class TestQcExternal(unittest.TestCase):
     def test_run_gage(self):
         '''test run_gage'''
@@ -14,6 +15,11 @@ class TestQcExternal(unittest.TestCase):
         outdir = 'tmp.qc_external_test_run_gage'
         qc_external.run_gage(ref, scaffs, outdir)
         self.assertTrue(os.path.exists(os.path.join(outdir, 'gage.out')))
+        with open(os.path.join(outdir, 'gage.out')) as f:
+            got_lines = f.readlines()
+        with open(os.path.join(data_dir, 'qc_external_test_run_gage.out')) as f:
+            expected_lines = f.readlines()
+        self.assertEqual(got_lines[1:], expected_lines[1:])
         shutil.rmtree(outdir)
 
 

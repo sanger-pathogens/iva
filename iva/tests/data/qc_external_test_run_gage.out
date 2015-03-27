@@ -1,0 +1,55 @@
+MUMMER: /usr/local/bin
+Contig Stats
+Total units: 3
+Reference: 3000
+BasesInFasta: 2998
+Min: 840
+Max: 1260
+N10: 1260 COUNT: 1
+N25: 1260 COUNT: 1
+N50: 898 COUNT: 2
+N75: 840 COUNT: 3
+E-size:1033.2
+
+Genome Size: 3000
+Assembly Size: 2998
+Chaff bases: 0
+Missing Reference Bases: 60(2.00%)
+Missing Assembly Bases: 54(1.80%)
+Missing Assembly Contigs: 0(0.00%)
+Duplicated Reference Bases: 0
+Compressed Reference Bases: 0
+Bad Trim: 0
+Avg Idy: 99.86
+SNPs: 2
+Indels < 5bp: 2
+Indels >= 5: 1
+Inversions: 0
+Relocation: 0
+Translocation: 0
+
+Corrected Contig Stats
+Total units: 4
+Reference: 3000
+BasesInFasta: 2946
+Min: 601
+Max: 900
+N10: 900 COUNT: 1
+N25: 900 COUNT: 1
+N50: 840 COUNT: 2
+N75: 605 COUNT: 3
+E-size:747.61
+
+Scaffold Stats
+Total units: 2
+Reference: 3000
+BasesInFasta: 3058
+Min: 1260
+Max: 1798
+N10: 1798 COUNT: 1
+N25: 1798 COUNT: 1
+N50: 1798 COUNT: 1
+N75: 1260 COUNT: 2
+E-size:1606.8
+
+Corrected Scaffold Stats
