@@ -212,6 +212,9 @@ class Qc:
         self.ref_ids = self._ids_in_order_from_fai(self.ref_fasta_fai)
         self.ref_lengths = {}
         pyfastaq.tasks.lengths_from_fai(self.ref_fasta_fai, self.ref_lengths)
+        number_of_sequences = pyfastaq.tasks.count_sequences(self.ref_fasta)
+        if number_of_sequences != len(self.ref_lengths):
+            raise Error('At least one reference name has been used more than once.\nNames must be unique. Cannot continue')
 
         self.ref_length_offsets = {}
         offset = 0
