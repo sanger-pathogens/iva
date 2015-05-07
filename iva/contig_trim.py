@@ -73,7 +73,7 @@ def _trim_ends(fasta_in, fasta_out, to_trim, min_length=100, min_dist_to_end=25,
             continue
  
         seq.seq = seq.seq[good_coords[0]:good_coords[1]+1]
-        if len(seq) > 0:
+        if len(seq) >= min_length:
             print(seq, file=f_out)
 
     pyfastaq.utils.close(f_out)
