@@ -149,7 +149,11 @@ def _kmc_to_kmer_counts(infile, number, kmers_to_ignore=None, contigs_to_check=N
             except:
                 raise Error('Error getting count from sequence name in bam:\n' + sam.qname)
 
-            counts[common.decode(sam.seq)] = count
+            nucleotides = common.decode(sam.seq)
+            if nucleotides not in kmers_to_ignore:
+                counts[nucleotides] = count
+            elif verbose >= 4:
+                print('Skipping seed already found:', nucleotides)
         sam_reader.close()
 
     shutil.rmtree(tmpdir)
