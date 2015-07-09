@@ -158,6 +158,10 @@ else:
     if options.threads > 1:
         p1.join()
 
+    if p1.exitcode != 0 or p2.exitcode != 0:
+        print('Error in input reads files. Cannot continue', file=sys.stderr)
+        sys.exit(1)
+
     for fname in to_delete:
         os.unlink(fname)
 
