@@ -272,7 +272,11 @@ class Assembly:
                     contigs_to_remove.add(ctg)
             elif ctg not in self.contigs_trimmed_for_strand_bias:
                 self._trim_contig_for_strand_bias(sorted_bam, ctg)
-                if tag_as_trimmed:
+                # contig could get completely trimmed so nothing left, in which
+                # case, we need to remove it
+                if len(self.contigs[ctg]) == 0:
+                    contigs_to_remove.add(ctg)
+                elif tag_as_trimmed:
                     self.contigs_trimmed_for_strand_bias.add(ctg)
 
         for ctg in contigs_to_remove:
@@ -422,6 +426,19 @@ class Assembly:
             if self.verbose:
                 print('{:_^79}'.format(' Try making new seed '), flush=True)
             new_seed_name = self.add_new_seed_contig(current_reads_prefix + '_1.fa', current_reads_prefix + '_2.fa')
+
+            if new_seed_name is None:
+                if self.verbose:
+                    print('Couldn\'t make new seed and extend it. Stopping assembly.')
+                if len(self.contigs) == 0:
+                    print('No contigs made.')
+                    print('Read coverage may be too low, in which case try reducing --seed_min_kmer_cov, --ext_min_cov and --seed_ext_min_cov.')
+                    print('Alternatively --max_insert could be incorrect, which is currently set to:', self.max_insert)
+                if reads_prefix != current_reads_prefix:
+                    os.unlink(current_reads_prefix + '_1.fa')
+                    os.unlink(current_reads_prefix + '_2.fa')
+                break
+
 
 
     def _run_nucmer(self, contigs_to_use=None):
