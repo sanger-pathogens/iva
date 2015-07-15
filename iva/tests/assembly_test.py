@@ -159,7 +159,7 @@ class TestAssembly(unittest.TestCase):
         fwd_cov = [0, 1, 1, 2, 5, 10, 100, 10, 10, 6, 0, 10, 10, 10, 5, 10]
         rev_cov = [0, 5, 5, 5, 5, 20, 10,  10, 10, 100, 9, 10, 10, 10, 5, 0]
         expected = [(3,5), (7,8), (11,14)]
-        a = assembly.Assembly()
+        a = assembly.Assembly(strand_bias=0.2)
         got = a._good_intervals_from_strand_coverage(fwd_cov, rev_cov)
         self.assertListEqual(expected, got)
 
