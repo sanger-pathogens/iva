@@ -6,7 +6,7 @@ from iva import contig, mapping, seed, mummer, graph, edge, common
 import pyfastaq
 
 class Assembly:
-    def __init__(self, contigs_file=None, map_index_k=15, map_index_s=3, threads=1, max_insert=1000, map_minid=0.5, min_clip=3, ext_min_cov=5, ext_min_ratio=2, ext_bases=100, verbose=0, seed_min_cov=5, seed_min_ratio=10, seed_min_kmer_count=200, seed_max_kmer_count=1000000000, seed_start_length=None, seed_stop_length=500, seed_overlap_length=None, make_new_seeds=False, contig_iter_trim=10, seed_ext_max_bases=50, max_contigs=50, clean=True, strand_bias=0.2):
+    def __init__(self, contigs_file=None, map_index_k=15, map_index_s=3, threads=1, max_insert=800, map_minid=0.5, min_clip=3, ext_min_cov=5, ext_min_ratio=2, ext_bases=100, verbose=0, seed_min_cov=5, seed_min_ratio=10, seed_min_kmer_count=200, seed_max_kmer_count=1000000000, seed_start_length=None, seed_stop_length=500, seed_overlap_length=None, make_new_seeds=False, contig_iter_trim=10, seed_ext_max_bases=50, max_contigs=50, clean=True, strand_bias=0):
         self.contigs = {}
         self.contig_lengths = {}
         self.map_index_k = map_index_k
