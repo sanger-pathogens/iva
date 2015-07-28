@@ -1,3 +1,4 @@
+import stat
 import inspect
 import sys
 import os
@@ -25,7 +26,7 @@ class Database:
         self.minimizer_len = minimizer_len
         self.max_db_size = max_db_size
         self.current_taxon_id = 2000000000
-        self.current_gi = 4000000000 
+        self.current_gi = 4000000000
         self.preload = preload
         self.verbose = verbose
         self.taxon_to_parent = {}
@@ -88,11 +89,11 @@ class Database:
                 'genbank_ids': genbank_ids,
                 'new_gis': new_gis,
             }
-            
+
             self.current_taxon_id += 1
         pyfastaq.utils.close(f)
 
-        
+
     def _download_from_genbank(self, outfile, filetype, gi, max_tries=5, delay=3):
         assert filetype in ['gb', 'fasta']
         file_ok = False
@@ -137,7 +138,7 @@ class Database:
         gi = None
         for line in f:
             if line.startswith('                     /db_xref="taxon:'):
-                taxon_id = line.rstrip().split(':')[-1].rstrip('"')            
+                taxon_id = line.rstrip().split(':')[-1].rstrip('"')
             elif line.startswith('VERSION'):
                 gi = line.rstrip().split()[-1].split(':')[-1]
             if None not in [taxon_id, gi]:
@@ -161,7 +162,7 @@ class Database:
         iva.common.syscall('grep -v CONTIG ' + infile + ' > tmp.gbk; mv tmp.gbk ' + infile)
         iva.common.syscall(genbank2embl + ' ' + infile + ' ' + outfile, verbose=self.verbose)
         shutil.rmtree(tmpdir)
-        
+
 
     def _append_to_file(self, filename, line):
         try:
@@ -199,7 +200,7 @@ class Database:
             ]) + '\t|'
             self._append_to_file(self.kraken_nodes_dmp, line)
         self.added_to_kraken.add(new_taxon)
-        self._append_to_file(self.kraken_gi_taxid_nucl_dmp, str(new_gi) + '\t' + str(new_taxon)) 
+        self._append_to_file(self.kraken_gi_taxid_nucl_dmp, str(new_gi) + '\t' + str(new_taxon))
         iva.common.syscall('kraken-build --add-to-library ' + fa_file + ' --db ' + self.kraken_db, verbose=self.verbose)
 
 
@@ -254,7 +255,7 @@ class Database:
                     print('unlink', os.path.exists(fa_file), fa_file)
                 os.unlink(gb_file)
                 os.unlink(fa_file)
-               
+
 
     def _build_kraken_virus_db(self):
         if os.path.exists(self.done_files['clean']):
@@ -270,7 +271,7 @@ class Database:
             iva.common.syscall('kraken-build --download-taxonomy --db ' + self.kraken_db, verbose=self.verbose)
             if not self.skip_virus_download:
                 iva.common.syscall('kraken-build --download-library viruses --db ' + self.kraken_db, verbose=self.verbose)
-        
+
             if self.extra_refs_file is not None:
                 self._load_extra_ref_info()
                 self._download_extra_refs()
@@ -299,7 +300,7 @@ class Database:
             if os.path.exists(self.extra_refs_dir):
                 shutil.rmtree(self.extra_refs_dir)
             iva.common.syscall('touch ' + self.done_files['clean'], verbose=self.verbose)
-             
+
 
     def _get_genbank_virus_files(self):
         if os.path.exists(self.done_files['make_embl']):
@@ -336,7 +337,7 @@ class Database:
                 print()
             new_dir = re.sub('_uid[0-9]+$', '', directory).strip('_')
             if new_dir != directory:
-                os.rename(directory, new_dir) 
+                os.rename(directory, new_dir)
 
             final_dir =  os.path.join(self.embl_root, os.path.basename(new_dir))
             if os.path.exists(final_dir):
