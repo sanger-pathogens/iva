@@ -32,7 +32,7 @@ if not found_all_progs:
 
 setup(
     name='iva',
-    version='1.0.0',
+    version='1.0.1',
     description='Iterative Virus Assembler',
     packages = find_packages(),
     package_data={'iva': ['gage/*', 'ratt/*', 'read_trim/*']},
