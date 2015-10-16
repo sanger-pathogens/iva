@@ -43,7 +43,7 @@ setup(
     test_suite='nose.collector',
     tests_require=['nose >= 1.3'],
     install_requires=[
-        'pyfastaq >= 3.0.1',
+        'pyfastaq >= 3.10.0',
         'networkx >= 1.7',
         'pysam >= 0.8.1'
     ],
