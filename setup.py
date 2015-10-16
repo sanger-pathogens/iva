@@ -32,7 +32,7 @@ if not found_all_progs:
 
 setup(
     name='iva',
-    version='1.0.0',
+    version='1.0.1',
     description='Iterative Virus Assembler',
     packages = find_packages(),
     package_data={'iva': ['gage/*', 'ratt/*', 'read_trim/*']},
@@ -43,7 +43,7 @@ setup(
     test_suite='nose.collector',
     tests_require=['nose >= 1.3'],
     install_requires=[
-        'pyfastaq >= 3.0.1',
+        'pyfastaq >= 3.10.0',
         'networkx >= 1.7',
         'pysam >= 0.8.1'
     ],
