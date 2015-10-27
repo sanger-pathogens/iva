@@ -31,7 +31,7 @@ class Tester:
 
         print('Current working directory:', os.getcwd())
         print('Running iva on the test data with the command:', cmd, sep='\n')
-        iva.common.syscall(cmd, allow_fail=True)
+        iva.common.syscall(cmd)
 
 
     def _check_output(self):
