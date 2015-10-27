@@ -35,7 +35,7 @@ setup(
     version='1.0.1',
     description='Iterative Virus Assembler',
     packages = find_packages(),
-    package_data={'iva': ['gage/*', 'ratt/*', 'read_trim/*']},
+    package_data={'iva': ['gage/*', 'ratt/*', 'read_trim/*', 'test_run_data/*']},
     author='Martin Hunt',
     author_email='path-help@sanger.ac.uk',
     url='https://github.com/sanger-pathogens/iva',

@@ -17,5 +17,6 @@ __all__ = [
     'read_trim',
     'seed',
     'seed_processor',
+    'test_data_runner',
 ]
 from iva import *
