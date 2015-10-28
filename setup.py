@@ -32,10 +32,10 @@ if not found_all_progs:
 
 setup(
     name='iva',
-    version='1.0.1',
+    version='1.0.2',
     description='Iterative Virus Assembler',
     packages = find_packages(),
-    package_data={'iva': ['gage/*', 'ratt/*', 'read_trim/*']},
+    package_data={'iva': ['gage/*', 'ratt/*', 'read_trim/*', 'test_run_data/*']},
     author='Martin Hunt',
     author_email='path-help@sanger.ac.uk',
     url='https://github.com/sanger-pathogens/iva',

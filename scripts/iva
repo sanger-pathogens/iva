@@ -64,9 +64,19 @@ other_group = parser.add_argument_group('Other options')
 other_group.add_argument('-i', '--max_insert', type=int, help='Maximum insert size (includes read length). Reads with inferred insert size more than the maximum will not be used to extend contigs [%(default)s]', default=800, metavar='INT')
 other_group.add_argument('-t', '--threads', type=int, help='Number of threads to use [%(default)s]', default=1, metavar='INT')
 other_group.add_argument('--strand_bias', type=float, help='Set strand bias cutoff of mapped reads when trimming contig ends, in the interval [0,0.5]. A value of x means that a base needs min(fwd_depth, rev_depth) / total_depth <= x. The only time this should be used is with libraries with overlapping reads (ie fragment length < 2*read length), and even then, it can make results worse. If used, try a low value like 0.1 first [%(default)s]', default=0, metavar='FLOAT in [0,0.5]')
+other_group.add_argument('--test', action='store_true', help='Run using built in test data. All other options will be ignored, except the mandatory output directory, and --trimmomatic and --threads can be also be used')
 other_group.add_argument('--version', action='version', version=iva.common.version)
 
 options = parser.parse_args()
+
+if options.test:
+    print('Running iva in test mode...')
+    this_script = os.path.abspath(__file__)
+    tester = iva.test_data_runner.Tester(options.outdir, this_script, trimmo_jar=options.trimmomatic, threads=options.threads)
+    tester.run()
+    sys.exit()
+
+
 if options.seed_stop_length == 0:
     options.seed_stop_length = int(0.9 * options.max_insert)
 

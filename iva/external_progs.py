@@ -2,6 +2,7 @@ import shutil
 import subprocess
 import re
 import sys
+from distutils.version import LooseVersion
 import pyfastaq
 from iva import common
 
@@ -23,6 +24,11 @@ prog_to_version_cmd = {
     'R': ('R --version', re.compile('^R version (.*) \(.*\) --')),
     'smalt': ('smalt version', re.compile('^Version: (.*)$')),
     'samtools': ('samtools', re.compile('^Version: (.*)$')),
+}
+
+ 
+minimum_versions = {
+    'samtools': '0.1.19'
 }
 
 
@@ -79,6 +85,8 @@ def get_all_versions(progs, must_be_in_path=True):
     info = []
     for prog in sorted(progs):
         version = get_version(prog, must_be_in_path=must_be_in_path)
+        if prog in minimum_versions and LooseVersion(version) < LooseVersion(minimum_versions[prog]):
+            raise Error('Found version ' + version + ' of ' + prog + ' but must be at least ' + minimum_versions[prog] + '. Cannot continue')
         info.append(' '.join(['Using', prog, 'version', version]))
     return info
 
