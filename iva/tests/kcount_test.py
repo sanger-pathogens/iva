@@ -42,6 +42,14 @@ class TestKcount(unittest.TestCase):
         os.unlink(counts_file)
 
 
+    def test_run_kmc_two_threads(self):
+        '''Test test_run_kmc with two threads'''
+        reads = os.path.join(data_dir, 'kcount_test.run_kmc.fa')
+        counts_file = kcount._run_kmc(reads, 'tmp.run_kmc', 10, 2, 4, threads=2)
+        self.assertTrue(filecmp.cmp(counts_file, os.path.join(data_dir, 'kcount_test.run_kmc.counts'), shallow=False))
+        os.unlink(counts_file)
+
+
     def test_kmc_to_kmer_counts(self):
         '''Test _kmc_to_kmer_counts'''
         counts = kcount._kmc_to_kmer_counts(os.path.join(data_dir, 'kcount_test.kmc_counts'), number=2)

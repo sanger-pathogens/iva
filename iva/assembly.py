@@ -6,12 +6,13 @@ from iva import contig, mapping, seed, mummer, graph, edge, common
 import pyfastaq
 
 class Assembly:
-    def __init__(self, contigs_file=None, map_index_k=15, map_index_s=3, threads=1, max_insert=800, map_minid=0.5, min_clip=3, ext_min_cov=5, ext_min_ratio=2, ext_bases=100, verbose=0, seed_min_cov=5, seed_min_ratio=10, seed_min_kmer_count=200, seed_max_kmer_count=1000000000, seed_start_length=None, seed_stop_length=500, seed_overlap_length=None, make_new_seeds=False, contig_iter_trim=10, seed_ext_max_bases=50, max_contigs=50, clean=True, strand_bias=0):
+    def __init__(self, contigs_file=None, map_index_k=15, map_index_s=3, threads=1, kmc_threads=1, max_insert=800, map_minid=0.5, min_clip=3, ext_min_cov=5, ext_min_ratio=2, ext_bases=100, verbose=0, seed_min_cov=5, seed_min_ratio=10, seed_min_kmer_count=200, seed_max_kmer_count=1000000000, seed_start_length=None, seed_stop_length=500, seed_overlap_length=None, make_new_seeds=False, contig_iter_trim=10, seed_ext_max_bases=50, max_contigs=50, clean=True, strand_bias=0):
         self.contigs = {}
         self.contig_lengths = {}
         self.map_index_k = map_index_k
         self.map_index_s = map_index_s
         self.threads = threads
+        self.kmc_threads = kmc_threads
         self.max_insert = max_insert
         self.map_minid = map_minid
         self.min_clip = min_clip
@@ -583,7 +584,7 @@ class Assembly:
         made_seed = False
 
         for i in range(max_attempts):
-            s = seed.Seed(reads1=seed_reads1, reads2=seed_reads2, extend_length=self.seed_ext_max_bases, seed_length=self.seed_start_length, seed_min_count=self.seed_min_kmer_count, seed_max_count=self.seed_max_kmer_count, ext_min_cov=self.seed_min_cov, ext_min_ratio=self.seed_min_ratio, verbose=self.verbose, threads=self.threads, sequences_to_ignore=self.used_seeds, contigs_to_check=self.contigs)
+            s = seed.Seed(reads1=seed_reads1, reads2=seed_reads2, extend_length=self.seed_ext_max_bases, seed_length=self.seed_start_length, seed_min_count=self.seed_min_kmer_count, seed_max_count=self.seed_max_kmer_count, ext_min_cov=self.seed_min_cov, ext_min_ratio=self.seed_min_ratio, verbose=self.verbose, kmc_threads=self.kmc_threads, map_threads=self.threads, sequences_to_ignore=self.used_seeds, contigs_to_check=self.contigs)
 
             if s.seq is None or len(s.seq) == 0:
                 break
