@@ -63,6 +63,7 @@ trimming_group.add_argument('--pcr_primers', action=iva.common.abspathAction, he
 other_group = parser.add_argument_group('Other options')
 other_group.add_argument('-i', '--max_insert', type=int, help='Maximum insert size (includes read length). Reads with inferred insert size more than the maximum will not be used to extend contigs [%(default)s]', default=800, metavar='INT')
 other_group.add_argument('-t', '--threads', type=int, help='Number of threads to use [%(default)s]', default=1, metavar='INT')
+other_group.add_argument('--kmc_onethread', action='store_true', help='Force kmc to use one thread. By default the value of -t/--threads is used when running kmc')
 other_group.add_argument('--strand_bias', type=float, help='Set strand bias cutoff of mapped reads when trimming contig ends, in the interval [0,0.5]. A value of x means that a base needs min(fwd_depth, rev_depth) / total_depth <= x. The only time this should be used is with libraries with overlapping reads (ie fragment length < 2*read length), and even then, it can make results worse. If used, try a low value like 0.1 first [%(default)s]', default=0, metavar='FLOAT in [0,0.5]')
 other_group.add_argument('--test', action='store_true', help='Run using built in test data. All other options will be ignored, except the mandatory output directory, and --trimmomatic and --threads can be also be used')
 other_group.add_argument('--version', action='version', version=iva.common.version)
@@ -100,6 +101,12 @@ if options.contigs and options.reference:
 if os.path.exists(options.outdir):
     print('Error! Output directory', options.outdir, 'already exists. Cannot continue', file=sys.stderr)
     sys.exit(1)
+
+
+if options.kmc_onethread:
+    kmc_threads = 1
+else:
+    kmc_threads = options.threads
 
 
 iva.external_progs.get_all_versions(iva.external_progs.assembly_progs)
@@ -198,6 +205,7 @@ elif options.reference:
         index_k = options.smalt_k,
         index_s = options.smalt_s,
         threads = options.threads,
+        kmc_threads = kmc_threads,
         max_insert = options.max_insert,
         minid = 0.9,
         seed_stop_length = options.seed_stop_length,
@@ -223,6 +231,7 @@ assembly = iva.assembly.Assembly(
     map_index_k = options.smalt_k,
     map_index_s = options.smalt_s,
     threads = options.threads,
+    kmc_threads = kmc_threads,
     map_minid = options.smalt_id,
     contig_iter_trim = options.ctg_iter_trim,
     ext_min_cov = options.ext_min_cov,

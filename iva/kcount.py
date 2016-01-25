@@ -52,14 +52,14 @@ def _median(d):
             return key
 
 
-def _run_kmc_with_script(script, reads, outfile, kmer, min_count, max_count, m_option, verbose, allow_fail):
+def _run_kmc_with_script(script, reads, outfile, kmer, min_count, max_count, m_option, verbose, allow_fail, threads=1):
     f = pyfastaq.utils.open_file_write(script)
     print('set -e', file=f)
     kmc_command = ''.join([
         'kmc -fa',
          ' -m', str(m_option),
          ' -k', str(kmer),
-         ' -sf', '1',
+         ' -sf', str(threads),
          ' -ci', str(min_count),
          ' -cs', str(max_count),
          ' -cx', str(max_count),
@@ -80,7 +80,7 @@ def _run_kmc_with_script(script, reads, outfile, kmer, min_count, max_count, m_o
     return common.syscall('bash ' + script, allow_fail=allow_fail)
 
 
-def _run_kmc(reads, outprefix, kmer, min_count, max_count, verbose=0):
+def _run_kmc(reads, outprefix, kmer, min_count, max_count, verbose=0, threads=1):
     '''Runs the kmer counting program kmc on a FASTA file. Returns filename made by kmc of the counts of kmers'''
     reads = os.path.abspath(reads)
     tmpdir = tempfile.mkdtemp(prefix='tmp.run_kmc.', dir=os.getcwd())
@@ -92,11 +92,11 @@ def _run_kmc(reads, outprefix, kmer, min_count, max_count, verbose=0):
     # The range is 4-32 (GB).
     # Try 4 and 32 (the default), then give up. This seems to make a difference, regardless of
     # RAM available on the machine.
-    ran_ok = _run_kmc_with_script('run_kmc.sh', reads, kmer_counts_file, kmer, min_count, max_count, 32, verbose, True)
+    ran_ok = _run_kmc_with_script('run_kmc.sh', reads, kmer_counts_file, kmer, min_count, max_count, 32, verbose, True, threads=threads)
     if not ran_ok:
         if verbose:
             print('First try of running kmc failed. Trying again with -m4 instead of -m32...', flush=True)
-        ran_ok = _run_kmc_with_script('run_kmc.sh', reads, kmer_counts_file, kmer, min_count, max_count, 4, verbose, False)
+        ran_ok = _run_kmc_with_script('run_kmc.sh', reads, kmer_counts_file, kmer, min_count, max_count, 4, verbose, False, threads=threads)
 
     os.chdir(original_dir)
     shutil.rmtree(tmpdir)
@@ -204,7 +204,7 @@ def _counts_file_to_fasta(infile, outfile):
     pyfastaq.utils.close(fout)
 
 
-def get_most_common_kmers(reads1, reads2, kmer_length=None, head=100000, min_count=10, max_count=100000000, most_common=100, method='kmc', verbose=0, ignore_seqs=None, contigs_to_check=None, threads=1):
+def get_most_common_kmers(reads1, reads2, kmer_length=None, head=100000, min_count=10, max_count=100000000, most_common=100, method='kmc', verbose=0, ignore_seqs=None, contigs_to_check=None, kmc_threads=1, map_threads=1):
     '''Gets the most common kmers from a pair of interleaved read FASTA or FASTQ files. Takes the first N sequences (determined by head).  Returns a dict of kmer=>frequency. If kmer length is not given, use min(0.8 * median read length, 95)'''
     tmpdir = tempfile.mkdtemp(prefix='tmp.common_kmers.', dir=os.getcwd())
     counts = {}
@@ -217,8 +217,8 @@ def get_most_common_kmers(reads1, reads2, kmer_length=None, head=100000, min_cou
         kmer_length = min(int(0.8 * _median(read_lengths)), 95)
 
     if method == 'kmc':
-        counts_file = _run_kmc(reads, os.path.join(tmpdir, 'out'), kmer_length, min_count, max_count, verbose=verbose)
-        counts = _kmc_to_kmer_counts(counts_file, most_common, kmers_to_ignore=ignore_seqs, contigs_to_check=contigs_to_check, verbose=verbose, threads=threads)
+        counts_file = _run_kmc(reads, os.path.join(tmpdir, 'out'), kmer_length, min_count, max_count, verbose=verbose, threads=kmc_threads)
+        counts = _kmc_to_kmer_counts(counts_file, most_common, kmers_to_ignore=ignore_seqs, contigs_to_check=contigs_to_check, verbose=verbose, threads=map_threads)
     else:
         raise Error('Method "' + method + '" not supported in kcount.get_most_common_kmers(). Cannot continue.')
 

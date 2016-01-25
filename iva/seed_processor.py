@@ -9,7 +9,7 @@ import pyfastaq
 class Error (Exception): pass
 
 class SeedProcessor:
-    def __init__(self, seeds_fasta, reads1, reads2, outfile, index_k=15, index_s=3, threads=1, max_insert=500, minid=0.9, seed_stop_length=500, extend_length=50, overlap_length=None, ext_min_cov=5, ext_min_ratio=2, verbose=0, seed_length=None, seed_min_count=10, seed_max_count=100000000):
+    def __init__(self, seeds_fasta, reads1, reads2, outfile, index_k=15, index_s=3, threads=1, max_insert=500, minid=0.9, seed_stop_length=500, extend_length=50, overlap_length=None, ext_min_cov=5, ext_min_ratio=2, verbose=0, seed_length=None, seed_min_count=10, seed_max_count=100000000, kmc_threads=1):
         self.seeds_fasta = seeds_fasta
         self.reads1 = reads1
         self.reads2 = reads2
@@ -17,6 +17,7 @@ class SeedProcessor:
         self.index_k = index_k
         self.index_s = index_s
         self.threads = threads
+        self.kmc_threads = kmc_threads
         self.max_insert = max_insert
         self.minid = minid
         self.seed_stop_length = seed_stop_length
@@ -61,7 +62,9 @@ class SeedProcessor:
             verbose = self.verbose,
             seed_length = self.seed_length,
             seed_min_count = self.seed_min_count,
-            seed_max_count = self.seed_max_count
+            seed_max_count = self.seed_max_count,
+            kmc_threads = self.kmc_threads,
+            map_threads = self.threads
         )
         if len(new_seed) == 0:
             print('Warning: could not get most common kmer for', seed_name)
