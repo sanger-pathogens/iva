@@ -32,7 +32,7 @@ if not found_all_progs:
 
 setup(
     name='iva',
-    version='1.0.3',
+    version='1.0.4',
     description='Iterative Virus Assembler',
     packages = find_packages(),
     package_data={'iva': ['gage/*', 'ratt/*', 'read_trim/*', 'test_run_data/*']},
@@ -45,7 +45,7 @@ setup(
     install_requires=[
         'pyfastaq >= 3.10.0',
         'networkx >= 1.7',
-        'pysam >= 0.8.1'
+        'pysam >= 0.8.1, <= 0.8.3',
     ],
     license='GPLv3',
     classifiers=[
