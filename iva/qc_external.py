@@ -140,12 +140,13 @@ def run_ratt(embl_dir, assembly, outdir, config_file=None, transfer='Species', c
     assembly = os.path.abspath(assembly)
 
     cwd = os.getcwd()
-    try:
-        os.mkdir(outdir)
-    except:
-        pass
+    if os.path.exists(outdir):
+        if os.path.isdir(outdir):
+            shutil.rmtree(outdir)
+        else:
+            os.unlink(outdir)
+    os.mkdir(outdir)
     os.chdir(outdir)
-    iva.common.syscall('rm -rf ./*')
 
     extractor = iva.egg_extract.Extractor(os.path.abspath(os.path.join(os.path.dirname(iva.__file__), os.pardir)))
     ratt_code_indir = os.path.join('iva', 'ratt')
