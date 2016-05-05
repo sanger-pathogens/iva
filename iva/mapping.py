@@ -5,6 +5,7 @@ import collections
 import pyfastaq
 import pysam
 from iva import common
+from iva import external_progs
 
 class Error (Exception): pass
 
@@ -78,7 +79,10 @@ def map_reads(reads_fwd, reads_rev, ref_fa, out_prefix, index_k=15, index_s=3, t
     if sort:
         threads = min(4, threads)
         thread_mem = int(500 / threads)
-        sort_cmd = 'samtools sort -@' + str(threads) + ' -m ' + str(thread_mem) + 'M ' + intermediate_bam + ' ' + out_prefix
+        if str(external_progs.get_version('samtools')) >= '1.2':
+            sort_cmd = 'samtools sort -@' + str(threads) + ' -m ' + str(thread_mem) + 'M -o ' + final_bam + ' ' + intermediate_bam
+        else:
+            sort_cmd = 'samtools sort -@' + str(threads) + ' -m ' + str(thread_mem) + 'M ' + intermediate_bam + ' ' + out_prefix
         index_cmd = 'samtools index ' + final_bam
         if verbose >= 2:
             print('        map reads. sort:  ', sort_cmd)
