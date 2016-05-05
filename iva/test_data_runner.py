@@ -21,7 +21,7 @@ class Tester:
     def __init__(self, outdir, iva_script, trimmo_jar=None, threads=1):
         self.outdir = os.path.join(outdir)
         if os.path.exists(self.outdir):
-            raise Error('Output directory alread exists. Cannot continue')
+            raise Error('Output directory already exists. Cannot continue')
 
         self.iva_script = iva_script
         self.trimmo_jar = trimmo_jar
