@@ -44,6 +44,7 @@ mkdir $kmc_dir
 cd $kmc_dir
 download $KMC_DOWNLOAD_URL "kmc"
 download $KMCDUMP_DOWNLOAD_URL "kmc_dump"
+chmod +x kmc kmc_dump
 
 
 # --------------- mummer ------------------
