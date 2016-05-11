@@ -70,7 +70,8 @@ cd $build_dir
 download $SMALT_DOWNLOAD_URL "smalt-${SMALT_VERSION}-bin.tar.gz"
 tar zxf smalt-${SMALT_VERSION}-bin.tar.gz
 smalt_dir="$build_dir/smalt-${SMALT_VERSION}-bin"
-
+cd $smalt_dir
+ln -s smalt_x86_64 smalt
 
 
 cd $start_dir
