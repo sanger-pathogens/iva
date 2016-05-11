@@ -40,6 +40,7 @@ download () {
 
 # --------------- kmc -----------------
 kmc_dir="$build_dir/kmc-${KMC_VERSION}"
+rm -fr $kmc_dir
 mkdir $kmc_dir
 cd $kmc_dir
 download $KMC_DOWNLOAD_URL "kmc"
