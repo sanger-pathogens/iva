@@ -12,6 +12,12 @@ including installation instructions.
 For usage help and examples, see the [IVA wiki page] [IVA wiki page].
 
 
+---------------------------------
+
+Build status: [![Build Status](https://travis-ci.org/sanger-pathogens/iva.svg?branch=master)](https://travis-ci.org/sanger-pathogens/iva)
+
+
+
 
   [IVA wiki page]: https://github.com/sanger-pathogens/iva/wiki
   [IVA website]: http://sanger-pathogens.github.io/iva/
