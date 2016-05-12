@@ -34,7 +34,7 @@ io_group.add_argument('-r', '--reads_rev', action=iva.common.abspathAction, help
 io_group.add_argument('--fr', action=iva.common.abspathAction, dest='reads', help='Name of interleaved fasta/q file', metavar='filename[.gz]')
 io_group.add_argument('--keep_files', action='store_true', help='Keep intermediate files (could be many!). Default is to delete all unnecessary files')
 io_group.add_argument('--contigs', action=iva.common.abspathAction, help='Fasta file of contigs to be extended. Incompatible with --reference', metavar='filename[.gz]')
-io_group.add_argument('--reference', action=iva.common.abspathAction, help='Fasta file of reference genome, or parts thereof. IVA will try to assemble one contig per sequence in this file. Incompatible with --contigs', metavar='filename[.gz]')
+io_group.add_argument('--reference', action=iva.common.abspathAction, help='EXPERIMENTAL! This option is EXPERIMENTAL, not recommended, and has not been tested! Fasta file of reference genome, or parts thereof. IVA will try to assemble one contig per sequence in this file. Incompatible with --contigs', metavar='filename[.gz]')
 io_group.add_argument('-v', '--verbose', action='count', help='Be verbose by printing messages to stdout. Use up to three times for increasing verbosity.', default=0)
 
 
@@ -111,6 +111,9 @@ if not (bool(options.reads) ^ bool(options.reads_fwd and options.reads_rev)) or 
 if options.contigs and options.reference:
     print('Error! Cannot use both of --contgs and --reference. Cannot continue', file=sys.stderr)
     sys.exit(1)
+
+if options.reference:
+    print('WARNING. The option --reference has been used. It is EXPERIMENTAL and it is probably better to not use it!', file=sys.stderr)
 
 if os.path.exists(options.outdir):
     print('Error! Output directory', options.outdir, 'already exists. Cannot continue', file=sys.stderr)
@@ -209,6 +212,8 @@ if options.contigs:
     contigs = 'contigs_to_extend.fasta'
     pyfastaq.tasks.to_fasta(options.contigs, contigs, line_length=60, strip_after_first_whitespace=True)
 elif options.reference:
+    print('WARNING. The option --reference has been used. Trying to use reference file to generate starting contig.', file=sys.stderr)
+    print(' ... if this throws errors, then try running without the --reference option', file=sys.stderr)
     reference = 'reference_in.fasta'
     pyfastaq.tasks.to_fasta(options.reference, reference, line_length=60, strip_after_first_whitespace=True)
     p = iva.seed_processor.SeedProcessor(
