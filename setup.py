@@ -60,7 +60,7 @@ setup(
     install_requires=[
         'pyfastaq >= 3.10.0',
         'networkx >= 1.7',
-        'pysam >= 0.8.1, <= 0.8.3',
+        'pysam >= 0.8.1',
     ],
     license='GPLv3',
     classifiers=[
