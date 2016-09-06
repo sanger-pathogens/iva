@@ -1,3 +1,5 @@
+#!/bin/sh
+
 FILENAME=$1
 SCRIPT_PATH=$2
 JAVA_PATH=$2:.

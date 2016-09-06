@@ -23,7 +23,7 @@ parser = argparse.ArgumentParser(
 )
 
 parser.add_argument('outdir', help='Name of output directory', metavar='Directory_name')
-parser.add_argument('--add_to_ref', action=iva.common.abspathAction, help='Filename of Genbank IDs or GI numbers to be added to database. Format is: whitespace separated list of GI numbers on each line. One line defines one genome (e.g. flu is 8 segements, so put 8 GI numbers on one line for one flu reference)', metavar='Filename')
+parser.add_argument('--add_to_ref', action=iva.common.abspathAction, help='Filename of Genbank IDs or GI numbers to be added to database. Format is: whitespace separated list of GI numbers on each line. One line defines one genome (e.g. flu is 8 segments, so put 8 GI numbers on one line for one flu reference)', metavar='Filename')
 parser.add_argument('--skip_viruses', action='store_true', help='Do not run kraken-build --download-library viruses when building the database. If this option used, then --add_to_ref must also be used')
 parser.add_argument('--threads', type=int, help='Number of threads to use [%(default)s]', metavar='INT', default=1)
 parser.add_argument('--minimizer_len', type=int, help='Number to pass to kraken-build minimizer_len option [%(default)s]', default=13, metavar='INT')
