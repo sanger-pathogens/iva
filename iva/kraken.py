@@ -69,6 +69,18 @@ class Database:
         self.done_files = {x:os.path.join(self.rootdir, 'progress.' + x + '.done') for x in self.tasks}
 
 
+    @classmethod
+    def count_cds_from_embl(cls, infile):
+        count = 0
+
+        with open(infile) as f:
+            for line in f:
+                if line.startswith('FT   CDS '):
+                    count += 1
+
+        return count
+
+
     def _mkdir(self, d, rmtree=False):
         if rmtree and os.path.exists(d):
             shutil.rmtree(d)
