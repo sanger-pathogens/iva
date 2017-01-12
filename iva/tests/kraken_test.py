@@ -27,6 +27,13 @@ class TestKraken(unittest.TestCase):
         self.db = kraken.Database(os.path.join(data_dir, 'kraken_test.db'))
 
 
+    def test_count_cds_from_embl(self):
+        '''test count_cds_from_embl'''
+        for i in range(3):
+            infile = os.path.join(data_dir, 'kraken_count_cds_from_embl.' + str(i))
+            self.assertEqual(i, kraken.Database.count_cds_from_embl(infile))
+
+
     def test_get_parent_taxons(self):
         '''test _get_parent_taxons'''
         taxons = set(['1', '9', '13'])
@@ -87,7 +94,7 @@ class TestKraken(unittest.TestCase):
         self.db._append_to_file(tmp, '42')
         self.assertTrue(filecmp.cmp(tmp, after))
         os.unlink(tmp)
-    
+
 
     def test_species_to_dir(self):
         '''test species_to_dir'''
