@@ -265,6 +265,10 @@ class Database:
                 self._replace_fasta_header(fa_file, 'gi|' + str(new_gi) + '|x')
                 embl_file = os.path.join(embl_dir, gi + '.embl')
                 self._genbank2embl(gb_file, embl_file)
+                number_of_cds = Database.count_cds_from_embl(embl_file)
+                print('GI', gi, '  CDS:', number_of_cds)
+                if number_of_cds < 1:
+                    raise Error('No CDS found for GI ' + gi + '. Can only use references that have at least one CDS. Cannot continue.')
 
         self._get_parent_taxons(real_taxon_ids)
 
