@@ -11,6 +11,15 @@ cache:
   - "$HOME/.cache/pip"
 python:
   - "3.4"
+  - "3.5"
+  - "3.6"
+env:
+  - SAMTOOLS_VERSION=1.3
+  - SAMTOOLS_VERSION=1.3.1
+  - SAMTOOLS_VERSION=1.4
+  - SAMTOOLS_VERSION=1.4.1
+  - SAMTOOLS_VERSION=1.5
+  - SAMTOOLS_VERSION=1.6
 sudo: false
 install:
   - "source ./install_dependencies.sh"
