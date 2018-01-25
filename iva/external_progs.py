@@ -37,7 +37,7 @@ prog_to_version_cmd = {
     'nucmer': ('nucmer --version', re.compile('^NUCmer \(NUCleotide MUMmer\) version (.*)$')),
     'R': ('R --version', re.compile('^R version (.*) \(.*\) --')),
     'smalt': ('smalt version', re.compile('^Version: (.*)$')),
-    'samtools': ('samtools', re.compile('^Version: ([^ ]+)')),
+    'samtools': ('samtools', re.compile('(\d+\.\d+[\.\d]*)')),
 }
 
 
