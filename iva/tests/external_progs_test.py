@@ -16,18 +16,6 @@ import unittest
 from iva import external_progs
 
 class TestExternalProgs(unittest.TestCase):
-    def test_r_in_path(self):
-        '''Test blastn in path'''
-        self.assertTrue(external_progs.is_in_path('R'), 'Error! Did not find R in your path! Please install R')
-    
-    def test_blastn_in_path(self):
-        '''Test blastn in path'''
-        self.assertTrue(external_progs.is_in_path('blastn'), 'Error! Did not find blast in your path! Please install NCBI blast+')
-    
-    def test_makeblastdb_in_path(self):
-        '''Test makeblastdb in path'''
-        self.assertTrue(external_progs.is_in_path('makeblastdb'), 'Error! Did not find makeblastdb in your path! Please install NCBI blast+')
-    
     def test_kmc_in_path(self):
         '''Test kmc in path'''
         self.assertTrue(external_progs.is_in_path('kmc'), 'Error! Did not find kmc in your path! Please install kmc')
@@ -57,9 +45,7 @@ class TestExternalProgs(unittest.TestCase):
         self.assertTrue(external_progs.is_in_path('smalt'), 'Error! Did not find smalt in your path! Please install smalt')
     
     def test_r_version(self):
-        '''Test R version'''
-        self.assertTrue(external_progs.get_version('R',must_be_in_path=True))
-        
+        '''Test R versions'''
         self.assertEqual('3.4.0', self.check_regex_version_extraction('R', """
 R version 3.4.0 (2017-04-21) -- "You Stupid Darkness"
 Copyright (C) 2017 The R Foundation for Statistical Computing
@@ -100,7 +86,6 @@ Platform: x86_64-unknown-linux-gnu (64-bit)
     
     def test_blastn_version(self):
         '''Test blastn version'''
-        self.assertTrue(external_progs.get_version('blastn',must_be_in_path=True))
         self.assertEqual('2.7.0+', self.check_regex_version_extraction('blastn', """
 blastn: 2.7.0+
  Package: blast 2.7.0, build Sep 12 2017 15:51:33
@@ -116,7 +101,6 @@ Package: blast 2.2.31, build Jul  6 2015 15:14:27
     
     def test_makeblastdb_version(self):
         '''Test makeblastdb version'''
-        self.assertTrue(external_progs.get_version('makeblastdb',must_be_in_path=True))
         self.assertEqual('2.7.0+', self.check_regex_version_extraction('makeblastdb', """
 makeblastdb: 2.7.0+
  Package: blast 2.7.0, build Sep 12 2017 15:51:33
@@ -168,7 +152,6 @@ Copyright (C) 2017 Genome Research Ltd.""" ))
 
     def test_samtools_original_version(self):
         '''Test samtools original version'''
-        
         self.assertEqual('0.1.19', self.check_regex_version_extraction('samtools', """
 Program: samtools (Tools for alignments in the SAM format)
 Version: 0.1.19-44428cd
