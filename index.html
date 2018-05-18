@@ -98,6 +98,21 @@ version 0.1.19 or greater, and SMALT version 0.7.6.</p>
 </p>
 
 <h4>
+<a name="Docker" class="anchor" href="#docker"><span class="octicon octicon-link"></span></a>Docker</h4>
+<p>IVA can be run in a Docker container. First install Docker, then install IVA: </p>
+
+<pre><code>docker pull sangerpathogens/iva
+</pre></code>
+<p>To use it you would use a command such as this (substituting in your directories), where your files are assumed to be stored in /home/ubuntu/data: </p>
+
+<pre><code>docker run --rm -it -v /home/ubuntu/data:/data sangerpathogens/iva iva -f /data/reads_fwd.fastq -r /data/reads_rev.fastq /data/Output_directory
+</pre></code>
+
+<p>The image includes all required and optional dependencies for IVA. To run IVA with trimmomatic, you also need to specify the path to the trimmomatic jar file, which is available at /Trimmomatic-0.38/trimmomatic-0.38.jar:</p>
+<pre><code>docker run --rm -it -v /home/ubuntu/data:/data sangerpathogens/iva iva --trimmomatic /Trimmomatic-0.38/trimmomatic-0.38.jar -f /data/reads_fwd.fastq -r /data/reads_rev.fastq /data/Output_directory
+</pre></code>
+
+<h4>
 <a name="optional-dependencies" class="anchor" href="#optional-dependencies"><span class="octicon octicon-link"></span></a>Optional dependencies</h4>
 
 <p>The following dependencies only apply to the QC scripts of IVA and
