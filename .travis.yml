@@ -28,5 +28,9 @@ env:
 sudo: false
 install:
 - source ./install_dependencies.sh
+before_script:
+  - pip install codecov
 script:
-- python setup.py test
+  - "coverage run setup.py test"
+after_success:
+  - codecov
