@@ -30,60 +30,7 @@ IVA is a de novo assembler designed to assemble virus genomes that have no repea
 For more information, please read the [IVA publication](http://bioinformatics.oxfordjournals.org/content/early/2015/02/27/bioinformatics.btv120.abstract).
 
 ## Installation
-IVA has the following dependencies:
-
-### Required dependencies
-* [Python 3](http://www.python.org/) >= 3.3
-* [KMC](http://sun.aei.polsl.pl/kmc/download.html)
-* [MUMmer](http://mummer.sourceforge.net/)
-* [Samtools](http://samtools.sourceforge.net/)
-* [SMALT](http://www.sanger.ac.uk/resources/software/smalt/)
-
-### Optional dependencies
-* [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic)
-* [R](http://www.r-project.org/)
-* [BioPerl](http://www.bioperl.org/wiki/Main_Page)
-* [kraken](http://ccb.jhu.edu/software/kraken/)
-* [NCBI-blast+](http://blast.ncbi.nlm.nih.gov/Blast.cgi?PAGE_TYPE=BlastDocs&DOC_TYPE=Download)
-
-Although trimmomatic is optional, it is highly recommended. It is used to trim adapter sequences from reads before assembling and significantly improves the results.
-
-The rest of the optional dependencies only apply to the QC scripts of IVA and are not needed to run an assembly. Only install them if you want to run the scripts iva_qc or iva_qc_make_db.
-
-There are a number of ways to install IVA and details are provided below. If you encounter an issue when installing IVA please contact your local system administrator. If you encounter a bug please log it [here](https://github.com/sanger-pathogens/iva/issues) or email us at iva-help@sanger.ac.uk.
-
-### Using pip3
-```
-pip3 install iva
-```
-
-### Docker
-IVA can be run in a Docker container. First install Docker, then install IVA:
-```
-docker pull sangerpathogens/iva
-```
-To use it you would use a command such as this (substituting in your directories), where your files are assumed to be stored in /home/ubuntu/data:
-```
-docker run --rm -it -v /home/ubuntu/data:/data sangerpathogens/iva iva -f /data/reads_fwd.fastq -r /data/reads_rev.fastq /data/Output_directory
-```
-The image includes all required and optional dependencies for IVA. To run IVA with trimmomatic, you also need to specify the path to the trimmomatic jar file, which is available at /Trimmomatic-0.38/trimmomatic-0.38.jar:
-```
-docker run --rm -it -v /home/ubuntu/data:/data sangerpathogens/iva iva --trimmomatic /Trimmomatic-0.38/trimmomatic-0.38.jar -f /data/reads_fwd.fastq -r /data/reads_rev.fastq /data/Output_directory
-```
-
-### Bioconda
-Set up bioconda channel:
-```
-conda config --add channels bioconda
-```
-Install IVA:
-```
-conda install -c bioconda seroba
-```
-Please see the [IVA website](http://sanger-pathogens.github.io/iva/) for more information.
-
-### Running the tests
-The installation can be tested by running an assembly using [test data](https://github.com/sanger-pathogens/iva/wiki/Assembly-test-data) included with IVA.
+For installation instructions, please refer to the [IVA website](http://sanger-pathogens.github.io/iva/)
 
 ## Usage
 ```
