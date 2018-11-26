@@ -13,12 +13,7 @@ Iterative Virus Assembler - de novo virus assembler of Illumina paired reads.
 ## Contents
   * [Introduction](#introduction)
   * [Installation](#installation)
-    * [Required dependencies](#required-dependencies)
-    * [Optional dependencies](#optional-dependencies)
-    * [Using pip3](#using-pip3)
-    * [Docker](#docker)
-    * [Bioconda](#bioconda)
-    * [Running the tests](#running-the-tests)
+  * [Running the tests](#running-the-tests)
   * [Usage](#usage)
   * [License](#license)
   * [Feedback/Issues](#feedbackissues)
@@ -31,6 +26,11 @@ For more information, please read the [IVA publication](http://bioinformatics.ox
 
 ## Installation
 For installation instructions, please refer to the [IVA website](http://sanger-pathogens.github.io/iva/)
+
+## Running the tests
+The test can be run with dzil from the top level directory:  
+
+`python setup.py test`
 
 ## Usage
 ```
