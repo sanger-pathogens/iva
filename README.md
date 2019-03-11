@@ -1,8 +1,9 @@
 # IVA
 Iterative Virus Assembler - de novo virus assembler of Illumina paired reads.
+
 PLEASE NOTE: we currently do not have the resources to provide support for IVA, so please do not expect a reply if you flag any issue.
 
-[![Unmaintained](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
+[![Unmaintained](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)  
 [![Build Status](https://travis-ci.org/sanger-pathogens/iva.svg?branch=master)](https://travis-ci.org/sanger-pathogens/iva)  
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-brightgreen.svg)](https://github.com/sanger-pathogens/iva/blob/master/LICENSE)  
 [![status](https://img.shields.io/badge/Bioinformatics-10.1093-brightgreen.svg)](https://academic.oup.com/bioinformatics/article/31/14/2374/254470)  
@@ -174,6 +175,7 @@ IVA is free software, licensed under [GPLv3](https://github.com/sanger-pathogens
 
 ## Feedback/Issues
 Please report any issues to the [issues page](https://github.com/sanger-pathogens/iva/issues) or email iva-help@sanger.ac.uk.
+
 PLEASE NOTE: we currently do not have the resources to provide support for IVA, so please do not expect a reply if you flag any issue.
 
 ## Citation
