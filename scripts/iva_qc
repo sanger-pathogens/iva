@@ -45,12 +45,6 @@ mummer_group.add_argument('--ctg_min_hit_length', type=int, help='Minimum hit le
 mummer_group.add_argument('--ctg_min_hit_id', type=float, help='Minimum hit percent identity when running nucmer of contigs against reference [%(default)s]', metavar='FLOAT', default=80)
 
 
-mapping_group = parser.add_argument_group('SMALT mapping options')
-mapping_group.add_argument('-k', '--smalt_k', type=int, help='kmer hash length in SMALT (the -k option in smalt index) [%(default)s]', default=15, metavar='INT')
-mapping_group.add_argument('-s', '--smalt_s', type=int, help='kmer hash step size in SMALT (the -s option in smalt index) [%(default)s]', default=3, metavar='INT')
-mapping_group.add_argument('-y', '--smalt_id', type=float, help='Minimum identity threshold for mapping to be reported (the -y option in smalt map) [%(default)s]', default=0.5, metavar='FLOAT')
-
-
 external_group = parser.add_argument_group('External tools')
 external_group.add_argument('--gage_minid', help='Minimum percent identity used when GAGE runs nucmer [%(default)s]', metavar='INT in [0,100]', default=80)
 external_group.add_argument('--kraken_preload', action='store_true', help='Use the --preload option when running kraken')
@@ -86,9 +80,6 @@ qc = iva.qc.Qc(
     nucmer_min_cds_hit_id=options.cds_min_hit_id,
     nucmer_min_ctg_hit_length=options.ctg_min_hit_length,
     nucmer_min_ctg_hit_id=options.ctg_min_hit_id,
-    smalt_k=options.smalt_k,
-    smalt_s=options.smalt_s,
-    smalt_id=options.smalt_id,
     min_ref_cov=options.min_ref_cov,
     contig_layout_plot_title=options.ctg_layout_plot_title,
     threads=options.threads,

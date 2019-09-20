@@ -25,7 +25,7 @@ modules_dir = os.path.dirname(os.path.abspath(mapping.__file__))
 data_dir = os.path.join(modules_dir, 'tests', 'data')
 
 
-# different smalt version output slightly different BAMs. Some columns
+# different bowtie2 version output slightly different BAMs. Some columns
 # should never change, so check just those ones
 def get_sam_columns(bamfile):
     sams = []
@@ -40,12 +40,12 @@ def get_sam_columns(bamfile):
 
 
 class TestMapping(unittest.TestCase):
-    def test_smalt_in_path(self):
-        '''Test that smalt is in the user's path'''
-        assert(shutil.which('smalt') is not None)
+    def test_bowtie2_in_path(self):
+        '''Test that bowtie2 is in the user's path'''
+        assert(shutil.which('bowtie2') is not None)
 
 
-    def test_smalt_in_path(self):
+    def test_samtools_in_path(self):
         '''Test that samtools is in the user's path'''
         assert(shutil.which('samtools') is not None)
 
@@ -55,8 +55,8 @@ class TestMapping(unittest.TestCase):
         ref = os.path.join(data_dir, 'mapping_test.ref.trimmed.fa')
         reads_prefix = os.path.join(data_dir, 'mapping_test.reads')
         out_prefix = 'tmp.out'
-        mapping.map_reads(reads_prefix + '_1.fastq', reads_prefix + '_2.fastq', ref, out_prefix)
-        expected = get_sam_columns(os.path.join(data_dir, 'mapping_test.smalt.out.bam'))
+        mapping.map_reads(reads_prefix + '_1.fastq', reads_prefix + '_2.fastq', ref, out_prefix, minid=0.5)
+        expected = get_sam_columns(os.path.join(data_dir, 'mapping_test.bowtie2.out2.bam'))
         got = get_sam_columns(out_prefix + '.bam')
         self.assertListEqual(expected, got)
         os.unlink(out_prefix + '.bam')
@@ -68,7 +68,7 @@ class TestMapping(unittest.TestCase):
         reads_prefix = os.path.join(data_dir, 'mapping_test.reads')
         out_prefix = 'tmp.out'
         mapping.map_reads(reads_prefix + '_1.fastq', reads_prefix + '_2.fastq', ref, out_prefix, sort=True, verbose=3)
-        expected = get_sam_columns(os.path.join(data_dir, 'mapping_test.smalt.out.sorted.bam'))
+        expected = get_sam_columns(os.path.join(data_dir, 'mapping_test.bowtie2.out2.sorted.bam'))
         got = get_sam_columns(out_prefix + '.bam')
         self.assertListEqual(expected, got)
         os.unlink(out_prefix + '.bam')
@@ -82,7 +82,7 @@ class TestMapping(unittest.TestCase):
         reads_prefix = os.path.join(data_dir, 'mapping_test.reads')
         out_prefix = 'tmp.out'
         mapping.map_reads(reads_prefix + '_1.fastq', reads_prefix + '_2.fastq', ref, out_prefix, required_flag=12, verbose=3)
-        expected = get_sam_columns(os.path.join(data_dir, 'mapping_test.smalt.out.flag12.bam'))
+        expected = get_sam_columns(os.path.join(data_dir, 'mapping_test.bowtie2.out.flag12.bam'))
         got = get_sam_columns(out_prefix + '.bam')
         self.assertListEqual(expected, got)
         os.unlink(out_prefix + '.bam')
@@ -90,9 +90,9 @@ class TestMapping(unittest.TestCase):
 
     def test_get_bam_region_coverage_rev(self):
         '''Test get_bam_region_coverage reverse strand'''
-        bam = os.path.join(data_dir, 'mapping_test.smalt.out.sorted.bam')
+        bam = os.path.join(data_dir, 'mapping_test.bowtie2.out.sorted.bam')
         cov = mapping.get_bam_region_coverage(bam, 'ref', 190, rev=True, verbose=3)
-        f = open(os.path.join(data_dir, 'mapping_test.smalt.out.sorted.bam.rev.cov'), 'rb')
+        f = open(os.path.join(data_dir, 'mapping_test.bowtie2.out.sorted.bam.rev.cov'), 'rb')
         expected = pickle.load(f)
         f.close()
         self.assertListEqual(cov, expected)
@@ -100,9 +100,9 @@ class TestMapping(unittest.TestCase):
 
     def test_get_bam_region_coverage_fwd(self):
         '''Test get_bam_region_coverage forward strand'''
-        bam = os.path.join(data_dir, 'mapping_test.smalt.out.sorted.bam')
+        bam = os.path.join(data_dir, 'mapping_test.bowtie2.out.sorted.bam')
         cov = mapping.get_bam_region_coverage(bam, 'ref', 190, verbose=3)
-        f = open(os.path.join(data_dir, 'mapping_test.smalt.out.sorted.bam.fwd.cov'), 'rb')
+        f = open(os.path.join(data_dir, 'mapping_test.bowtie2.out.sorted.bam.fwd.cov'), 'rb')
         expected = pickle.load(f)
         f.close()
         self.assertListEqual(cov, expected)
@@ -110,9 +110,9 @@ class TestMapping(unittest.TestCase):
 
     def test_get_bam_region_coverage_fwd_And_rev(self):
         '''Test get_bam_region_coverage both strands'''
-        bam = os.path.join(data_dir, 'mapping_test.smalt.out.sorted.bam')
+        bam = os.path.join(data_dir, 'mapping_test.bowtie2.out.sorted.bam')
         cov = mapping.get_bam_region_coverage(bam, 'ref', 190, verbose=3, both_strands=True)
-        f = open(os.path.join(data_dir, 'mapping_test.smalt.out.sorted.bam.fwd_and_rev.cov'), 'rb')
+        f = open(os.path.join(data_dir, 'mapping_test.bowtie2.out.sorted.bam.fwd_and_rev.cov'), 'rb')
         expected = pickle.load(f)
         f.close()
         self.assertListEqual(cov, expected)
@@ -197,7 +197,7 @@ class TestMapping(unittest.TestCase):
             (0, 1)
         ]
 
-        sam_reader = pysam.Samfile(os.path.join(data_dir, 'mapping_test.smalt.out.bam'), "rb")
+        sam_reader = pysam.Samfile(os.path.join(data_dir, 'mapping_test.bowtie2.out.bam'), "rb")
         i = 0
         for sam in sam_reader.fetch(until_eof=True):
             self.assertEqual(mapping.soft_clipped(sam), expected[i])
@@ -209,7 +209,7 @@ class TestMapping(unittest.TestCase):
         expected_seqs = {}
         pyfastaq.tasks.file_to_dict(os.path.join(data_dir, 'mapping_test.reads_1.fasta'), expected_seqs)
         pyfastaq.tasks.file_to_dict(os.path.join(data_dir, 'mapping_test.reads_2.fasta'), expected_seqs)
-        sam_reader = pysam.Samfile(os.path.join(data_dir, 'mapping_test.smalt.out.bam'), "rb")
+        sam_reader = pysam.Samfile(os.path.join(data_dir, 'mapping_test.bowtie2.out2.bam'), "rb")
         for sam in sam_reader.fetch(until_eof=True):
             fa = mapping.sam_to_fasta(sam)
             self.assertTrue(fa.id in expected_seqs)
@@ -236,7 +236,7 @@ class TestMapping(unittest.TestCase):
 
         ]
 
-        sam_reader = pysam.Samfile(os.path.join(data_dir, 'mapping_test.smalt.out.bam'), "rb")
+        sam_reader = pysam.Samfile(os.path.join(data_dir, 'mapping_test.bowtie2.out.bam'), "rb")
         i = 0
         for sam in sam_reader.fetch(until_eof=True):
             self.assertEqual(mapping._can_extend(sam, 190, min_clip=2), expected[i])
@@ -255,7 +255,7 @@ class TestMapping(unittest.TestCase):
             (mapping.NOT_USEFUL, mapping.NOT_USEFUL)
         ]
 
-        sam_reader = pysam.Samfile(os.path.join(data_dir, 'mapping_test.smalt.out.bam'), "rb")
+        sam_reader = pysam.Samfile(os.path.join(data_dir, 'mapping_test.bowtie2.out.bam'), "rb")
         previous_sam = None
         i = 0
         for sam in sam_reader.fetch(until_eof=True):
@@ -274,7 +274,7 @@ class TestMapping(unittest.TestCase):
         expected = ['ref'] * 14
         for i in ([5,10,11]):
             expected[i] = None
-        sam_reader = pysam.Samfile(os.path.join(data_dir, 'mapping_test.smalt.out.bam'), "rb")
+        sam_reader = pysam.Samfile(os.path.join(data_dir, 'mapping_test.bowtie2.out.bam'), "rb")
         i = 0
         for sam in sam_reader.fetch(until_eof=True):
             self.assertEqual(mapping.get_ref_name(sam, sam_reader), expected[i])
@@ -285,7 +285,7 @@ class TestMapping(unittest.TestCase):
         '''Test bam_file_to_fasta_pair_files'''
         tmp1 = 'tmp.to_fasta_1.fa'
         tmp2 = 'tmp.to_fasta_2.fa'
-        mapping.bam_file_to_fasta_pair_files(os.path.join(data_dir, 'mapping_test.smalt.out.bam'), tmp1, tmp2)
+        mapping.bam_file_to_fasta_pair_files(os.path.join(data_dir, 'mapping_test.bowtie2.out2.bam'), tmp1, tmp2)
         self.assertTrue(filecmp.cmp(os.path.join(data_dir, 'mapping_test.reads_1.fasta'), tmp1))
         self.assertTrue(filecmp.cmp(os.path.join(data_dir, 'mapping_test.reads_2.fasta'), tmp2))
         os.unlink(tmp1)
@@ -296,7 +296,7 @@ class TestMapping(unittest.TestCase):
         '''Test bam_file_to_fasta_pair_files with a region'''
         tmp1 = 'tmp.to_fasta_1.fa'
         tmp2 = 'tmp.to_fasta_2.fa'
-        mapping.bam_file_to_fasta_pair_files(os.path.join(data_dir, 'mapping_test.smalt.out.sorted.bam'), tmp1, tmp2, chromosome='ref', start=25, end=150)
+        mapping.bam_file_to_fasta_pair_files(os.path.join(data_dir, 'mapping_test.bowtie2.out.sorted.bam'), tmp1, tmp2, chromosome='ref', start=25, end=150)
         self.assertTrue(filecmp.cmp(os.path.join(data_dir, 'mapping_test.bam_to_region_1.fa'), tmp1))
         self.assertTrue(filecmp.cmp(os.path.join(data_dir, 'mapping_test.bam_to_region_2.fa'), tmp2))
         os.unlink(tmp1)
@@ -306,7 +306,7 @@ class TestMapping(unittest.TestCase):
     def test_bam_file_to_region_fasta(self):
         '''Test bam_file_to_region_fasta'''
         tmp = 'tmp.to_fasta.fa'
-        bam = os.path.join(data_dir, 'mapping_test.smalt.out.sorted.bam')
+        bam = os.path.join(data_dir, 'mapping_test.bowtie2.out.sorted.bam')
         mapping.bam_file_to_region_fasta(bam, tmp, 'ref', start=42, end=142)
         self.assertTrue(filecmp.cmp(os.path.join(data_dir, 'mapping_test.bam_to_region.fasta'), tmp))
         os.unlink(tmp)

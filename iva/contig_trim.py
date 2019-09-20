@@ -76,7 +76,7 @@ def _trim_ends(fasta_in, fasta_out, to_trim, min_length=100, min_dist_to_end=25,
     tmpdir = tempfile.mkdtemp(prefix='tmp.adapter_trim.', dir=os.getcwd())
     tmp_prefix = os.path.join(tmpdir, 'out')
     sorted_bam = tmp_prefix + '.bam'
-    mapping.map_reads(to_trim, None, fasta_in, tmp_prefix, index_k=9, index_s=1, threads=1, minid=0.75, sort=True, extra_smalt_map_ops='-d -1 -m 10')
+    mapping.map_reads(to_trim, None, fasta_in, tmp_prefix, index_k=9, index_s=1, threads=1, minid=0.75, sort=True, extra_map_ops='-a')
 
     f_out = pyfastaq.utils.open_file_write(fasta_out)
     seq_reader = pyfastaq.sequences.file_reader(fasta_in)

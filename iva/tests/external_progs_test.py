@@ -40,9 +40,9 @@ class TestExternalProgs(unittest.TestCase):
         '''Test samtools in path'''
         self.assertTrue(external_progs.is_in_path('samtools'), 'Error! Did not find samtools in your path! Please install samtools')
     
-    def test_smalt_in_path(self):
-        '''Test smalt in path'''
-        self.assertTrue(external_progs.is_in_path('smalt'), 'Error! Did not find smalt in your path! Please install smalt')
+    def test_bowtie2_in_path(self):
+        '''Test bowtie2 in path'''
+        self.assertTrue(external_progs.is_in_path('bowtie2'), 'Error! Did not find bowtie2 in your path! Please install bowtie2')
     
     def test_r_version(self):
         '''Test R versions'''
@@ -158,13 +158,17 @@ Version: 0.1.19-44428cd
 
 Usage:   samtools <command> [options]""" ))
      
-    def test_smalt_version(self):
-       '''Test smalt version'''
-       self.assertTrue(external_progs.get_version('smalt',must_be_in_path=True))
-       self.assertEqual('0.7.6', self.check_regex_version_extraction('smalt', """
-             SMALT - Sequence Mapping and Alignment Tool
-Version: 0.7.6
-Date:    21-03-2014""" ))
+    def test_bowtie2_version(self):
+       '''Test bowtie2 version'''
+       self.assertTrue(external_progs.get_version('bowtie2',must_be_in_path=True))
+       self.assertEqual('2.2.8', self.check_regex_version_extraction('bowtie2', """
+/opt/bowtie2/bowtie2-align-s version 2.2.8
+64-bit
+Built on localhost.localdomain
+Thu Mar 10 14:17:54 EST 2016
+Compiler: gcc version 4.1.2 20080704 (Red Hat 4.1.2-54)
+Options: -O3 -m64 -msse2  -funroll-loops -g3 -DPOPCNT_CAPABILITY
+Sizeof {int, long, long long, void*, size_t, off_t}: {4, 8, 8, 8, 8, 8}""" ))
     
     def check_regex_version_extraction(self, prog,  raw_version_output ):
         cmd, regex = external_progs.prog_to_version_cmd[prog]

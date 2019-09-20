@@ -38,12 +38,6 @@ io_group.add_argument('--reference', action=iva.common.abspathAction, help='EXPE
 io_group.add_argument('-v', '--verbose', action='count', help='Be verbose by printing messages to stdout. Use up to three times for increasing verbosity.', default=0)
 
 
-mapping_group = parser.add_argument_group('SMALT mapping options')
-mapping_group.add_argument('-k', '--smalt_k', type=int, help='kmer hash length in SMALT (the -k option in smalt index) [%(default)s]', default=19, metavar='INT')
-mapping_group.add_argument('-s', '--smalt_s', type=int, help='kmer hash step size in SMALT (the -s option in smalt index) [%(default)s]', default=11, metavar='INT')
-mapping_group.add_argument('-y', '--smalt_id', type=float, help='Minimum identity threshold for mapping to be reported (the -y option in smalt map) [%(default)s]', default=0.5, metavar='FLOAT')
-
-
 contig_group = parser.add_argument_group('Contig options')
 contig_group.add_argument('--ctg_first_trim', type=int, help='Number of bases to trim off the end of every contig before extending for the first time [%(default)s]', default=25, metavar='INT')
 contig_group.add_argument('--ctg_iter_trim', type=int, help='During iterative extension, number of bases to trim off the end of a contig when extension fails (then try extending again) [%(default)s]', default=10, metavar='INT')
@@ -221,8 +215,6 @@ elif options.reference:
         reads_1,
         reads_2,
         'seeds.fasta',
-        index_k = options.smalt_k,
-        index_s = options.smalt_s,
         threads = options.threads,
         kmc_threads = kmc_threads,
         max_insert = options.max_insert,
@@ -247,11 +239,8 @@ assembly = iva.assembly.Assembly(
     contigs,
     verbose = options.verbose,
     clean = not options.keep_files,
-    map_index_k = options.smalt_k,
-    map_index_s = options.smalt_s,
     threads = options.threads,
     kmc_threads = kmc_threads,
-    map_minid = options.smalt_id,
     contig_iter_trim = options.ctg_iter_trim,
     ext_min_cov = options.ext_min_cov,
     ext_min_ratio = options.ext_min_ratio,

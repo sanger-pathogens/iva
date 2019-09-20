@@ -27,7 +27,7 @@ required_progs = [
     'delta-filter',
     'show-coords',
     'samtools',
-    'smalt',
+    'bowtie2',
 ]
 
 found_all_progs = True

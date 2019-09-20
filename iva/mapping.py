@@ -31,38 +31,40 @@ CAN_EXTEND_LEFT = 3
 CAN_EXTEND_RIGHT = 4
 
 
-def map_reads(reads_fwd, reads_rev, ref_fa, out_prefix, index_k=15, index_s=3, threads=1, max_insert=1000, minid=0.5, verbose=0, required_flag=None, sort=False, exclude_flag=None, mate_ref=None, extra_smalt_map_ops=None):
-    if extra_smalt_map_ops is None:
-        extra_smalt_map_ops = ''
+def map_reads(reads_fwd, reads_rev, ref_fa, out_prefix, index_k=15, index_s=3, threads=1, max_insert=1000, minid=0.5, verbose=0, required_flag=None, sort=False, exclude_flag=None, mate_ref=None, extra_map_ops=None):
+    if extra_map_ops is None:
+        extra_map_ops = ''
     map_index = out_prefix + '.map_index'
-    clean_files = [map_index + '.' + x for x in ['smi', 'sma']]
+    clean_files = [map_index + '.' + x + '.bt2' for x in ['1',
+                                                          '2',
+                                                          '3',
+                                                          '4',
+                                                          'rev.1',
+                                                          'rev.2']]
     index_cmd = ' '.join([
-        'smalt index',
-        '-k', str(index_k),
-        '-s', str(index_s),
-        map_index,
-        ref_fa
+        'bowtie2-build',
+        ref_fa,
+        map_index
     ])
 
-    map_cmd = 'smalt map ' + extra_smalt_map_ops + ' '
+    map_cmd = 'bowtie2 ' + extra_map_ops + ' -x ' + map_index + ' '
 
-    # depending on OS, -n can break smalt, so only use -n if it's > 1.
     if threads > 1:
-        map_cmd += '-n ' + str(threads) + ' -O '
+        map_cmd += '--threads ' + str(threads) + ' --reorder '
 
+    if minid <= 0.7:
+        map_cmd += '--local '
+    if reads_fwd.endswith('.fa'):
+        map_cmd += '-f '
     if reads_rev is None:
         map_cmd += ' '.join([
-            '-y', str(minid),
-            map_index,
-            reads_fwd,
+            '-U', reads_fwd,
         ])
     else:
         map_cmd += ' '.join([
-            '-i', str(max_insert),
-            '-y', str(minid),
-            map_index,
-            reads_fwd,
-            reads_rev,
+            '--maxins', str(max_insert),
+            '-1', reads_fwd,
+            '-2', reads_rev,
         ])
 
     if mate_ref is not None:

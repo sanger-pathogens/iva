@@ -7,15 +7,14 @@ start_dir=$(pwd)
 KMC_VERSION=3.0.0
 MUMMER_VERSION=3.23
 SAMTOOLS_VERSION=${SAMTOOLS_VERSION:-"1.3"}
-SMALT_VERSION=0.7.6
+BOWTIE2_VERSION=2.2.8
 
 #KMC_DOWNLOAD_URL=http://sun.aei.polsl.pl/REFRESH/kmc/downloads/${KMC_VERSION}/linux/kmc
 #KMCDUMP_DOWNLOAD_URL=http://sun.aei.polsl.pl/REFRESH/kmc/downloads/${KMC_VERSION}/linux/kmc_dump
 KMC3_DOWNLOAD_URL="https://github.com/refresh-bio/KMC/releases/download/v${KMC_VERSION}/KMC3.linux.tar.gz"
 MUMMER_DOWNLOAD_URL="http://downloads.sourceforge.net/project/mummer/mummer/${MUMMER_VERSION}/MUMmer${MUMMER_VERSION}.tar.gz"
 SAMTOOLS_DOWNLOAD_URL="https://github.com/samtools/samtools/releases/download/${SAMTOOLS_VERSION}/samtools-${SAMTOOLS_VERSION}.tar.bz2"
-SMALT_DOWNLOAD_URL=http://downloads.sourceforge.net/project/smalt/smalt-${SMALT_VERSION}-bin.tar.gz
-
+BOWTIE2_DOWNLOAD_URL=https://github.com/BenLangmead/bowtie2/releases/download/v${BOWTIE2_VERSION}/bowtie2-${BOWTIE2_VERSION}-linux-x86_64.zip
 
 # Make an install location
 if [ ! -d 'build' ]; then
@@ -73,13 +72,12 @@ cd $samtools_dir
 make
 
 
-# --------------- smalt -----------------
+# --------------- bowtie2 -----------------
 cd $build_dir
-download $SMALT_DOWNLOAD_URL "smalt-${SMALT_VERSION}-bin.tar.gz"
-tar zxf smalt-${SMALT_VERSION}-bin.tar.gz
-smalt_dir="$build_dir/smalt-${SMALT_VERSION}-bin"
-cd $smalt_dir
-ln -fs smalt_x86_64 smalt
+download $BOWTIE2_DOWNLOAD_URL "bowtie2-${BOWTIE2_VERSION}.zip"
+unzip -qq bowtie2-${BOWTIE2_VERSION}.zip
+bowtie2_dir="$build_dir/bowtie2-${BOWTIE2_VERSION}"
+rm bowtie2-${BOWTIE2_VERSION}.zip
 
 
 cd $start_dir
@@ -94,6 +92,6 @@ update_path () {
 update_path ${kmc_dir}
 update_path ${mummer_dir}
 update_path ${samtools_dir}
-update_path ${smalt_dir}
+update_path ${bowtie2_dir}
 
 

@@ -67,17 +67,6 @@ Input and output:
   -v, --verbose         Be verbose by printing messages to stdout. Use up to
                         three times for increasing verbosity.
 
-SMALT mapping options:
-  -k INT, --smalt_k INT
-                        kmer hash length in SMALT (the -k option in smalt
-                        index) [19]
-  -s INT, --smalt_s INT
-                        kmer hash step size in SMALT (the -s option in smalt
-                        index) [11]
-  -y FLOAT, --smalt_id FLOAT
-                        Minimum identity threshold for mapping to be reported
-                        (the -y option in smalt map) [0.5]
-
 Contig options:
   --ctg_first_trim INT  Number of bases to trim off the end of every contig
                         before extending for the first time [25]

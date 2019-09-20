@@ -3,12 +3,12 @@
 FROM debian:testing
 
 # Install required dependancies
-RUN apt-get -qq update && apt-get install -y openjdk-8-jdk python3-pip git wget unzip zlib1g-dev libncurses5-dev
-ENV JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
-RUN git clone https://github.com/sanger-pathogens/iva.git
+RUN apt-get -qq update && apt-get install -y openjdk-13-jdk python3-pip git wget unzip zlib1g-dev libncurses5-dev libbz2-dev liblzma-dev
+ENV JAVA_HOME="/usr/lib/jvm/java-13-openjdk-amd64"
+COPY . iva/
 RUN cd iva && ./install_dependencies.sh
-ENV PATH /iva/build/kmc-2.3.0:/iva/build/samtools-1.3:/iva/build/smalt-0.7.6-bin:/iva/build/samtools-1.3:/iva/build/MUMmer3.23:/iva/build/SPAdes-3.7.1-Linux/bin:$PATH
-RUN export PATH
+ENV PATH /iva/build/kmc-3.0.0:/iva/build/samtools-1.3:/iva/build/bowtie2-2.2.8:/iva/build/samtools-1.3:/iva/build/MUMmer3.23:/iva/build/SPAdes-3.7.1-Linux/bin:$PATH
+RUN export PATH && ln -s /usr/bin/python3 /usr/bin/python
 
 # Install optional dependencies
 RUN wget http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/Trimmomatic-0.38.zip && unzip Trimmomatic-0.38.zip

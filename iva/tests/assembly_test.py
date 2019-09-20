@@ -39,7 +39,7 @@ class TestAssembly(unittest.TestCase):
         out_prefix = 'tmp.assembly_test.out'
         a._map_reads(reads_prefix + '_1.fastq', reads_prefix + '_2.fastq', out_prefix)
 
-        # different smalt version output slightly different BAMs. Some columns
+        # different bowtie2 version output slightly different BAMs. Some columns
         # should never change, so check just those ones
         def get_sam_columns(bamfile):
             sams = []
@@ -61,7 +61,7 @@ class TestAssembly(unittest.TestCase):
     def test_extend_contigs_with_bam(self):
         '''test _extend_contigs_with_bam'''
         a = assembly.Assembly(contigs_file=os.path.join(data_dir, 'mapping_test.ref.trimmed.fa'), ext_min_cov=1, ext_min_ratio=1, ext_bases=10, max_insert=200)
-        bam = os.path.join(data_dir, 'mapping_test.smalt.out.bam')
+        bam = os.path.join(data_dir, 'mapping_test.bowtie2.out.bam')
         out_prefix = 'tmp'
         a._extend_contigs_with_bam(bam, out_prefix, output_all_useful_reads=False)
         tmp_contigs = 'tmp.new_contigs.fa'

@@ -43,9 +43,6 @@ class Qc:
         nucmer_min_ctg_hit_length=100,
         nucmer_min_ctg_hit_id=80,
         gage_nucmer_minid=80,
-        smalt_k=15,
-        smalt_s=3,
-        smalt_id=0.5,
         blast_for_act=False,
         kraken_preload=False,
         clean=True,
@@ -136,9 +133,6 @@ class Qc:
         self.nucmer_min_cds_hit_id = nucmer_min_cds_hit_id
         self.nucmer_min_ctg_hit_length = nucmer_min_ctg_hit_length
         self.nucmer_min_ctg_hit_id = nucmer_min_ctg_hit_id
-        self.smalt_k=smalt_k
-        self.smalt_s=smalt_s
-        self.smalt_id=smalt_id
         self.contig_pos_in_ref = {}
         self.low_cov_ref_regions = {}
         self.low_cov_ref_regions_fwd = {}
@@ -533,7 +527,7 @@ class Qc:
 
     def _map_reads_to_assembly(self):
         if not self.assembly_is_empty:
-            iva.mapping.map_reads(self.reads_fwd, self.reads_rev, self.assembly_fasta, self.assembly_bam[:-4], sort=True, threads=self.threads, index_k=self.smalt_k, index_s=self.smalt_s, minid=self.smalt_id, extra_smalt_map_ops='-x')
+            iva.mapping.map_reads(self.reads_fwd, self.reads_rev, self.assembly_fasta, self.assembly_bam[:-4], sort=True, threads=self.threads, extra_map_ops='-x')
             os.unlink(self.assembly_bam[:-4] + '.unsorted.bam')
 
 
@@ -572,7 +566,7 @@ class Qc:
 
     def _map_reads_to_reference(self):
         assert os.path.exists(self.ref_fasta)
-        iva.mapping.map_reads(self.reads_fwd, self.reads_rev, self.ref_fasta, self.ref_bam[:-4], sort=True, threads=self.threads, index_k=self.smalt_k, index_s=self.smalt_s, minid=self.smalt_id, extra_smalt_map_ops='-x')
+        iva.mapping.map_reads(self.reads_fwd, self.reads_rev, self.ref_fasta, self.ref_bam[:-4], sort=True, threads=self.threads)
         os.unlink(self.ref_bam[:-4] + '.unsorted.bam')
 
 
