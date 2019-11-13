@@ -93,14 +93,22 @@ class Assembly:
             if len(self.contigs[name]) >= min_length and name not in do_not_write and (name in only_write or len(only_write)==0):
                 if order_by_orfs and contig_revcomp[i]:
                     self.contigs[name].fa.revcomp()
+                    suffix = ' (reversed)'
+                else:
+                    suffix = ''
 
                 if prefix is None:
                     print(self.contigs[name].fa, file=f)
                 else:
                     printed += 1
-                    self.contigs[name].fa.id = prefix + '.' + str(printed).zfill(5)
+                    new_name = prefix + '.' + str(printed).zfill(5)
+                    self.contigs[name].fa.id = new_name
                     print(self.contigs[name].fa, file=f)
                     self.contigs[name].fa.id = name
+                    if self.verbose >= 2:
+                        print('Reported {} as {}{}.'.format(name,
+                                                            new_name,
+                                                            suffix))
 
                 if order_by_orfs and contig_revcomp[i]:
                     self.contigs[name].fa.revcomp()
@@ -483,19 +491,30 @@ class Assembly:
                 hits = self._remove_contig_from_nucmer_hits(hits, contig)
                 self._remove_contig(contig)
                 contigs.remove(contig)
+                if self.verbose >= 2:
+                    print('Removing contained contig:', contig)
 
 
     def _coords_to_new_contig(self, coords_list):
         new_contig = pyfastaq.sequences.Fasta(coords_list[0][0], '')
+        descriptions = []
         for name, coords, reverse in coords_list:
             assert name in self.contigs
             if reverse:
                 seq = pyfastaq.sequences.Fasta('ni', self.contigs[name].fa.seq[coords.start:coords.end+1])
                 seq.revcomp()
                 new_contig.seq += seq.seq
+                descriptions.append('{}[{}<-{}]'.format(name, coords.end, coords.start))
             else:
                 new_contig.seq += self.contigs[name].fa.seq[coords.start:coords.end+1]
-
+                descriptions.append('{}[{}->{}]'.format(name, coords.start, coords.end))
+        if self.verbose >= 2:
+            final_description = '{}[0->{}]'.format(new_contig.id,
+                                                   len(new_contig.seq))
+            print('Merging contigs:',
+                  ' + '.join(descriptions),
+                  '==>',
+                  final_description)
         return new_contig
 
 
