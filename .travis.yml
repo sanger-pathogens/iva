@@ -5,6 +5,8 @@ addons:
     - zlib1g-dev
     - libncurses5-dev
     - libncursesw5-dev
+    - libbz2-dev
+    - liblzma-dev
 cache:
   directories:
   - build

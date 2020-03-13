@@ -96,4 +96,4 @@ update_path ${mummer_dir}
 update_path ${samtools_dir}
 update_path ${smalt_dir}
 
-
+pip install cython
