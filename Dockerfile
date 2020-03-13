@@ -19,15 +19,6 @@ RUN apt-get update -y -qq \
       unzip \
       zlib1g-dev \
       libncurses5-dev \
-      pkg-config \ 
-      libcurl4-openssl-dev \
-      lbzip2 \
-      zlib1g \
-      libbz2-1.0 \
-      libncurses5 \
-      liblzma5 \
-      build-essential \
-      libncurses5-dev \
       libbz2-dev \
       liblzma-dev
   
