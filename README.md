@@ -174,7 +174,7 @@ For usage help and examples, see the [IVA wiki page](https://github.com/sanger-p
 IVA is free software, licensed under [GPLv3](https://github.com/sanger-pathogens/iva/blob/master/LICENSE).
 
 ## Feedback/Issues
-Please report any issues to the [issues page](https://github.com/sanger-pathogens/iva/issues) or email iva-help@sanger.ac.uk.
+Please report any issues to the [issues page](https://github.com/sanger-pathogens/iva/issues).
 
 PLEASE NOTE: we currently do not have the resources to provide support for IVA, so please do not expect a reply if you flag any issue.
 
