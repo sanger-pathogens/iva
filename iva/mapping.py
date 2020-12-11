@@ -46,7 +46,7 @@ def map_reads(reads_fwd, reads_rev, ref_fa, out_prefix, index_k=15, index_s=3, t
         ref_fa
     ])
 
-    map_cmd = 'smalt map ' + extra_smalt_map_ops + ' '
+    map_cmd = 'smalt map -r 1 ' + extra_smalt_map_ops + ' '
 
     # depending on OS, -n can break smalt, so only use -n if it's > 1.
     if threads > 1:
