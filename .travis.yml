@@ -5,6 +5,8 @@ addons:
     - zlib1g-dev
     - libncurses5-dev
     - libncursesw5-dev
+    - libbz2-dev
+    - liblzma-dev
 cache:
   directories:
   - build
@@ -18,13 +20,10 @@ deploy:
   on:
     tags: true
 python:
-- '3.5'
 - '3.6'
 env:
 - SAMTOOLS_VERSION=1.3.1
-- SAMTOOLS_VERSION=1.4.1
-- SAMTOOLS_VERSION=1.5
-- SAMTOOLS_VERSION=1.6
+- SAMTOOLS_VERSION=1.10
 sudo: false
 install:
 - source ./install_dependencies.sh
