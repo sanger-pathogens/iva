@@ -9,7 +9,7 @@ PLEASE NOTE: we currently do not have the resources to provide support for IVA, 
 [![status](https://img.shields.io/badge/Bioinformatics-10.1093-brightgreen.svg)](https://academic.oup.com/bioinformatics/article/31/14/2374/254470)  
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat-square)](http://bioconda.github.io/recipes/iva/README.html)   
 [![Container ready](https://img.shields.io/badge/container-ready-brightgreen.svg)](https://quay.io/repository/biocontainers/iva)  
-[![Docker Build Status](https://img.shields.io/docker/build/sangerpathogens/iva.svg)](https://hub.docker.com/r/sangerpathogens/iva)  
+[![Docker Build Status](https://img.shields.io/docker/cloud/build/sangerpathogens/iva.svg)](https://hub.docker.com/r/sangerpathogens/iva)  
 [![Docker Pulls](https://img.shields.io/docker/pulls/sangerpathogens/iva.svg)](https://hub.docker.com/r/sangerpathogens/iva)  
 [![codecov](https://codecov.io/gh/sanger-pathogens/iva/branch/master/graph/badge.svg)](https://codecov.io/gh/sanger-pathogens/iva)  
 
