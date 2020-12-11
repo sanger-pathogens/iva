@@ -27,6 +27,7 @@ env:
 - SAMTOOLS_VERSION=1.4.1
 - SAMTOOLS_VERSION=1.5
 - SAMTOOLS_VERSION=1.6
+- SAMTOOLS_VERSION=1.10
 sudo: false
 install:
 - source ./install_dependencies.sh

@@ -21,6 +21,8 @@ import pysam
 from iva import common
 from iva import external_progs
 
+from packaging import version
+
 class Error (Exception): pass
 
 
@@ -93,7 +95,7 @@ def map_reads(reads_fwd, reads_rev, ref_fa, out_prefix, index_k=15, index_s=3, t
     if sort:
         threads = min(4, threads)
         thread_mem = int(500 / threads)
-        if str(external_progs.get_version('samtools')) >= '1.2':
+        if version.parse(external_progs.get_version('samtools')) >= version.parse("1.2"):
             sort_cmd = 'samtools sort -@' + str(threads) + ' -m ' + str(thread_mem) + 'M -o ' + final_bam + ' ' + intermediate_bam
         else:
             sort_cmd = 'samtools sort -@' + str(threads) + ' -m ' + str(thread_mem) + 'M ' + intermediate_bam + ' ' + out_prefix

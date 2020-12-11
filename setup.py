@@ -27,7 +27,7 @@ required_progs = [
     'delta-filter',
     'show-coords',
     'samtools',
-    'smalt',
+    'smalt'
 ]
 
 found_all_progs = True
@@ -61,6 +61,7 @@ setup(
         'pyfastaq >= 3.10.0',
         'networkx >= 1.7',
         'pysam >= 0.8.1',
+        'packaging'
     ],
     license='GPLv3',
     classifiers=[
