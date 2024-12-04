@@ -357,7 +357,7 @@ class Database:
             if self.verbose:
                 print('Converting', directory, end=' ', flush=True)
             for fname in gbk_files:
-                self._genbank2embl(fname, re.sub('\.gbk$', '', fname) + '.embl')
+                self._genbank2embl(fname, re.sub(r'\.gbk$', '', fname) + '.embl')
                 os.unlink(fname)
                 if self.verbose:
                     print(fname, end=' ', flush=True)
@@ -365,7 +365,7 @@ class Database:
             os.chdir(original_dir)
             if self.verbose:
                 print()
-            new_dir = re.sub('_uid[0-9]+$', '', directory).strip('_')
+            new_dir = re.sub(r'_uid[0-9]+$', '', directory).strip('_')
             if new_dir != directory:
                 os.rename(directory, new_dir)
 
@@ -412,7 +412,7 @@ class Database:
         if s.startswith('added.'):
             return s
         else:
-            return re.sub('\W', '_', s).strip('_')
+            return re.sub(r'\W', '_', s).strip('_')
 
 
     def _get_most_common_species_dir(self, kraken_report):

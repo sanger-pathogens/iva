@@ -156,12 +156,12 @@ def _remove_indels(l, p_or_m):
 
 
 def strip_mpileup_coverage_string(s):
-    s = re.sub('\^.', '', s)
+    s = re.sub(r'\^.', '', s)
     a = list(s)
     a = _remove_indels(a, '+')
     a = _remove_indels(a, '-')
     s = ''.join(a)
-    return re.sub('[*$]', '', s)
+    return re.sub(r'[*$]', '', s)
 
 
 def consensus_base(counts, keys, ratio=0.5):
